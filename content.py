@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/arp-spoofing/">ARP-Spoofing</a> – Man-in-the-Middle mit Ettercap, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection. '
+    'news': ['<strong>Neu:</strong> <a href="routing/show-ip-route/">Die Routing-Tabelle lesen</a> – show ip route Zeile für Zeile, administrative Distanzen und welche Route bei mehreren Protokollen gewinnt. '
+             'Außerdem <a href="netzwerksicherheit/arp-spoofing/">ARP-Spoofing</a> – Man-in-the-Middle mit Ettercap, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection. '
              'Außerdem <a href="netzwerksicherheit/rogue-dhcp/">Rogue-DHCP-Server</a> – falsches Gateway unterschieben als Man-in-the-Middle, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi). '
              'Außerdem <a href="netzwerksicherheit/dhcp-starvation/">DHCP-Starvation</a> – Angriff mit Yersinia, im Wireshark nachvollziehen, Schutz mit Port-Security und DHCP Snooping. '
              'Außerdem <a href="routing/ospf-3/">OSPF 3: Multi-Area-OSPF</a> – Areas, ABR und Kurzfassungen zum Erkunden, O oder O IA, mit Übungen. '
@@ -59,6 +60,8 @@ AREAS = [
      ]},
     {'slug': 'routing', 'title': 'Routing', 'text': 'Wie Pakete zwischen Netzen ihren Weg finden.',
      'topics': [
+         {'slug': 'show-ip-route', 'title': 'Die Routing-Tabelle lesen', 'tool': 'show-ip-route',
+          'text': 'show ip route Zeile für Zeile, administrative Distanzen, Floating Static Route und welche Route gewinnt, wenn mehrere Protokolle dasselbe Netz melden – mit Übungen.'},
          {'slug': 'inter-vlan-routing', 'title': 'Inter-VLAN-Routing', 'tool': 'inter-vlan-routing',
           'text': 'Router-on-a-Stick und Layer-3-Switch – Schritt für Schritt, mit Fehlersuche-Übungen und Zufallsgenerator.'},
          {'slug': 'statisches-routing', 'title': 'Statisches Routing', 'tool': 'statisches-routing',
