@@ -60,7 +60,10 @@ function build(r, lvl) {
     if (lvl === 'S' && offers.length === 1 && !offers[0].local && r() < 0.35) {
       var o0 = offers[0]; offers.push({proto: o0.proto, metric: metric(r, o0.proto), nh: '10.0.9.' + ri(r, 1, 9), ifn: 'Gi0/5'});
     }
-    var w = winner(offers), age = (w.proto === 'connected' || w.proto === 'static') ? null : [ri(r,0,9),ri(r,0,59),ri(r,0,59)].map(function(x,i){return (i===0?String(x):('0'+x).slice(-2));}).join(':').replace(/^(\d):/,'0$1:');
+    var w = winner(offers), age;
+    if (w.proto === 'connected' || w.proto === 'static') age = null;
+    else if (w.proto === 'rip') age = '00:00:' + ('0' + ri(r, 0, 29)).slice(-2);  // RIP: Zähler < Update-Intervall (30 s)
+    else age = ['0' + ri(r, 0, 9), ('0' + ri(r, 0, 59)).slice(-2), ('0' + ri(r, 0, 59)).slice(-2)].join(':');  // Uptime
     nets.push({net: net, p: 24, offers: offers, win: w, age: age});
   }
   return {router: 'R1', oct: oct, neighbors: neighbors, nets: nets, level: lvl};

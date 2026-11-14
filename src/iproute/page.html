@@ -177,12 +177,12 @@ var P=I.PROTO;
 var EXP={
  connected:{code:'C',name:'Direkt verbunden',ad:0,shape:'conn',ifn:'Gi0/1'},
  static:{code:'S',name:'Statisch',ad:1,metric:0,shape:'static',nh:'10.1.12.2'},
- ospf:{code:'O',name:'OSPF',ad:110,metric:65,mname:'Cost',shape:'dyn',nh:'10.1.12.2',ifn:'Gi0/1'},
- eigrp:{code:'D',name:'EIGRP',ad:90,metric:2172416,mname:'Composite-Metrik',shape:'dyn',nh:'10.1.23.2',ifn:'Gi0/2'},
- rip:{code:'R',name:'RIP',ad:120,metric:2,mname:'Hops',shape:'dyn',nh:'10.1.34.2',ifn:'Gi0/3'},
- ebgp:{code:'B',name:'eBGP',ad:20,metric:0,mname:'BGP nutzt Pfadattribute statt einer Metrik',shape:'dyn',nh:'10.1.45.2',ifn:'Gi0/0'}
+ ospf:{code:'O',name:'OSPF',ad:110,metric:65,mname:'Cost',shape:'dyn',nh:'10.1.12.2',ifn:'Gi0/1',age:'00:12:40'},
+ eigrp:{code:'D',name:'EIGRP',ad:90,metric:2172416,mname:'Composite-Metrik',shape:'dyn',nh:'10.1.23.2',ifn:'Gi0/2',age:'01:42:07'},
+ rip:{code:'R',name:'RIP',ad:120,metric:2,mname:'Hops',shape:'dyn',nh:'10.1.34.2',ifn:'Gi0/3',age:'00:00:21'},
+ ebgp:{code:'B',name:'eBGP',ad:20,metric:0,mname:'BGP nutzt Pfadattribute statt einer Metrik',shape:'dyn',nh:'10.1.45.2',ifn:'Gi0/0',age:'06:30:55'}
 };
-var EORD=['connected','static','ospf','eigrp','rip','ebgp'],curP='ospf',curSel=null,AGE='00:12:40';
+var EORD=['connected','static','ospf','eigrp','rip','ebgp'],curP='ospf',curSel=null;
 function segsFor(p){
  var e=EXP[p],out=[];
  out.push({t:e.code,c:'#f9a825',pad:1,title:'Code: Quelle der Route',body:'<b>'+e.code+'</b> = '+(p==='connected'?'direkt verbundenes Netz (Connected)':p==='static'?'statische Route (von Hand mit ip route gesetzt)':'über <b>'+e.name+'</b> gelernt')+'. Der Buchstabe sagt, woher die Route stammt – daraus folgt die administrative Distanz (hier <b>'+e.ad+'</b>).'});
@@ -194,7 +194,7 @@ function segsFor(p){
   out.push({t:'['+e.ad+'/'+e.metric+']',c:'#a5d6a7',sep:' ',title:'[administrative Distanz / Metrik]',body:'Links die <b>AD '+e.ad+'</b> ('+(p==='static'?'statische Route':e.name)+') – sie entscheidet, wenn mehrere Protokolle dasselbe Netz melden. Rechts die <b>Metrik '+e.metric+'</b>'+(p==='static'?' – bei statischen Routen immer 0':' ('+e.mname+')')+'. Die Metrik wird nur <b>innerhalb desselben Protokolls</b> verglichen.'});
   out.push({t:'via '+e.nh,c:'#ffab91',sep:' ',title:'Next Hop',body:'An diese <b>IP des nächsten Routers</b> wird das Paket geschickt. Dorthin löst der Router bei Bedarf die MAC-Adresse per ARP auf.'});
   if(e.shape==='dyn'){
-   out.push({t:AGE,c:'#90a4ae',sep:', ',title:'Alter der Route',body:'Wie lange die Route schon in der Tabelle steht (hh:mm:ss). Er steht <b>zwischen Next Hop und Interface</b> – und nur bei <b>dynamisch</b> gelernten Routen (O, D, R, B). Bei C und S fehlt er.'});
+   out.push({t:e.age,c:'#90a4ae',sep:', ',title:'Zeitstempel',body:(p==='rip'?'Bei RIP ist das die <b>Zeit seit dem letzten Update</b>. Weil RIP alle <b>30 Sekunden</b> updatet (Update-Intervall), bleibt dieser Zähler immer <b>unter 30 Sekunden</b> – hier 00:00:21. Danach springt er zurück auf 0.':'Die <b>Uptime</b>: wie lange die Route schon in der Tabelle steht (hh:mm:ss). Bei OSPF/EIGRP/BGP zählt sie hoch und kann Stunden oder Tage erreichen.')+' Er steht <b>zwischen Next Hop und Interface</b> und nur bei <b>dynamisch</b> gelernten Routen (O, D, R, B). Bei C und S fehlt er.'});
    out.push({t:e.ifn,c:'#ce93d8',sep:', ',title:'Ausgangs-Interface',body:'Über dieses <b>eigene Interface</b> verlässt das Paket den Router Richtung Next Hop.'});
   }
  }
