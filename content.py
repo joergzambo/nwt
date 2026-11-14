@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/dhcp-starvation/">DHCP-Starvation</a> – Angriff mit Yersinia, im Wireshark nachvollziehen, Schutz mit Port-Security und DHCP Snooping. '
+    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/rogue-dhcp/">Rogue-DHCP-Server</a> – falsches Gateway unterschieben als Man-in-the-Middle, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi). '
+             'Außerdem <a href="netzwerksicherheit/dhcp-starvation/">DHCP-Starvation</a> – Angriff mit Yersinia, im Wireshark nachvollziehen, Schutz mit Port-Security und DHCP Snooping. '
              'Außerdem <a href="routing/ospf-3/">OSPF 3: Multi-Area-OSPF</a> – Areas, ABR und Kurzfassungen zum Erkunden, O oder O IA, mit Übungen. '
              'Außerdem <a href="routing/ospf-2/">OSPF 2: Backbone Area, DR/BDR und LSDB</a> – wie Router den Netzplan austauschen, DR/BDR-Wahl zum Ausprobieren, Referenzbandbreite. '
              'Außerdem <a href="routing/ospf-1/">OSPF 1: Dijkstra-Algorithmus</a> – eigener Dijkstra-Solver Schritt für Schritt, Kosten als Zahlen oder aus Bandbreiten, mit Übungen. '
@@ -83,6 +84,8 @@ AREAS = [
          {'slug': 'arp-spoofing', 'title': 'ARP-Spoofing', 'text': 'Man-in-the-Middle im LAN und Dynamic ARP Inspection.'},
          {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'tool': 'dhcp-starvation',
           'text': 'Den Adresspool mit Yersinia leeren: warum DHCP angreifbar ist, SPAN und Wireshark, Schutz mit Port-Security und DHCP Snooping – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'rogue-dhcp', 'title': 'Rogue-DHCP-Server', 'tool': 'rogue-dhcp',
+          'text': 'Falsches Gateway unterschieben (Man-in-the-Middle): Wettlauf der Offer, im Wireshark erkennen, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi) – mit Übungen.'},
          {'slug': 'stp-angriff', 'title': 'Angriff auf die Root Bridge', 'text': 'Gefälschte BPDUs und BPDU Guard / Root Guard.'},
          {'slug': 'rip-authentifizierung', 'title': 'RIP-Authentifizierung', 'text': 'Gefälschte Routing-Updates verhindern.'},
      ]},

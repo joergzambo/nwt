@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rogue-DHCP-Server</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.cfgbox{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.cfgbox .ipcfg{border:1.5px solid #cfd8dc;border-radius:6px;padding:8px 12px;font:13px var(--mono);background:#fff;min-width:210px}
+.cfgbox .ipcfg b{font-family:var(--ui);font-size:13px;display:block;margin-bottom:3px}
+.cfgbox .ipcfg.bad{border-color:#c62828;background:#fdecea}
+.cfgbox .ipcfg .gw{font-weight:700}
+.cfgbox .ipcfg.bad .gw{color:#c62828}
+.pcap{border:1px solid #c5c9cc;border-radius:4px;overflow:hidden;margin-top:8px;font-family:var(--mono);font-size:12.5px}
+.pcap .hd{display:grid;grid-template-columns:40px 66px 136px 96px 46px 1fr;background:#e4e7e9;font-weight:700;padding:4px 8px;gap:8px}
+.pcap .rows{overflow:auto}
+.pcap .rw{display:grid;grid-template-columns:40px 66px 136px 96px 46px 1fr;padding:3px 8px;gap:8px;border-top:1px solid #eef1f2;white-space:nowrap}
+.pcap .rw.real{background:#e8f0fe}
+.pcap .rw.rogue{background:#fdecea}
+.filt{font-family:var(--mono);font-size:13px;background:#eafaf0;border:1px solid #abdcbd;border-radius:4px;padding:5px 9px;margin:8px 0 0;display:inline-block}
+.lab{counter-reset:step}
+.lab .st{border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:4px;padding:12px 16px 12px 52px;margin:10px 0;position:relative}
+.lab .st::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font:700 15px var(--ui);display:flex;align-items:center;justify-content:center}
+.lab .st h4{font:600 16px var(--ui);margin:0 0 4px}
+.lab .st p{margin:0 0 6px}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px}
+.key{display:inline-block;font:600 12px var(--ui);background:#eceff1;border:1px solid #cfd8dc;border-radius:4px;padding:1px 7px;margin:0 1px}
+.uni{border:1px solid #cfd8dc;border-radius:6px;padding:10px 14px;margin-top:8px;background:#f7f9fb}
+.uni h4{font:600 15px var(--ui);margin:0 0 4px;color:#0559c9}
+.uni ol{margin:0;padding-left:20px}
+.uni .path{font:600 13px var(--mono);background:#eceff1;border-radius:4px;padding:2px 7px;display:inline-block;margin:2px 0}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.disc{background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Rogue-DHCP-Server: das falsche Gateway unterschieben</h1>
+<p class="sub">Ein <b>Rogue-DHCP-Server</b> ist ein nicht autorisierter DHCP-Server im Netz. Er beantwortet die Anfragen der Clients mit seinen eigenen Werten – vor allem mit einem <b>falschen Standardgateway und DNS-Server</b>. Dann läuft der gesamte Internet-Verkehr der Opfer über den Angreifer: ein <b>Man-in-the-Middle</b>. Oft ist es aber auch nur ein versehentlich eingesteckter Heimrouter.</p>
+<div class="disc">⚠️ <b>Nur im eigenen Labornetz.</b> Diese Anleitung dient dem Unterricht und dem Verständnis der Abwehr. Angriffe auf fremde Netze sind strafbar.</div>
+<nav class="jumps" aria-label="Abschnitte"><a href="#warum">Warum es funktioniert</a><a href="#anim">Der Angriff</a><a href="#wireshark">Im Wireshark</a><a href="#lab">Lab-Anleitung</a><a href="#cisco">Schutz: Cisco</a><a href="#unifi">Schutz: UniFi</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="warum">Warum funktioniert der Angriff?</h2>
+<div class="rules">
+ <div class="card"><h3>Der erste Offer gewinnt</h3><p style="margin:0 0 6px">Ein Client schickt sein <b>Discover</b> als Broadcast an <b>alle</b>. Jeder DHCP-Server im selben Netz hört es und darf antworten. Der Client nimmt den <b>zuerst eintreffenden Offer</b> – welcher Server das ist, prüft er nicht.</p>
+  <p style="margin:0">Ein Rogue-Server, der <b>näher</b> am Client sitzt oder schneller antwortet, gewinnt dieses Rennen. Nach einer <a href="../dhcp-starvation/">DHCP-Starvation</a> ist der echte Pool leer – dann antwortet sowieso nur noch der Rogue.</p></div>
+ <div class="card check"><h3>Die Schwachstellen</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Keine Authentifizierung.</b> Der Client kann einen echten nicht von einem gefälschten Server unterscheiden.</li>
+  <li><b>Wettlauf (Race Condition).</b> Es zählt nur, wer zuerst antwortet.</li>
+  <li><b>Gateway und DNS kommen vom Server.</b> Wer sie setzt, lenkt den Verkehr – ideal für Man-in-the-Middle.</li>
+  <li><b>Oft gar kein Angriff.</b> Ein mitgebrachter WLAN-Router mit aktivem DHCP verteilt im Firmennetz munter falsche Adressen.</li></ul></div>
+</div>
+
+<h2 class="part" id="anim">Der Angriff Schritt für Schritt</h2>
+<div class="card">
+ <div id="asvg"></div>
+ <div class="cfgbox" id="cfg"></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="wireshark">So sieht es im Wireshark aus</h2>
+<p class="sub">Über einen SPAN-Port läuft der Verkehr des Client-Ports auf den Mitschnitt-PC. Das verräterische Zeichen: <b>zwei Offer auf ein Discover</b> – mit <b>verschiedenen Gateways</b> und von verschiedenen Server-MACs.</p>
+<div class="card">
+ <span class="filt">bootp &nbsp;<span style="color:#78909c">(bzw. <b>dhcp</b>)</span></span>
+ <div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Dest.</span><span>Prot.</span><span>Info</span></div><div class="rows" id="pcap"></div></div>
+ <p class="hint" id="pcaphint" style="margin-top:8px"></p>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Woran man den Rogue erkennt</h3><ul style="margin:0;padding-left:20px;font-size:15px">
+ <li><b>Zwei DHCP Offer</b> auf ein Discover – mit <b>unterschiedlichem Gateway</b> (Option 3) und DNS (Option 6).</li>
+ <li>Der Offer kommt von einer <b>unerwarteten Server-IP/MAC</b> (nicht die des echten Servers).</li>
+ <li>Filter in Wireshark: <code>dhcp.option.dhcp == 2</code> zeigt nur die Offer; die Server-Identifier (Option 54) vergleichen.</li>
+ <li>Am Client: <code>ipconfig /all</code> zeigt plötzlich ein falsches <b>Standardgateway</b> oder einen falschen DHCP-Server.</li></ul></div>
+
+<h2 class="part" id="lab">Lab-Anleitung: Rogue-Server mit Yersinia</h2>
+<p class="sub">Derselbe Aufbau wie bei der Starvation: Angreifer-PC (Kali) und Opfer am Cisco-Switch, Mitschnitt-PC am SPAN-Zielport. Oft kombiniert man beides – erst Starvation, dann Rogue, damit nur noch der Rogue antwortet.</p>
+<div class="lab">
+ <div class="st"><h4>Yersinia interaktiv starten</h4><p>Als root im Terminal starten.</p><pre class="cli">sudo yersinia -I</pre></div>
+ <div class="st"><h4>Interface und Protokoll wählen</h4><p>Taste <span class="key">i</span> → Interface (z. B. <code>eth0</code>) aktivieren, <span class="key">q</span> zurück. Dann <span class="key">g</span> → Protokoll <b>DHCP</b> wählen.</p></div>
+ <div class="st"><h4>Rogue-Server starten</h4><p>Taste <span class="key">x</span> öffnet das Angriffsfenster. <b>„creating DHCP rogue server“</b> wählen und mit <span class="key">Enter</span> starten. Yersinia antwortet nun auf Discover mit sich selbst als Gateway/DNS.</p>
+  <div class="warn">Als Einzeiler: <code>sudo yersinia dhcp -attack 2 -interface eth0</code> (Attack 2 = Rogue-Server). Realistischer ist ein echter DHCP-Server, z. B. <code>dnsmasq</code> mit eigener <code>dhcp-range</code> und <code>dhcp-option=3,&lt;Angreifer-IP&gt;</code>.</div></div>
+ <div class="st"><h4>Opfer eine Adresse holen lassen</h4><pre class="cli">C:\> ipconfig /release
+C:\> ipconfig /renew
+C:\> ipconfig /all          ! Default Gateway = Angreifer-IP?</pre></div>
+ <div class="st"><h4>Man-in-the-Middle scharf schalten</h4><p>Damit das Opfer trotzdem ins Internet kommt (und nichts merkt), muss der Angreifer weiterleiten und mitlesen:</p><pre class="cli">sudo sysctl -w net.ipv4.ip_forward=1     ! Pakete weiterreichen
+# Verkehr in Wireshark mitschneiden, Zugangsdaten in HTTP/DNS mitlesen</pre></div>
+ <div class="st"><h4>Angriff stoppen</h4><p>In Yersinia <span class="key">L</span> → Angriff beenden, <span class="key">q</span> schließen. Am Switch/Server die falschen Leases prüfen und löschen.</p></div>
+</div>
+
+<h2 class="part" id="cisco">Schutz auf Cisco: DHCP Snooping</h2>
+<p class="sub">DHCP Snooping teilt die Ports in <b>vertraut</b> und <b>nicht vertraut</b>. Nur vertraute Ports (zum echten Server/Uplink) dürfen Server-Nachrichten (Offer, ACK, NAK) senden. Ein Rogue an einem nicht vertrauten Port wird sofort verworfen.</p>
+<pre class="cli">Switch(config)# ip dhcp snooping
+Switch(config)# ip dhcp snooping vlan 10
+!
+Switch(config)# interface Gi0/24                 ! Uplink zum echten DHCP-Server
+Switch(config-if)# ip dhcp snooping trust
+!
+Switch(config)# interface range Gi0/1 - 23       ! alle Client-Ports
+Switch(config-if-range)# ip dhcp snooping limit rate 15   ! optional gegen Starvation
+!
+Switch# show ip dhcp snooping                     ! trusted/untrusted je Port
+Switch# show ip dhcp snooping binding             ! MAC ↔ IP ↔ Port ↔ VLAN</pre>
+<div class="card"><p style="margin:0" class="hint">Standardmäßig sind alle Ports <b>untrusted</b> – man muss nur den Server-Port auf <code>trust</code> setzen. Verwirft der Switch ein Rogue-Offer, zählt <code>show ip dhcp snooping</code> die Drops. Ergänzend: <b>Port-Security</b> gegen die MAC-Flut (siehe <a href="../dhcp-starvation/">DHCP-Starvation</a>).</p></div>
+
+<h2 class="part" id="unifi">Schutz auf UniFi</h2>
+<p class="sub">UniFi (UDM/USW) bringt zwei Mechanismen mit: eine <b>Erkennung</b> fremder DHCP-Server und ein <b>DHCP Guarding</b>, das Antworten fremder Server blockt.</p>
+<div class="rules">
+ <div class="uni"><h4>DHCP Guarding (blockt den Rogue)</h4>
+  <ol><li>UniFi Network öffnen: <span class="path">Settings ▸ Networks</span></li>
+  <li>Das betroffene Netz (VLAN) wählen, dann <span class="path">Advanced ▸ DHCP Guarding</span> einschalten.</li>
+  <li>Die <b>IP-Adresse(n) des echten DHCP-Servers</b> als „Trusted DHCP Server“ eintragen.</li>
+  <li>Die UniFi-Geräte verwerfen nun DHCP-Server-Antworten (Offer/ACK) von jeder anderen Quelle – der Rogue kommt beim Client nicht mehr an.</li></ol>
+  <p class="hint" style="margin:6px 0 0">Das ist das UniFi-Gegenstück zu „trust“ bei Cisco: Statt eines vertrauten Ports definiert man die vertraute Server-IP.</p></div>
+ <div class="uni"><h4>Rogue-DHCP-Erkennung (alarmiert)</h4>
+  <ol><li>Unter <span class="path">Settings ▸ System</span> bzw. in den <span class="path">Alerts/Insights</span> meldet UniFi, wenn im Netz DHCP-Offer von einem unbekannten Server auftauchen.</li>
+  <li>Die Meldung nennt die <b>IP/MAC</b> des fremden Servers und den Switch-Port – so findet man den eingesteckten Heimrouter schnell.</li></ol>
+  <p class="hint" style="margin:6px 0 0">Erkennung allein blockt nicht – sie warnt nur. Zum Blocken braucht es DHCP Guarding.</p></div>
+</div>
+<div class="card"><table class="cmp"><thead><tr><th></th><th>Cisco</th><th>UniFi</th></tr></thead><tbody>
+<tr><td><b>Blocken</b></td><td><code>ip dhcp snooping</code> + <code>trust</code> am Server-Port</td><td><b>DHCP Guarding</b> mit erlaubter Server-IP</td></tr>
+<tr><td><b>Prinzip</b></td><td>vertrauter <b>Port</b></td><td>vertraute <b>Server-IP</b></td></tr>
+<tr><td><b>Erkennen</b></td><td><code>show ip dhcp snooping</code> (Drops)</td><td>Rogue-DHCP-Alarm in den Insights</td></tr>
+<tr><td><b>Zusätzlich</b></td><td>Port-Security, Rate-Limit</td><td>Port-Isolation, feste Uplinks</td></tr>
+</tbody></table></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies Mitschnitt und Konfiguration: Wie viele Offer erreichen den Client? Welches Gateway bekommt er? Welche Maßnahme schützt (oder würde schützen)?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Rogue ja/nein, Cisco)</option><option value="M" selected>Mittel (auch UniFi DHCP Guarding)</option><option value="S">Schwer (Maßnahmen gemischt)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/*RGJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},R=window.RG,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'" font-family="'+(o.mono?'ui-monospace,Menlo,Consolas,monospace':'Open Sans,Arial,sans-serif')+'">'+esc(t)+'</text>';}
+var ICON_S='<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function srv(col){col=col||'#1565c0';return'<rect x="-18" y="-20" width="36" height="40" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><circle cx="-10" cy="-12" r="2.5" fill="#2e7d32"/><path d="M-4 -12h12M-12 -3h24M-12 4h24M-12 11h16" stroke="'+col+'" stroke-width="2"/>';}
+function cloud(){return'<path d="M-34 10a16 16 0 0 1 4 -30a21 21 0 0 1 38 -6a16 16 0 0 1 28 10a14 14 0 0 1 -3 26z" fill="#eef3f7" stroke="#78909c" stroke-width="1.5"/>';}
+
+/* ===== Animation ===== */
+var NET='192.168.10.',REALGW=NET+'1',ROGUE=NET+'66';
+function topo(st){
+ var W=860,H=300,sw=[430,150],cli=[150,150],real=[700,70],rog=[700,250],net=[430,270];
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Rogue-DHCP">';
+ [cli,real,rog].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ /* MITM-Pfad hervorheben */
+ if(st&&st.mitm){h+='<line x1="'+cli[0]+'" y1="'+cli[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#c62828" stroke-width="5" opacity=".5"/><line x1="'+rog[0]+'" y1="'+rog[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#c62828" stroke-width="5" opacity=".5"/>';}
+ h+='<g transform="translate('+sw[0]+' '+sw[1]+')">'+ICON_S+'</g>'+tx(sw[0],sw[1]+32,'Switch',{fs:12,fw:700});
+ h+='<g transform="translate('+cli[0]+' '+cli[1]+')">'+pc('#455a64')+'</g>'+tx(cli[0],cli[1]+30,'Client (Opfer)',{fs:12,fw:700});
+ if(st&&st.cligw)h+=tx(cli[0],cli[1]-28,'GW: '+st.cligw,{fs:11.5,mono:1,fw:700,c:st.mitm?'#c62828':'#2e7d32'});
+ h+='<g transform="translate('+real[0]+' '+real[1]+')">'+srv('#1565c0')+'</g>'+tx(real[0]+28,real[1]-3,'echter DHCP',{a:'start',fs:12,fw:700,c:'#1565c0'})+tx(real[0]+28,real[1]+13,REALGW,{a:'start',fs:11,mono:1,c:'#546e7a'});
+ if(st&&st.rogueOn){h+='<g transform="translate('+rog[0]+' '+rog[1]+')">'+pc('#c62828')+'</g>'+tx(rog[0]+28,rog[1]-3,'Angreifer / Rogue',{a:'start',fs:12,fw:700,c:'#c62828'})+tx(rog[0]+28,rog[1]+13,ROGUE,{a:'start',fs:11,mono:1,c:'#546e7a'});}
+ else h+='<g transform="translate('+rog[0]+' '+rog[1]+')" opacity=".3">'+pc('#90a4ae')+'</g>'+tx(rog[0]+28,rog[1]+3,'(noch kein Rogue)',{a:'start',fs:11,c:'#90a4ae'});
+ /* Pakete */
+ if(st&&st.msgs)st.msgs.forEach(function(m){var a=m.from,b=m.to,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-4,w=m.lbl.length*6.6+16;
+  h+='<g><rect x="'+(mx-w/2)+'" y="'+(my-10)+'" width="'+w+'" height="19" rx="9" fill="'+m.col+'"/>'+tx(mx,my+3.5,m.lbl,{fs:11,fw:700,c:'#fff'})+'</g>';});
+ return h+'</svg>';
+}
+var CLI=[150,150],REAL=[700,70],ROG=[700,250],SW=[430,150];
+var S=[
+ {t:'Normalbetrieb',txt:'Der Client holt sich eine Adresse vom <b>echten</b> DHCP-Server und bekommt das richtige Gateway '+REALGW+'. Sein Verkehr ins Internet läuft korrekt.',cligw:REALGW,rogueOn:false},
+ {t:'Angreifer startet einen Rogue-Server',txt:'Der Angreifer startet (z. B. mit Yersinia) einen eigenen DHCP-Server. Dessen Gateway ist der Angreifer selbst: '+ROGUE+'.',cligw:REALGW,rogueOn:true},
+ {t:'Client fragt neu an',txt:'Der Client erneuert seine Adresse und schickt ein <b>Discover</b> als Broadcast an alle.',cligw:REALGW,rogueOn:true,msgs:[{from:CLI,to:SW,lbl:'Discover (Broadcast)',col:'#455a64'}]},
+ {t:'Beide Server antworten',txt:'Der echte Server bietet '+REALGW+' als Gateway, der Rogue bietet sich selbst ('+ROGUE+') an. Es zählt nur, wer <b>zuerst</b> antwortet.',cligw:REALGW,rogueOn:true,msgs:[{from:REAL,to:SW,lbl:'Offer GW '+REALGW,col:'#1565c0'},{from:ROG,to:SW,lbl:'Offer GW '+ROGUE,col:'#c62828'}]},
+ {t:'Der Rogue gewinnt das Rennen',txt:'Der Rogue sitzt näher und war schneller. Der Client nimmt dessen Offer und trägt <b>'+ROGUE+' als Gateway</b> und DNS ein – ohne es zu merken.',cligw:ROGUE,rogueOn:true,mitm:false,msgs:[{from:SW,to:CLI,lbl:'ACK: GW '+ROGUE,col:'#c62828'}]},
+ {t:'Man-in-the-Middle',txt:'Jetzt schickt der Client allen Internet-Verkehr an den Angreifer. Der liest mit (Wireshark, Zugangsdaten, DNS) und leitet weiter ans echte Gateway – das Opfer merkt nichts. Mit gefälschtem DNS kann der Angreifer auch auf Phishing-Seiten umleiten.',cligw:ROGUE,rogueOn:true,mitm:true},
+ {t:'Mit Schutz: der Rogue wird verworfen',txt:'Mit <b>DHCP Snooping</b> (Cisco) oder <b>DHCP Guarding</b> (UniFi) gilt nur der echte Server als vertrauenswürdig. Sein Offer kommt durch, der des Rogue wird <b>verworfen</b>. Der Client behält das richtige Gateway '+REALGW+'.',cligw:REALGW,rogueOn:true,msgs:[{from:ROG,to:SW,lbl:'Offer verworfen ✕',col:'#90a4ae'},{from:REAL,to:SW,lbl:'Offer GW '+REALGW,col:'#1565c0'}]}
+];
+var si=0,playing=false,timer=0;
+function cfgCards(st){
+ return'<div class="ipcfg'+(st.mitm||st.cligw===ROGUE?' bad':'')+'"><b>Client: ipconfig /all</b>IPv4 .... '+NET+'50<br>Subnet .. 255.255.255.0<br><span class="gw">Gateway . '+st.cligw+'</span><br>DNS ..... '+st.cligw+'</div>';
+}
+function arender(){
+ var st=S[si];$('asvg').innerHTML=topo(st);$('cfg').innerHTML=cfgCards(st);
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;
+ if(playing)sched();
+}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){if(!playing)return;if(si<S.length-1){si++;arender();}else stop();},[0,3400,2600,1800,1200,700][+$('spd').value]);}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('prev').onclick=function(){stop();if(si>0){si--;arender();}};
+$('next').onclick=function(){stop();if(si<S.length-1){si++;arender();}};
+$('play').onclick=function(){if(playing){stop();return;}playing=true;$('play').textContent='❚❚ Pause';if(si>=S.length-1){si=0;arender();}else{si++;arender();}};
+arender();
+
+/* ===== Wireshark ===== */
+var ws=R.mulberry32(20260914),wsS={net:NET,srvHost:2,realGw:REALGW,realDns:'8.8.8.8',rogue:true,rogueHost:66,rogueGw:ROGUE,race:'rogue',defense:'none',clientHost:50,clientMac:R.oui(ws),realMac:R.oui(ws),rogueMac:R.oui(ws)};
+wsS.res=R.evaluate(wsS);
+function rowHTML(x){return'<div class="rw'+(x.tag==='rogue'?' rogue':x.tag==='real'?' real':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>Broadcast</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}
+(function(){var rows=R.capture(ws,wsS);$('pcap').innerHTML=rows.map(rowHTML).join('');
+ var offers=rows.filter(function(x){return/Offer/.test(x.info);});
+ $('pcaphint').innerHTML='Auf <b>ein</b> Discover kommen <b>'+offers.length+'</b> Offer – einer vom echten Server ('+NET+'2, Gateway '+REALGW+', blau), einer vom <b>Rogue</b> ('+NET+'66, Gateway '+ROGUE+', rot). Der Client nimmt den ersten – hier den Rogue.';})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was macht ein Rogue-DHCP-Server?',['Er schaltet den echten Server ab','Er beantwortet DHCP-Anfragen mit eigenen Werten – vor allem einem falschen Gateway/DNS','Er stiehlt MAC-Adressen','Er verschlüsselt den Verkehr'],1,'So lenkt er den Verkehr der Opfer über den Angreifer (Man-in-the-Middle) oder verursacht Ausfälle.'],
+ ['Welchen Offer nimmt ein Client?',['Den mit der höchsten IP','Den vom Server mit der kleinsten MAC','Den, der zuerst eintrifft','Immer den vom echten Server'],2,'DHCP kennt keine Authentifizierung. Es zählt nur, wer zuerst antwortet – ein naher Rogue gewinnt oft.'],
+ ['Warum ist ein Rogue besonders gefährlich in Kombination mit DHCP-Starvation?',['Starvation schaltet den Switch ab','Nach der Starvation ist der echte Pool leer – dann antwortet nur noch der Rogue','Starvation verschlüsselt die Leases','Das hat nichts miteinander zu tun'],1,'Erst den echten Server lahmlegen, dann als einziger antworten – der Rogue muss kein Rennen mehr gewinnen.'],
+ ['Woran erkennt man einen Rogue im Wireshark?',['An doppelten ARP-Antworten','An zwei DHCP Offer auf ein Discover mit unterschiedlichem Gateway','An fehlenden Discover-Paketen','An HTTPS-Zertifikatsfehlern'],1,'Zwei Offer mit verschiedenem Gateway/DNS und von verschiedenen Server-IPs sind das klare Zeichen.'],
+ ['Was bewirkt „ip dhcp snooping trust“ an einem Cisco-Port?',['Nur dieser Port darf DHCP-Server-Antworten senden','Der Port wird abgeschaltet','Der Port ignoriert DHCP','Der Port bekommt eine feste IP'],0,'Nur vertraute Ports (zum echten Server) dürfen Offer/ACK senden. An untrusted Ports werden Server-Antworten verworfen – der Rogue ist blockiert.'],
+ ['Was ist das UniFi-Gegenstück zu Ciscos „trust“?',['Port Isolation','DHCP Guarding mit erlaubter Server-IP','VLAN-Tagging','Band Steering'],1,'Bei DHCP Guarding trägt man die IP des echten DHCP-Servers ein; Antworten anderer Server werden verworfen.'],
+ ['Die UniFi-Rogue-DHCP-Erkennung meldet einen fremden Server. Ist das Netz damit geschützt?',['Ja, die Erkennung blockt ihn','Nein – Erkennung warnt nur, blocken muss DHCP Guarding','Ja, wenn man den Alarm bestätigt','Nur im WLAN'],1,'Die Erkennung hilft beim Finden (IP/MAC/Port), aber erst DHCP Guarding verwirft die Offer.'],
+ ['Ein Mitarbeiter steckt einen WLAN-Heimrouter ins Firmen-LAN und es gibt Probleme. Warum?',['Der Router sendet zu viele Broadcasts','Der Router hat einen eigenen DHCP-Server aktiv und verteilt falsche Adressen','Der Router blockt das Internet','WLAN stört das LAN'],1,'Ein ungewollter Rogue: Der Heimrouter antwortet auf DHCP und schiebt sein eigenes Gateway unter. Häufigster Fall in der Praxis.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return R.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function defHTML(s){
+ if(s.defense==='snoop')return'<b>Cisco:</b>\nSwitch(config)# ip dhcp snooping\nSwitch(config)# ip dhcp snooping vlan 10\nSwitch(config)# interface Gi0/24   ! zum echten Server\nSwitch(config-if)#  ip dhcp snooping trust';
+ if(s.defense==='guard')return'<b>UniFi:</b> DHCP Guarding ist aktiv.\nTrusted DHCP Server: '+s.net+s.srvHost+'   (echter Server)';
+ return'<b>Keine Abwehr aktiv</b> (kein DHCP Snooping, kein DHCP Guarding).';
+}
+function taskHTML(s,id,label){
+ var r=R.mulberry32((s.code.charCodeAt(0)*131+parseInt(s.code.split('-')[1]))>>>0);
+ var rows=R.capture(r,s);
+ var cap='<div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Dest.</span><span>Prot.</span><span>Info</span></div><div class="rows">'+rows.map(function(x){return'<div class="rw'+(x.tag==='rogue'?' rogue':x.tag==='real'?' real':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>Broadcast</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}).join('')+'</div></div>';
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+R.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+
+  '<div class="slist"><li><b>Szenario:</b> Netz '+s.net+'0/24, echter DHCP-Server '+s.net+s.srvHost+' (Gateway '+s.realGw+'). '+(s.rogue?('Ein <b>Rogue</b> '+s.net+s.rogueHost+' bietet Gateway '+s.rogueGw+' an und antwortet '+(s.race==='rogue'?'<b>zuerst</b>':'nach dem echten Server')+'.'):'Kein unerwarteter Server im Netz.')+'</li></div>'+
+  '<p class="ph" style="margin-top:8px;font:600 13.5px var(--ui)">Mitschnitt am Client-Port</p>'+cap+
+  '<p class="ph" style="margin-top:10px;font:600 13.5px var(--ui)">Gegenmaßnahme</p><pre class="cli">'+esc(defHTML(s))+'</pre>'+
+  '<p class="qh">1. Wie viele DHCP Offer erreichen den Client?</p><input class="one off" inputmode="numeric" style="width:5em" autocomplete="off" aria-label="Offer">'+
+  '<p class="qh">2. Welches Gateway trägt der Client am Ende ein?</p><input class="one gw" autocomplete="off" spellcheck="false" style="width:12em" placeholder="z. B. 192.168.10.1" aria-label="Gateway">'+
+  '<p class="qh">3. Ist der Client Opfer eines Man-in-the-Middle (falsches Gateway)?</p><div class="opts"><label><input type="radio" name="'+id+'-m" value="1"> Ja</label><label><input type="radio" name="'+id+'-m" value="0"> Nein</label></div>'+
+  '<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),e=s.res,ok=0,tot=3;
+ var o=card.querySelector('.off');mark(o,o.value.trim()===''?null:+o.value.trim()===e.offersAtClient);if(+o.value.trim()===e.offersAtClient)ok++;
+ var g=card.querySelector('.gw');mark(g,g.value.trim()===''?null:g.value.trim()===e.gateway);if(g.value.trim()===e.gateway)ok++;
+ var m=card.querySelector('input[name$="-m"]:checked');card.querySelectorAll('input[name$="-m"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add((rb.value==='1')===e.mitm?'right':'wrong');});if(m&&(m.value==='1')===e.mitm)ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var e=s.res;
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. '+e.offersAtClient+' Offer</b><br><span class="hint">'+(!s.rogue?'Nur der echte Server antwortet.':e.dropRogue?('Der Rogue existiert, aber '+(s.defense==='snoop'?'DHCP Snooping':'DHCP Guarding')+' verwirft seinen Offer – beim Client kommt nur der echte an.'):'Echter Server und Rogue antworten beide, keine Abwehr blockt – zwei Offer erreichen den Client.')+'</span></li>';
+ h+='<li><b>2. Gateway '+e.gateway+'</b><br><span class="hint">'+(e.winner==='rogue'?'Der Rogue hat das Rennen gewonnen und beim Client sein eigenes Gateway eingetragen.':'Der Client bekommt das Gateway des echten Servers.')+'</span></li>';
+ h+='<li><b>3. '+(e.mitm?'Ja – Man-in-the-Middle':'Nein')+'</b><br><span class="hint">'+(e.mitm?'Das Gateway zeigt auf den Angreifer ('+s.rogueGw+') – sein Verkehr läuft über ihn.':(!s.rogue?'Es gibt keinen Rogue.':'Die Abwehr ('+(s.defense==='snoop'?'DHCP Snooping':'DHCP Guarding')+') hat den Rogue-Offer verworfen – der Client behält das echte Gateway.'))+'</span></li></ul>';
+ return h;
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=R.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=R.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
