@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="routing/ospf-3/">OSPF 3: Multi-Area-OSPF</a> – Areas, ABR und Kurzfassungen zum Erkunden, O oder O IA, mit Übungen. '
+    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/dhcp-starvation/">DHCP-Starvation</a> – Angriff mit Yersinia, im Wireshark nachvollziehen, Schutz mit Port-Security und DHCP Snooping. '
+             'Außerdem <a href="routing/ospf-3/">OSPF 3: Multi-Area-OSPF</a> – Areas, ABR und Kurzfassungen zum Erkunden, O oder O IA, mit Übungen. '
              'Außerdem <a href="routing/ospf-2/">OSPF 2: Backbone Area, DR/BDR und LSDB</a> – wie Router den Netzplan austauschen, DR/BDR-Wahl zum Ausprobieren, Referenzbandbreite. '
              'Außerdem <a href="routing/ospf-1/">OSPF 1: Dijkstra-Algorithmus</a> – eigener Dijkstra-Solver Schritt für Schritt, Kosten als Zahlen oder aus Bandbreiten, mit Übungen. '
              'Außerdem <a href="switching/cdp/">CDP – Nachbarn erkennen</a> – aus CDP-Ausgaben Modelle und IPs ablesen und den Netzplan verkabeln. '
@@ -80,7 +81,8 @@ AREAS = [
     {'slug': 'netzwerksicherheit', 'title': 'Netzwerksicherheit', 'text': 'Angriffe im LAN verstehen und abwehren.',
      'topics': [
          {'slug': 'arp-spoofing', 'title': 'ARP-Spoofing', 'text': 'Man-in-the-Middle im LAN und Dynamic ARP Inspection.'},
-         {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'text': 'Den Adresspool leeren – und mit DHCP Snooping schützen.'},
+         {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'tool': 'dhcp-starvation',
+          'text': 'Den Adresspool mit Yersinia leeren: warum DHCP angreifbar ist, SPAN und Wireshark, Schutz mit Port-Security und DHCP Snooping – mit Übungen und Zufallsgenerator.'},
          {'slug': 'stp-angriff', 'title': 'Angriff auf die Root Bridge', 'text': 'Gefälschte BPDUs und BPDU Guard / Root Guard.'},
          {'slug': 'rip-authentifizierung', 'title': 'RIP-Authentifizierung', 'text': 'Gefälschte Routing-Updates verhindern.'},
      ]},

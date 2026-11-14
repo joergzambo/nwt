@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DHCP-Starvation</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.tabs button{padding:9px 14px;border-radius:4px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;text-align:left;line-height:1.25}
+.tabs button small{display:block;font:400 12px var(--body);opacity:.8}
+.tabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0}
+.pool{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.pool i{width:19px;height:19px;border-radius:3px;background:#e8f0e4;border:1px solid #c5dbbd;font-style:normal;font-size:0}
+.pool i.legit{background:#2e7d32;border-color:#2e7d32}
+.pool i.att{background:#c62828;border-color:#c62828}
+.poolbar{display:flex;gap:16px;flex-wrap:wrap;font:600 14px var(--ui);margin-top:8px}
+.poolbar b{font-family:var(--mono)}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-top:6px}
+.lg i{width:13px;height:13px;border-radius:3px;display:inline-block;vertical-align:-2px;margin-right:4px}
+.pcap{border:1px solid #c5c9cc;border-radius:4px;overflow:hidden;margin-top:8px;font-family:var(--mono);font-size:12.5px}
+.pcap .hd{display:grid;grid-template-columns:44px 72px 150px 150px 54px 1fr;background:#e4e7e9;font-weight:700;padding:4px 8px;gap:8px}
+.pcap .rows{max-height:340px;overflow:auto}
+.pcap .rw{display:grid;grid-template-columns:44px 72px 150px 150px 54px 1fr;padding:3px 8px;gap:8px;border-top:1px solid #eef1f2;white-space:nowrap}
+.pcap .rw.att{background:#fdecea}
+.pcap .rw.ofr{background:#e8f0fe}
+.pcap .rw:nth-child(even){background-image:linear-gradient(rgba(0,0,0,.015),rgba(0,0,0,.015))}
+.filt{font-family:var(--mono);font-size:13px;background:#eafaf0;border:1px solid #abdcbd;border-radius:4px;padding:5px 9px;margin:8px 0 0;display:inline-block}
+.lab{counter-reset:step}
+.lab .st{border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:4px;padding:12px 16px 12px 52px;margin:10px 0;position:relative}
+.lab .st::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font:700 15px var(--ui);display:flex;align-items:center;justify-content:center}
+.lab .st h4{font:600 16px var(--ui);margin:0 0 4px}
+.lab .st p{margin:0 0 6px}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px}
+.key{display:inline-block;font:600 12px var(--ui);background:#eceff1;border:1px solid #cfd8dc;border-radius:4px;padding:1px 7px;margin:0 1px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.at{border-collapse:collapse;margin-top:6px;font-size:15px}
+.at th,.at td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left}
+.at th{background:var(--soft);font:600 14px var(--ui)}
+.at input,.at select,.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.at input{width:6em}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.disc{background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>DHCP-Starvation: den Adresspool leeren</h1>
+<p class="sub">Bei der <b>DHCP-Starvation</b> überflutet ein Angreifer den DHCP-Server mit massenhaft Anfragen unter immer neuen, erfundenen MAC-Adressen. Der Server vergibt für jede eine Adresse – bis der Pool leer ist. Echte Geräte bekommen dann keine Adresse mehr. Oft ist das die Vorbereitung für einen <b>Rogue-DHCP-Server</b>.</p>
+<div class="disc">⚠️ <b>Nur im eigenen Labornetz.</b> Diese Anleitung dient dem Unterricht und dem Verständnis der Abwehr. Angriffe auf fremde Netze sind strafbar (in Österreich u. a. § 118a, § 126a, § 126b StGB).</div>
+<nav class="jumps" aria-label="Abschnitte"><a href="#warum">Warum es funktioniert</a><a href="#anim">Der Angriff</a><a href="#wireshark">Im Wireshark</a><a href="#lab">Lab-Anleitung</a><a href="#schutz">Schutz</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="warum">Warum funktioniert der Angriff?</h2>
+<div class="rules">
+ <div class="card"><h3>Die DORA-Erinnerung</h3><p style="margin:0 0 6px">DHCP vergibt Adressen in vier Schritten (<a href="../../ip-services/dhcp/">DHCP-Grundlagen</a>):</p>
+  <div class="states" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;font:600 13px var(--mono)"><span style="background:#eceff1;padding:4px 9px;border-radius:12px">Discover</span>→<span style="background:#eceff1;padding:4px 9px;border-radius:12px">Offer</span>→<span style="background:#eceff1;padding:4px 9px;border-radius:12px">Request</span>→<span style="background:#eceff1;padding:4px 9px;border-radius:12px">ACK</span></div>
+  <p style="margin:8px 0 0">Der Client nennt im Discover seine MAC-Adresse im Feld <b>chaddr</b> (client hardware address). Der Server merkt sich: „Diese MAC bekommt diese IP.“</p></div>
+ <div class="card check"><h3>Die Schwachstellen von DHCP</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Keine Authentifizierung.</b> DHCP prüft nicht, wer fragt. Jede Anfrage wird beantwortet.</li>
+  <li><b>Der Server vertraut der chaddr.</b> Jede neue MAC gilt als neues Gerät und bekommt eine eigene Adresse – der Angreifer erfindet einfach tausende.</li>
+  <li><b>Broadcast auf Layer 2.</b> Discover geht an alle; ein Gerät am selben Switch kann ungestört mitspielen.</li>
+  <li><b>Begrenzter Pool.</b> Ein /24-Pool hat höchstens ~254 Adressen. Ein Rechner füllt den in Sekunden.</li></ul>
+  <p class="hint">Der Angriff missbraucht also nur das <b>normale</b> Verhalten von DHCP – es ist keine Lücke in der Software, sondern im Protokoll selbst.</p></div>
+</div>
+
+<h2 class="part" id="anim">Der Angriff Schritt für Schritt</h2>
+<div class="tabs" role="tablist" id="tabs"></div>
+<div class="card">
+ <div id="asvg"></div>
+ <div class="pool" id="pool"></div>
+ <div class="poolbar"><span>Pool <b id="prange"></b></span><span style="color:#2e7d32">echte Geräte: <b id="pleg">0</b></span><span style="color:#c62828">Angreifer: <b id="patt">0</b></span><span>frei: <b id="pfree"></b></span></div>
+ <div class="lg"><span><i style="background:#2e7d32"></i>von echten Geräten belegt</span><span><i style="background:#c62828"></i>vom Angreifer belegt</span><span><i style="background:#e8f0e4;border:1px solid #c5dbbd"></i>frei</span></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="wireshark">So sieht es im Wireshark aus</h2>
+<p class="sub">Über einen SPAN-Port (Port-Mirroring) läuft der Verkehr auf den Mitschnitt-PC. Zuerst ein normaler DORA-Ablauf, dann die Flut gefälschter Discover-Pakete – jedes mit einer anderen Quell-MAC.</p>
+<div class="card">
+ <span class="filt">bootp &nbsp;<span style="color:#78909c">(bzw. <b>dhcp</b> in neuen Versionen – zeigt nur DHCP-Pakete)</span></span>
+ <div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Destination</span><span>Prot.</span><span>Info</span></div><div class="rows" id="pcap"></div></div>
+ <p class="hint" id="pcaphint" style="margin-top:8px"></p>
+ <div class="acts"><button class="btn" id="morepkts" type="button">Mehr Pakete fluten</button><button class="btn ghost" id="resetpkts" type="button">Zurücksetzen</button></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Woran man den Angriff erkennt</h3><ul style="margin:0;padding-left:20px;font-size:15px">
+ <li>Sehr viele <b>DHCP Discover</b> in kurzer Zeit, von <b>immer neuen Quell-MACs</b>.</li>
+ <li>Die MACs wirken zufällig (keine echten Hersteller-OUIs) und tauchen jeweils nur einmal auf.</li>
+ <li>In Wireshark: <span class="key">Statistics ▸ Conversations ▸ Ethernet</span> zeigt hunderte MACs mit je einem Paket.</li>
+ <li>Am Switch füllt sich die MAC-Adresstabelle, am Server leert sich der Pool.</li></ul></div>
+
+<h2 class="part" id="lab">Lab-Anleitung</h2>
+<div class="card"><h3 style="font:400 20px var(--head);margin:0 0 4px">Aufbau</h3>
+ <p style="margin:0 0 6px">Angreifer-PC (Kali mit Yersinia) und ein Opfer-PC an einem Cisco-Switch, dahinter der DHCP-Server (oder der Switch selbst als Server). Der Mitschnitt-PC hängt am <b>SPAN-Zielport</b>.</p>
+ <div id="labsvg"></div>
+</div>
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">1 · Port-Mirroring (SPAN) am Cisco-Switch</h3>
+<p class="sub">Damit Wireshark den Verkehr des Angreifer-Ports sieht, spiegelt der Switch ihn auf den Port des Mitschnitt-PCs.</p>
+<pre class="cli">Switch(config)# monitor session 1 source interface Gi0/1          ! Angreifer-Port (Quelle)
+Switch(config)# monitor session 1 destination interface Gi0/24    ! Mitschnitt-PC (Ziel)
+Switch# show monitor session 1</pre>
+<p class="hint">Mehrere Quellen gehen auch: <code>source interface Gi0/1 - 2</code>, oder ein ganzes VLAN: <code>source vlan 10</code>. Der Zielport gibt nur noch gespiegelten Verkehr aus – dort hängt ausschließlich Wireshark.</p>
+
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">2 · Angriff mit Yersinia (interaktiver Modus)</h3>
+<p class="sub">Der interaktive ncurses-Modus läuft direkt im Terminal – ohne grafische Oberfläche. Gesteuert wird über einzelne Tasten.</p>
+<div class="lab">
+ <div class="st"><h4>Yersinia interaktiv starten</h4><p>Als root starten. Es öffnet sich die textbasierte Oberfläche im Terminal.</p><pre class="cli">sudo yersinia -I</pre>
+  <p class="hint" style="margin:6px 0 0">Mit <span class="key">h</span> lässt sich jederzeit die Hilfe mit allen Tasten einblenden.</p></div>
+ <div class="st"><h4>Netzwerkkarte wählen</h4><p>Taste <span class="key">i</span> öffnet die Interface-Liste. Das Interface zum Switch (z. B. <code>eth0</code>) mit den Pfeiltasten markieren, mit <span class="key">Enter</span> aktivieren und mit <span class="key">q</span> zurück.</p></div>
+ <div class="st"><h4>Zum Protokoll DHCP wechseln</h4><p>Taste <span class="key">g</span> öffnet die Protokollauswahl. <b>DHCP</b> wählen (mit den Pfeiltasten, dann <span class="key">Enter</span>). Oben zeigt Yersinia nun die mitgeschnittenen DHCP-Pakete.</p></div>
+ <div class="st"><h4>Angriff starten</h4><p>Taste <span class="key">x</span> öffnet das Angriffsfenster (<b>Launch attack</b>) für DHCP. Dort <b>„sending DISCOVER packet“</b> auswählen und mit <span class="key">Enter</span> starten – das ist die Starvation. Yersinia erzeugt je Paket eine neue zufällige Quell-MAC und chaddr.</p>
+  <div class="warn">Ganz ohne Menü geht es als Einzeiler:<br><code>sudo yersinia dhcp -attack 1 -interface eth0</code> &nbsp;(Attack 1 = DISCOVER-Flood). Mit <span class="key">Strg</span>+<span class="key">C</span> beenden.</div></div>
+ <div class="st"><h4>Flut beobachten</h4><p>Yersinia zählt die gesendeten Pakete hoch. Parallel im Wireshark (Filter <code>bootp</code>) die Discover-Welle mitverfolgen.</p></div>
+ <div class="st"><h4>Wirkung prüfen</h4><p>Am Opfer-PC eine neue Adresse anfordern – es gibt keine mehr:</p><pre class="cli">C:\> ipconfig /release
+C:\> ipconfig /renew        ! bleibt bei 169.254.x.x (APIPA) hängen</pre>
+  <p>Am Server/Switch den geleerten Pool ansehen:</p><pre class="cli">Switch# show ip dhcp binding          ! hunderte Bindungen mit Fantasie-MACs
+Switch# show ip dhcp pool             ! Leased addresses = Pool-Größe</pre></div>
+ <div class="st"><h4>Angriff stoppen und aufräumen</h4><p>Taste <span class="key">L</span> zeigt die laufenden Angriffe – dort stoppen. Mit <span class="key">q</span> Yersinia beenden. Danach die Bindungen löschen, damit echte Geräte wieder Adressen bekommen:</p><pre class="cli">Switch# clear ip dhcp binding *</pre></div>
+</div>
+
+<h2 class="part" id="schutz">Schutz: DHCP Snooping und Port-Security</h2>
+<div class="rules">
+ <div class="card"><h3>Port-Security – die wirksamste Bremse</h3><p style="margin:0 0 6px">Begrenzt die Zahl der <b>Quell-MAC-Adressen</b> pro Port. Yersinia fälscht pro Paket eine neue Quell-MAC – nach dem Limit ist Schluss.</p>
+  <pre class="cli" style="margin:0">Switch(config)# interface Gi0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport port-security
+Switch(config-if)# switchport port-security maximum 2
+Switch(config-if)# switchport port-security violation shutdown
+Switch(config-if)# switchport port-security mac-address sticky</pre>
+  <p class="hint">Bei <code>violation shutdown</code> geht der Port nach der 3. MAC in <b>err-disabled</b> – der Angriff stoppt sofort. Prüfen: <code>show port-security interface Gi0/1</code>.</p></div>
+ <div class="card"><h3>DHCP Snooping</h3><p style="margin:0 0 6px">Der Switch unterscheidet <b>vertraute</b> (zum Server) und <b>nicht vertraute</b> Ports (zu Clients). Server-Antworten von untrusted Ports werden verworfen – das stoppt vor allem den Rogue-Server.</p>
+  <pre class="cli" style="margin:0">Switch(config)# ip dhcp snooping
+Switch(config)# ip dhcp snooping vlan 10
+Switch(config)# interface Gi0/24
+Switch(config-if)# ip dhcp snooping trust        ! Port zum echten Server
+Switch(config)# interface Gi0/1
+Switch(config-if)# ip dhcp snooping limit rate 10 ! max. 10 DHCP-Pakete/s</pre>
+  <p class="hint">Die <b>Rate-Limit</b> bremst die Discover-Flut. <code>ip dhcp snooping verify mac-address</code> (Standard an) prüft, ob Quell-MAC = chaddr.</p></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Warum reicht welche Maßnahme?</h3>
+<table class="cmp"><thead><tr><th>Angriffsvariante</th><th>verify mac-address</th><th>Port-Security</th></tr></thead><tbody>
+<tr><td>Quell-MAC <b>und</b> chaddr gefälscht (Yersinia-Standard)</td><td>greift <b>nicht</b> – beide sind gleich</td><td><b>stoppt</b> – zu viele Quell-MACs</td></tr>
+<tr><td>nur chaddr gefälscht, Quell-MAC bleibt gleich</td><td><b>stoppt</b> – Mismatch Quell-MAC ≠ chaddr</td><td>greift <b>nicht</b> – nur eine Quell-MAC</td></tr>
+</tbody></table>
+<p class="hint">Deshalb kombiniert man beides: <b>DHCP Snooping</b> (gegen Rogue-Server und mit Rate-Limit) und <b>Port-Security</b> (gegen die MAC-Flut).</p></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies Szenario, Mitschnitt und Switch-Konfiguration: Wie viele Adressen bekommt der Angreifer? Ist der Pool danach leer? Welche Maßnahme greift?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (ohne/mit Port-Security)</option><option value="M" selected>Mittel (auch verify, chaddr-only)</option><option value="S">Schwer (Maßnahmen kombiniert)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/* NWT · Netzwerksicherheit: DHCP-Starvation. Pool-Modell, gefälschte MACs, Wireshark-Mitschnitt, Aufgaben-Generator.
+   Browser: window.DS · Node: globalThis.DS */
+(function (G) {
+'use strict';
+var LVNAME = {L: 'Leicht', M: 'Mittel', S: 'Schwer'};
+var LVCODE = {L: 3, M: 4, S: 5};
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function ri(r, a, b) { return a + Math.floor(r() * (b - a + 1)); }
+function pick(r, a) { return a[Math.floor(r() * a.length)]; }
+function hex(r, n) { var s = ''; for (var i = 0; i < n; i++) s += '0123456789abcdef'[Math.floor(r() * 16)]; return s; }
+function mac(r) { var o = []; for (var i = 0; i < 6; i++) o.push(hex(r, 2)); return o.join(':'); }
+function oui(r) { return pick(r, ['08:00:27', '00:0c:29', '52:54:00', '00:50:56', 'b8:27:eb', '00:1a:2b']) + ':' + hex(r, 2) + ':' + hex(r, 2) + ':' + hex(r, 2); }
+
+/* ---------- Angriffsmodell ----------
+   Pool: start..end im /24. Angreifer sendet `flood` DISCOVERs.
+   mode: 'both' = Quell-MAC und chaddr zufällig (Yersinia-Standard); 'chaddr' = nur chaddr zufällig, eine Quell-MAC.
+   Abwehr: portSec = max. MACs am Angreifer-Port (0 = aus); verify = ip dhcp snooping verify mac-address;
+           snoopTrust = Angreifer-Port ist untrusted bei aktivem DHCP Snooping (blockt nur Server-Antworten, nicht DISCOVER).
+   Ergebnis: wie viele Leases der Angreifer bekommt, ob der Pool leer ist, welche Abwehr gegriffen hat. */
+function simulate(s) {
+  var poolSize = s.poolEnd - s.poolStart + 1, got, reason, effective = null;
+  if (s.portSec > 0 && s.mode === 'both') {
+    /* Jede neue Quell-MAC zählt; nach portSec MACs greift die Port-Security */
+    got = Math.min(s.flood, s.portSec, poolSize - s.legit);
+    if (s.flood > s.portSec) { reason = 'Port-Security lässt nur ' + s.portSec + ' MAC-Adressen zu, dann ' + (s.psAction === 'shutdown' ? 'err-disabled' : 'verworfen') + '.'; effective = 'portsec'; }
+    else reason = 'Angriff passt unter das Port-Security-Limit.';
+  } else if (s.verify && s.mode === 'both') {
+    /* verify prüft Quell-MAC == chaddr. Bei 'both' sind beide gleich gefälscht -> verify greift NICHT */
+    got = Math.min(s.flood, poolSize - s.legit); reason = 'verify mac-address greift nicht: Quell-MAC und chaddr sind identisch gefälscht.';
+  } else if (s.verify && s.mode === 'chaddr') {
+    got = 0; reason = 'verify mac-address verwirft alle: Quell-MAC bleibt gleich, chaddr ändert sich – Mismatch.'; effective = 'verify';
+  } else if (s.portSec > 0 && s.mode === 'chaddr') {
+    /* Nur eine Quell-MAC -> Port-Security sieht nur 1 MAC, greift nicht */
+    got = Math.min(s.flood, poolSize - s.legit); reason = 'Port-Security greift nicht: nur eine Quell-MAC, aber viele chaddr.';
+  } else {
+    got = Math.min(s.flood, poolSize - s.legit); reason = 'Keine wirksame Abwehr – der Pool wird geleert.';
+  }
+  var free = poolSize - s.legit - got, exhausted = free <= 0;
+  return {poolSize: poolSize, leased: s.legit + got, attackerGot: got, free: Math.max(0, free), exhausted: exhausted, reason: reason, effective: effective};
+}
+
+/* ---------- Wireshark-Mitschnitt ----------
+   Erzeugt eine Paketliste: legitime DORA + Flood aus gefälschten DISCOVERs. */
+function capture(r, s, n) {
+  var rows = [], t = 0, no = 1, bc = 'ff:ff:ff:ff:ff:ff';
+  function add(src, dst, info, bad) { rows.push({no: no++, t: (t += 0.0003 + r() * 0.002).toFixed(4), src: src, dst: dst, proto: 'DHCP', info: info, bad: !!bad}); }
+  if (s.showLegit) {
+    var cm = oui(r), xid = '0x' + hex(r, 8);
+    add(cm, bc, 'DHCP Discover - Transaction ID ' + xid);
+    add(s.serverMac, bc, 'DHCP Offer    - Transaction ID ' + xid);
+    add(cm, bc, 'DHCP Request  - Transaction ID ' + xid);
+    add(s.serverMac, bc, 'DHCP ACK      - Transaction ID ' + xid);
+  }
+  var fl = Math.min(n || s.flood, 120);
+  for (var i = 0; i < fl; i++) {
+    var src = s.mode === 'both' ? mac(r) : s.attackerMac, ch = mac(r);
+    add(src, bc, 'DHCP Discover - Transaction ID 0x' + hex(r, 8) + (s.showChaddr ? '  (chaddr ' + ch + ')' : ''), true);
+  }
+  return rows;
+}
+
+/* ---------- Generator ---------- */
+function build(r, lvl) {
+  var start = pick(r, [10, 20, 50, 100]), size = pick(r, lvl === 'L' ? [20, 30, 50] : [30, 50, 100, 150]);
+  var legit = ri(r, 1, Math.min(8, Math.floor(size / 4)));
+  var mode = lvl === 'L' ? 'both' : pick(r, ['both', 'both', 'chaddr']);
+  var defenses = lvl === 'L' ? pick(r, [[], ['portsec']]) : lvl === 'M' ? pick(r, [[], ['portsec'], ['verify'], ['snoop']]) : pick(r, [['portsec'], ['verify'], ['portsec', 'snoop'], ['verify', 'snoop'], []]);
+  var portSec = defenses.indexOf('portsec') >= 0 ? pick(r, [1, 2, 3, 5]) : 0;
+  var s = {
+    net: '192.168.' + ri(r, 1, 50) + '.', poolStart: start, poolEnd: start + size - 1, legit: legit,
+    flood: pick(r, [size + ri(r, 5, 40), ri(r, 2, size - legit - 1), size * 2]), mode: mode,
+    portSec: portSec, psAction: pick(r, ['shutdown', 'restrict']), verify: defenses.indexOf('verify') >= 0,
+    snoop: defenses.indexOf('snoop') >= 0, serverMac: oui(r), attackerMac: oui(r),
+    showLegit: true, showChaddr: lvl !== 'L'
+  };
+  s.res = simulate(s);
+  /* Für eindeutige Übungen: Flood soll den Pool ohne Abwehr leeren können, außer wenn absichtlich klein */
+  s.canExhaust = s.flood >= s.poolEnd - s.poolStart + 1 - s.legit;
+  return s;
+}
+function makeTask(seed, lvl) {
+  if (!LVCODE[lvl] || !(seed >= 1)) return null;
+  for (var att = 0; att < 60; att++) {
+    var r = mulberry32((seed * 7919 + att * 104729 + LVCODE[lvl] * 1000003 + 4231) >>> 0);
+    var s = build(r, lvl);
+    s.level = lvl; s.code = lvl + '-' + seed;
+    return s;
+  }
+  return null;
+}
+function fmtMac(m) { return m; }
+
+G.DS = {LVNAME: LVNAME, simulate: simulate, capture: capture, makeTask: makeTask, mulberry32: mulberry32, mac: mac, oui: oui, hex: hex};
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},D=window.DS,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'" font-family="'+(o.mono?'ui-monospace,Menlo,Consolas,monospace':'Open Sans,Arial,sans-serif')+'">'+esc(t)+'</text>';}
+var ICON_S='<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function srv(){return'<rect x="-20" y="-20" width="40" height="40" rx="3" fill="#fff" stroke="#1565c0" stroke-width="2.5"/><circle cx="-12" cy="-12" r="2.5" fill="#2e7d32"/><path d="M-6 -12h14M-14 -3h28M-14 4h28M-14 11h20" stroke="#1565c0" stroke-width="2"/>';}
+
+/* ===== Lab-Topologie ===== */
+(function(){
+ var W=860,H=250,sw=[430,120];
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Lab-Aufbau">';
+ var att=[120,120],vic=[280,120],mon=[640,120],ser=[430,230];
+ [att,vic,ser,mon].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ /* SPAN-Spiegelung angedeutet */
+ h+='<path d="M'+(att[0])+' '+(att[1]-26)+' Q'+((att[0]+mon[0])/2)+' 20 '+mon[0]+' '+(mon[1]-26)+'" fill="none" stroke="#e65100" stroke-width="2" stroke-dasharray="6 5"/>'+tx((att[0]+mon[0])/2,24,'SPAN spiegelt Gi0/1 → Gi0/24',{fs:12,fw:700,c:'#e65100'});
+ h+='<g transform="translate('+sw[0]+' '+sw[1]+')">'+ICON_S+'</g>'+tx(sw[0],sw[1]+32,'Cisco-Switch',{fs:13,fw:700});
+ h+='<g transform="translate('+att[0]+' '+att[1]+')">'+pc('#c62828')+'</g>'+tx(att[0],att[1]+30,'Angreifer (Yersinia)',{fs:12,fw:700,c:'#c62828'})+tx(att[0],att[1]-28,'Gi0/1',{fs:11,mono:1,c:'#546e7a'});
+ h+='<g transform="translate('+vic[0]+' '+vic[1]+')">'+pc('#455a64')+'</g>'+tx(vic[0],vic[1]+30,'Opfer-PC',{fs:12,fw:700})+tx(vic[0],vic[1]-28,'Gi0/2',{fs:11,mono:1,c:'#546e7a'});
+ h+='<g transform="translate('+mon[0]+' '+mon[1]+')">'+pc('#e65100')+'</g>'+tx(mon[0],mon[1]+30,'Mitschnitt-PC (Wireshark)',{fs:12,fw:700,c:'#e65100'})+tx(mon[0],mon[1]-28,'Gi0/24',{fs:11,mono:1,c:'#546e7a'});
+ h+='<g transform="translate('+ser[0]+' '+ser[1]+')">'+srv()+'</g>'+tx(ser[0]+30,ser[1]+5,'DHCP-Server',{a:'start',fs:12,fw:700,c:'#1565c0'});
+ $('labsvg').innerHTML=h+'</svg>';
+})();
+
+/* ===== Animation ===== */
+var POOL=24,LEG=3;
+var ATT=[150,95],SER=[710,95],SWP=[430,95];
+function topo(step,prog){
+ var W=860,H=170,sw=SWP,att=ATT,ser=SER;
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="DHCP-Starvation">';
+ [att,ser].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ h+='<g transform="translate('+sw[0]+' '+sw[1]+')">'+ICON_S+'</g>'+tx(sw[0],sw[1]+32,'Switch',{fs:12,fw:700});
+ h+='<g transform="translate('+att[0]+' '+att[1]+')">'+pc('#c62828')+'</g>'+tx(att[0],att[1]+30,'Angreifer',{fs:12,fw:700,c:'#c62828'});
+ h+='<g transform="translate('+ser[0]+' '+ser[1]+')">'+srv()+'</g>'+tx(ser[0],ser[1]+32,'DHCP-Server',{fs:12,fw:700,c:'#1565c0'});
+ if(step&&step.msg){var m=step.msg,from=m.dir==='out'?att[0]+26:ser[0]-26,to=m.dir==='out'?ser[0]-26:att[0]+26,k=prog==null?0.5:prog,cx=from+(to-from)*k,w=m.lbl.length*7.2+20;
+  h+='<g><rect x="'+(cx-w/2)+'" y="72" width="'+w+'" height="20" rx="10" fill="'+m.col+'"/>'+tx(cx,86,m.lbl,{fs:12,fw:700,c:'#fff'})+'</g>';}
+ return h+'</svg>';
+}
+var S=[
+ {t:'Normalbetrieb',txt:'Der Pool hat '+POOL+' Adressen. '+LEG+' echte Geräte haben schon eine – über den normalen DORA-Ablauf. Es sind noch '+(POOL-LEG)+' Adressen frei.',leg:LEG,att:0},
+ {t:'Angreifer schickt Discover',txt:'Der Angreifer sendet ein <b>DHCP Discover</b> – aber mit einer frei erfundenen MAC-Adresse im chaddr-Feld.',leg:LEG,att:0,msg:{dir:'out',lbl:'Discover (gefälschte MAC)',col:'#c62828'}},
+ {t:'Server vergibt eine Adresse',txt:'DHCP prüft nicht, wer fragt. Der Server hält die MAC für ein neues Gerät und bietet eine Adresse an (Offer → Request → ACK). Eine Adresse weniger.',leg:LEG,att:1,msg:{dir:'in',lbl:'ACK: Adresse vergeben',col:'#1565c0'}},
+ {t:'… und das tausendfach',txt:'Yersinia wiederholt das mit immer neuen MACs – hunderte Pakete pro Sekunde. Der Pool füllt sich rasend mit Fantasie-Geräten.',leg:LEG,att:9,msg:{dir:'out',lbl:'Discover × 1000',col:'#c62828'}},
+ {t:'Pool erschöpft',txt:'Alle Adressen sind vergeben. Der Pool ist <b>leer</b>.',leg:LEG,att:POOL-LEG},
+ {t:'Echte Geräte gehen leer aus',txt:'Ein neues, echtes Gerät schickt sein Discover – aber der Server hat nichts mehr. Es bekommt keine Adresse (landet bei APIPA 169.254.x.x). Das ist ein <b>Denial of Service</b>. Oft stellt der Angreifer jetzt einen eigenen Rogue-DHCP-Server bereit, der Adressen mit sich selbst als Gateway verteilt – dann läuft aller Verkehr über ihn.',leg:LEG,att:POOL-LEG,fail:1,msg:{dir:'in',lbl:'kein Offer – Pool leer',col:'#c62828'}}
+];
+var si=0,playing=false,timer=0,busy=false;
+function renderPool(st){
+ var h='';for(var i=0;i<POOL;i++){var cls=i<st.leg?'legit':i<st.leg+st.att?'att':'';h+='<i class="'+cls+'"></i>';}
+ $('pool').innerHTML=h;$('prange').textContent='192.168.10.10–'+(10+POOL-1);$('pleg').textContent=st.leg;$('patt').textContent=st.att;
+ var free=POOL-st.leg-st.att;$('pfree').textContent=free+(free<=0?' (leer!)':'');$('pfree').style.color=free<=0?'#c62828':'#1c2b33';
+}
+var animRAF=0,animTO=0;
+function arender(animate){
+ var st=S[si];renderPool(st);
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;
+ cancelAnimationFrame(animRAF);clearTimeout(animTO);
+ if(animate&&st.msg&&!reduce){busy=true;
+  var dur=[0,1900,1400,1000,650,380][+$('spd').value],t0=null;
+  function f(ts){if(t0===null)t0=ts;var k=Math.min(1,(ts-t0)/dur);$('asvg').innerHTML=topo(st,k);if(k<1)animRAF=requestAnimationFrame(f);else{busy=false;$('asvg').innerHTML=topo(st,1);if(playing)sched();}}
+  animRAF=requestAnimationFrame(f);
+  animTO=setTimeout(function(){if(!busy)return;busy=false;cancelAnimationFrame(animRAF);$('asvg').innerHTML=topo(st,1);if(playing)sched();},dur+600); /* Sicherheitsnetz: busy nie dauerhaft */
+ }else{$('asvg').innerHTML=topo(st,1);if(playing)sched();}
+}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){if(!playing)return;if(si<S.length-1){si++;arender(true);}else stop();},[0,2800,2000,1400,900,500][+$('spd').value]);}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('tabs').innerHTML='';
+$('prev').onclick=function(){stop();if(si>0){si--;arender(false);}};
+$('next').onclick=function(){if(busy)return;stop();if(si<S.length-1){si++;arender(true);}};
+$('play').onclick=function(){if(playing){stop();return;}playing=true;$('play').textContent='❚❚ Pause';if(si>=S.length-1){si=0;arender(false);}else{si++;arender(true);}};
+arender(false);
+/* Tabs ausblenden (nur ein Szenario) */
+$('tabs').style.display='none';
+
+/* ===== Wireshark-Mitschnitt ===== */
+var wr=D.mulberry32(20260911),wsS={mode:'both',attackerMac:D.oui(wr),serverMac:D.oui(wr),showLegit:true,showChaddr:false,flood:14},wsRows=[];
+function rowHTML(x){return'<div class="rw'+(x.bad?' att':/Offer|ACK/.test(x.info)?' ofr':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}
+function wsRender(){$('pcap').innerHTML=wsRows.map(rowHTML).join('');var macs={};wsRows.forEach(function(x){if(x.bad)macs[x.src]=1;});
+ $('pcaphint').innerHTML='Bisher <b>'+wsRows.filter(function(x){return x.bad;}).length+'</b> gefälschte Discover von <b>'+Object.keys(macs).length+'</b> verschiedenen MAC-Adressen. Normaler Verkehr blau, Angriff rot.';
+ $('pcap').scrollTop=$('pcap').scrollHeight;}
+function wsReset(){wr=D.mulberry32(20260911);wsRows=D.capture(wr,wsS,10);wsRender();}
+$('morepkts').onclick=function(){var add=D.capture(wr,{mode:'both',attackerMac:wsS.attackerMac,serverMac:wsS.serverMac,showLegit:false,showChaddr:false,flood:12},12);var base=wsRows.length;add.forEach(function(x,i){x.no=base+1+i;x.t=(parseFloat(wsRows[wsRows.length-1].t)+0.001*(i+1)).toFixed(4);});wsRows=wsRows.concat(add);wsRender();};
+$('resetpkts').onclick=wsReset;wsReset();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was macht ein DHCP-Starvation-Angriff?',['Er schaltet den Switch ab','Er überflutet den DHCP-Server mit Anfragen unter erfundenen MAC-Adressen, bis der Pool leer ist','Er stiehlt das WLAN-Passwort','Er verschlüsselt die Routing-Tabelle'],1,'Jede erfundene MAC bekommt eine Adresse – bis nichts mehr frei ist. Echte Geräte gehen dann leer aus.'],
+ ['Welche Eigenschaft von DHCP macht den Angriff möglich?',['DHCP verschlüsselt zu schwach','DHCP prüft nicht, wer anfragt, und vertraut jeder MAC-Adresse','DHCP braucht zu viel Bandbreite','DHCP hat einen Pufferüberlauf'],1,'Es ist keine Software-Lücke, sondern das Protokoll selbst: keine Authentifizierung, jede neue chaddr gilt als neues Gerät.'],
+ ['In welchem DHCP-Feld steht die (gefälschte) MAC des Clients?',['yiaddr','chaddr','siaddr','xid'],1,'chaddr = client hardware address. Yersinia füllt es mit Zufallswerten.'],
+ ['Wozu braucht man im Lab das Port-Mirroring (SPAN)?',['Damit der Angriff schneller läuft','Damit Wireshark auf dem Mitschnitt-PC den Verkehr des Angreifer-Ports sieht','Damit der Switch mehr Adressen hat','Damit Yersinia startet'],1,'Ein Switch leitet Frames nur gezielt weiter. SPAN spiegelt den gewünschten Port auf den Port des Mitschnitt-PCs.'],
+ ['Woran erkennt man den Angriff im Wireshark?',['An vielen ARP-Antworten','An vielen DHCP Discover von immer neuen, zufälligen Quell-MACs','An HTTPS-Fehlern','An doppelten IP-Adressen'],1,'Hunderte Discover in kurzer Zeit, jede mit anderer MAC – unter Statistics ▸ Conversations gut sichtbar.'],
+ ['Yersinia fälscht Quell-MAC UND chaddr. Welche Maßnahme stoppt das zuverlässig?',['ip dhcp snooping verify mac-address','switchport port-security maximum','Eine stärkere WLAN-Verschlüsselung','Ein längeres DHCP-Lease'],1,'Jede neue Quell-MAC zählt für die Port-Security. Verify greift hier nicht, weil Quell-MAC und chaddr identisch gefälscht sind.'],
+ ['Was bewirkt „ip dhcp snooping trust“ an einem Port?',['Der Port darf DHCP-Server-Antworten senden','Der Port wird abgeschaltet','Der Port ignoriert alle DHCP-Pakete','Der Port bekommt mehr Bandbreite'],0,'Nur vertraute Ports (zum echten Server) dürfen Offer/ACK senden. Das stoppt vor allem den Rogue-DHCP-Server.'],
+ ['Warum ist die Starvation oft nur der erste Schritt?',['Danach ist der Switch kaputt','Danach stellt der Angreifer einen eigenen Rogue-DHCP-Server bereit und wird zum Man-in-the-Middle','Danach ist das WLAN offen','Danach startet der Server neu'],1,'Ist der echte Pool leer, antwortet nur noch der Rogue-Server – mit sich selbst als Gateway/DNS.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return D.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function cfgHTML(s){
+ var o='Switch(config)# interface GigabitEthernet0/1\n';
+ if(s.portSec>0)o+=' switchport port-security\n switchport port-security maximum '+s.portSec+'\n switchport port-security violation '+s.psAction+'\n';
+ else o+=' ! (keine Port-Security)\n';
+ o+='!\n';
+ if(s.snoop||s.verify){o+='Switch(config)# ip dhcp snooping\nSwitch(config)# ip dhcp snooping vlan 10\n';if(s.verify)o+='Switch(config)# ip dhcp snooping verify mac-address\n';}
+ else o+='! (kein DHCP Snooping)\n';
+ return o.replace(/\n$/,'');
+}
+function taskHTML(s,id,label){
+ var r=D.mulberry32((s.code.charCodeAt(0)*131+parseInt(s.code.split('-')[1]))>>>0);
+ var rows=D.capture(r,{mode:s.mode,attackerMac:s.attackerMac,serverMac:s.serverMac,showLegit:true,showChaddr:true,flood:8},8);
+ var cap='<div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Destination</span><span>Prot.</span><span>Info</span></div><div class="rows">'+rows.map(function(x){return'<div class="rw'+(x.bad?' att':/Offer|ACK/.test(x.info)?' ofr':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}).join('')+'</div></div>';
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+D.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+
+  '<div class="slist"><li><b>Szenario:</b> DHCP-Pool '+s.net+s.poolStart+'–'+s.net+s.poolEnd+' ('+(s.poolEnd-s.poolStart+1)+' Adressen). '+s.legit+' echte Geräte haben schon eine Adresse. Der Angreifer (Yersinia) sendet <b>'+s.flood+'</b> Discover-Pakete. Angriffsart: <b>'+(s.mode==='both'?'Quell-MAC und chaddr gefälscht':'nur chaddr gefälscht, Quell-MAC bleibt gleich')+'</b>.</li></div>'+
+  '<p class="ph" style="margin-top:8px">Mitschnitt (Auszug)</p>'+cap+
+  '<p class="ph" style="margin-top:10px">Switch-Konfiguration am Angreifer-Port</p><pre class="cli">'+esc(cfgHTML(s))+'</pre>'+
+  '<p class="qh">1. Wie viele Adressen bekommt der Angreifer?</p><input class="one got" inputmode="numeric" autocomplete="off" aria-label="Adressen Angreifer">'+
+  '<p class="qh">2. Ist der Pool danach leer (kein Platz mehr für neue echte Geräte)?</p><div class="opts"><label><input type="radio" name="'+id+'-ex" value="1"> Ja, leer</label><label><input type="radio" name="'+id+'-ex" value="0"> Nein, noch frei</label></div>'+
+  '<p class="qh">3. Welche Maßnahme stoppt diesen Angriff (bzw. hat ihn gestoppt)?</p><select class="one eff"><option value="">– wählen –</option><option value="portsec">Port-Security (MAC-Limit)</option><option value="verify">verify mac-address</option><option value="none">keine der beiden greift hier</option></select>'+
+  '<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),R=s.res,ok=0,tot=3;
+ var g=card.querySelector('.got');mark(g,g.value.trim()===''?null:+g.value.trim()===R.attackerGot);if(+g.value.trim()===R.attackerGot)ok++;
+ var ex=card.querySelector('input[name$="-ex"]:checked'),exEl=card.querySelectorAll('input[name$="-ex"]');exEl.forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add((rb.value==='1')===R.exhausted?'right':'wrong');});if(ex&&(ex.value==='1')===R.exhausted)ok++;
+ var eff=card.querySelector('.eff'),want=R.effective||'none';mark(eff,eff.value===''?null:eff.value===want);if(eff.value===want)ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var R=s.res,poolSize=s.poolEnd-s.poolStart+1;
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. Adressen für den Angreifer: '+R.attackerGot+'</b><br><span class="hint">Pool '+poolSize+' − '+s.legit+' echte = '+(poolSize-s.legit)+' frei. '+R.reason+(R.effective==='portsec'?' Also höchstens '+s.portSec+'.':R.effective==='verify'?' Also 0.':' Angreifer bekommt min('+s.flood+' Flood, '+(poolSize-s.legit)+' frei) = '+R.attackerGot+'.')+'</span></li>';
+ h+='<li><b>2. Pool '+(R.exhausted?'leer':'noch frei')+'</b><br><span class="hint">'+s.legit+' echte + '+R.attackerGot+' Angreifer = '+R.leased+' von '+poolSize+' vergeben → '+R.free+' frei.</span></li>';
+ h+='<li><b>3. '+(R.effective==='portsec'?'Port-Security':R.effective==='verify'?'verify mac-address':'keine der beiden greift hier')+'</b><br><span class="hint">'+
+  (s.mode==='both'?'Quell-MAC und chaddr sind gleich gefälscht → verify sieht keinen Mismatch. Nur Port-Security (begrenzt die Quell-MACs) stoppt die Flut.':'Nur die chaddr ändert sich, die Quell-MAC bleibt → Port-Security sieht nur eine MAC. verify mac-address erkennt den Mismatch Quell-MAC ≠ chaddr und verwirft.')+'</span></li></ul>';
+ return h;
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=["L-1", "L-2", "M-1", "M-2", "M-3", "M-5", "S-1", "S-2", "S-3", "S-4"];
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=D.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=D.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
