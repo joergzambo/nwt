@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ARP-Spoofing</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.arp{border-collapse:collapse;font:13px var(--mono);margin-top:8px}
+.arp caption{font:600 13px var(--ui);text-align:left;padding:2px 0;color:#546e7a}
+.arp th,.arp td{border:1px solid #cfd8dc;padding:4px 10px;text-align:left}
+.arp th{background:var(--soft);font:600 12.5px var(--ui)}
+.arp tr.bad td{background:#fdecea;color:#c62828;font-weight:700}
+.pcap{border:1px solid #c5c9cc;border-radius:4px;overflow:hidden;margin-top:8px;font-family:var(--mono);font-size:12.5px}
+.pcap .hd{display:grid;grid-template-columns:38px 62px 128px 128px 40px 1fr;background:#e4e7e9;font-weight:700;padding:4px 8px;gap:8px}
+.pcap .rows{overflow:auto}
+.pcap .rw{display:grid;grid-template-columns:38px 62px 128px 128px 40px 1fr;padding:3px 8px;gap:8px;border-top:1px solid #eef1f2;white-space:nowrap}
+.pcap .rw.real{background:#e8f0fe}
+.pcap .rw.rogue{background:#fdecea}
+.pcap .rw.drop{background:#eceff1;color:#78909c}
+.filt{font-family:var(--mono);font-size:13px;background:#eafaf0;border:1px solid #abdcbd;border-radius:4px;padding:5px 9px;margin:8px 0 0;display:inline-block}
+.lab{counter-reset:step}
+.lab .st{border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:4px;padding:12px 16px 12px 52px;margin:10px 0;position:relative}
+.lab .st::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font:700 15px var(--ui);display:flex;align-items:center;justify-content:center}
+.lab .st h4{font:600 16px var(--ui);margin:0 0 4px}
+.lab .st p{margin:0 0 6px}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px}
+.key{display:inline-block;font:600 12px var(--ui);background:#eceff1;border:1px solid #cfd8dc;border-radius:4px;padding:1px 7px;margin:0 1px}
+.menu{font:600 13px var(--mono);background:#eceff1;border-radius:4px;padding:2px 7px;display:inline-block;margin:1px 0}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.opts.col label .mono{font-family:var(--mono);font-size:13.5px}
+.disc{background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>ARP-Spoofing: sich zwischen zwei Geräte schieben</h1>
+<p class="sub">Beim <b>ARP-Spoofing</b> (auch ARP-Poisoning) schickt der Angreifer gefälschte ARP-Antworten ins Netz: „Die IP des Gateways gehört zu <b>meiner</b> MAC-Adresse.“ Opfer und Gateway tragen die falsche Zuordnung in ihren ARP-Cache ein und schicken ihren Verkehr fortan an den Angreifer – ein <b>Man-in-the-Middle</b> auf Layer 2.</p>
+<div class="disc">⚠️ <b>Nur im eigenen Labornetz.</b> Diese Anleitung dient dem Unterricht und dem Verständnis der Abwehr. Angriffe auf fremde Netze sind strafbar.</div>
+<nav class="jumps" aria-label="Abschnitte"><a href="#warum">Warum es funktioniert</a><a href="#anim">Der Angriff</a><a href="#wireshark">Im Wireshark</a><a href="#lab">Lab mit Ettercap</a><a href="#schutz">Schutz</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="warum">Warum funktioniert der Angriff?</h2>
+<div class="rules">
+ <div class="card"><h3>Wozu ARP?</h3><p style="margin:0 0 6px">Um ein IP-Paket im LAN zuzustellen, braucht ein Gerät die <b>MAC-Adresse</b> zur Ziel-IP. Es fragt per Broadcast: „Who has 192.168.1.1? Tell 192.168.1.50.“ Der Besitzer antwortet: „192.168.1.1 is at aa:bb:…“. Das Ergebnis landet im <b>ARP-Cache</b> (<code>arp -a</code>).</p></div>
+ <div class="card check"><h3>Die Schwachstellen von ARP</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Keine Authentifizierung.</b> Jede ARP-Antwort wird geglaubt – egal, wer sie schickt.</li>
+  <li><b>Zustandslos.</b> Ein Gerät übernimmt eine Antwort auch dann, wenn es nie gefragt hat (unaufgefordertes/„gratuitous“ ARP).</li>
+  <li><b>Letzte Antwort gewinnt.</b> Der Angreifer schickt seine Fälschung einfach ständig – sie überschreibt den echten Eintrag.</li>
+  <li><b>Broadcast-Domäne.</b> Jedes Gerät im selben VLAN kann mitspielen.</li></ul>
+  <p class="hint">Wie bei DHCP ist das keine Software-Lücke, sondern ein Protokoll ganz ohne Schutzmechanismen.</p></div>
+</div>
+
+<h2 class="part" id="anim">Der Angriff Schritt für Schritt</h2>
+<div class="card">
+ <div id="asvg"></div>
+ <div id="caches" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:8px"></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="wireshark">So sieht es im Wireshark aus</h2>
+<p class="sub">Filter <code>arp</code>. Verräterisch sind <b>unaufgeforderte ARP-Replies</b> und vor allem Wiresharks Warnung <b>„duplicate use of … detected“</b>: Eine IP wird plötzlich zwei verschiedenen MAC-Adressen zugeordnet.</p>
+<div class="card">
+ <span class="filt">arp</span>
+ <div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Destination</span><span>Prot.</span><span>Info</span></div><div class="rows" id="pcap"></div></div>
+ <p class="hint" id="pcaphint" style="margin-top:8px"></p>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Woran man den Angriff erkennt</h3><ul style="margin:0;padding-left:20px;font-size:15px">
+ <li>Viele <b>ARP-Replies ohne vorausgehenden Request</b> (unaufgefordert), oft im Sekundentakt wiederholt.</li>
+ <li>Wireshark markiert gelb/schwarz: <b>„duplicate use of 192.168.1.1 detected“</b> – zwei MACs für eine IP.</li>
+ <li>Am Opfer zeigt <code>arp -a</code> für zwei verschiedene IPs <b>dieselbe MAC</b> (die des Angreifers).</li>
+ <li>Tools wie <b>arpwatch</b> oder <b>XArp</b> melden die geänderte Zuordnung automatisch.</li></ul></div>
+
+<h2 class="part" id="lab">Lab-Anleitung: ARP-Spoofing mit Ettercap (grafisch)</h2>
+<p class="sub">Angreifer-PC (Kali) und Opfer am selben Switch/VLAN, dazu das Gateway. Ettercap vergiftet die ARP-Caches von Opfer und Gateway, der Verkehr läuft danach über den Angreifer – parallel im Wireshark mitlesen.</p>
+<div class="lab">
+ <div class="st"><h4>Ettercap grafisch starten</h4><p>Als root starten – es öffnet sich die grafische Oberfläche.</p><pre class="cli">sudo ettercap -G</pre></div>
+ <div class="st"><h4>Sniffing starten</h4><p>Oben als <b>Primary Interface</b> das Interface zum Switch (z. B. <code>eth0</code>) wählen und mit dem Häkchen <span class="key">✓</span> (Accept) bestätigen. Ettercap startet das Unified Sniffing.</p></div>
+ <div class="st"><h4>Hosts suchen</h4><p>Im Menü (⋮) <span class="menu">Hosts ▸ Scan for hosts</span>. Danach <span class="menu">Hosts ▸ Hosts list</span> öffnet die Liste aller gefundenen Geräte mit IP und MAC.</p></div>
+ <div class="st"><h4>Ziele festlegen</h4><p>In der Hosts-Liste das <b>Gateway</b> markieren und <span class="key">Add to Target 1</span>, dann das <b>Opfer</b> markieren und <span class="key">Add to Target 2</span>. (Ohne Ziele vergiftet Ettercap das ganze Netz – im Lab lieber gezielt.)</p></div>
+ <div class="st"><h4>ARP-Poisoning starten</h4><p>Im MITM-Menü (🌐 / Zielscheibe) <span class="menu">ARP poisoning…</span> wählen, <b>„Sniff remote connections“</b> anhaken und mit <span class="key">OK</span> starten. Ettercap schickt nun beiden Zielen gefälschte ARP-Replies.</p>
+  <div class="warn">Als Einzeiler im Terminal:<br><code>sudo ettercap -T -i eth0 -M arp:remote /192.168.1.1// /192.168.1.50//</code><br>(<code>-T</code> Textmodus, <code>-M arp:remote</code> = ARP-Poisoning beider Richtungen, dann Gateway und Opfer.)</div></div>
+ <div class="st"><h4>Mitlesen</h4><p>Ettercap zeigt erkannte Zugangsdaten unter <span class="menu">View ▸ Connections</span>. Für den vollen Verkehr parallel <b>Wireshark</b> auf <code>eth0</code> laufen lassen. Am Opfer prüfen: <code>arp -a</code> zeigt fürs Gateway nun die Angreifer-MAC.</p></div>
+ <div class="st"><h4>Sauber beenden</h4><p><span class="menu">MITM ▸ Stop MITM attack(s)</span>. Wichtig: Ettercap schickt jetzt die <b>echten</b> ARP-Einträge nach (Re-ARP), damit Opfer und Gateway wieder sauber kommunizieren. Erst danach schließen.</p></div>
+</div>
+
+<h2 class="part" id="schutz">Schutz: Dynamic ARP Inspection und mehr</h2>
+<div class="rules">
+ <div class="card"><h3>Cisco: Dynamic ARP Inspection (DAI)</h3><p style="margin:0 0 6px">DAI prüft jedes ARP-Paket an <b>nicht vertrauten</b> Ports gegen die <b>DHCP-Snooping-Bindungstabelle</b> (IP ↔ MAC ↔ Port). Passt die Zuordnung nicht, wird das ARP-Paket <b>verworfen</b>. Der Angreifer kann keine fremde IP mehr beanspruchen.</p>
+  <pre class="cli" style="margin:0">Switch(config)# ip dhcp snooping
+Switch(config)# ip dhcp snooping vlan 10
+Switch(config)# ip arp inspection vlan 10
+!
+Switch(config)# interface Gi0/24          ! Uplink zu Gateway/Server
+Switch(config-if)#  ip dhcp snooping trust
+Switch(config-if)#  ip arp inspection trust
+!
+Switch# show ip arp inspection vlan 10</pre>
+  <p class="hint">DAI setzt <b>DHCP Snooping</b> voraus – ohne die Bindungstabelle weiß der Switch nicht, welche MAC zu welcher IP gehört. Für fest vergebene IPs ohne DHCP nimmt man eine <b>ARP-ACL</b>. Verschärfen: <code>ip arp inspection validate src-mac dst-mac ip</code>.</p></div>
+ <div class="card check"><h3>Weitere Maßnahmen</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Statische ARP-Einträge</b> für kritische Ziele (z. B. das Gateway): <code>arp -s 192.168.1.1 aa-bb-cc-dd-ee-ff</code> – überschreibbar nur manuell.</li>
+  <li><b>Erkennung</b> am Host: <b>arpwatch</b>, <b>XArp</b> melden geänderte IP↔MAC-Zuordnungen.</li>
+  <li><b>Verschlüsselung</b> (HTTPS, VPN, SSH) begrenzt den Schaden: Der Angreifer sieht zwar den Verkehr, aber nur verschlüsselt.</li>
+  <li><b>Port-Security</b> und <b>Private VLANs</b> erschweren, dass ein Gerät überhaupt frei funkt.</li></ul></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies Mitschnitt und Konfiguration: Welche MAC hat das Opfer fürs Gateway im Cache? Liegt ein Man-in-the-Middle vor? Welche Maßnahme greift?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Angriff ja/nein, DAI)</option><option value="M" selected>Mittel (auch statischer ARP-Eintrag)</option><option value="S">Schwer (Maßnahmen gemischt)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/*ARJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},A=window.AR,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'" font-family="'+(o.mono?'ui-monospace,Menlo,Consolas,monospace':'Open Sans,Arial,sans-serif')+'">'+esc(t)+'</text>';}
+var ICON_S='<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function rtr(){return'<ellipse cx="0" cy="7" rx="22" ry="8" fill="#1f5872"/><rect x="-22" y="-7" width="44" height="14" fill="#2f7392"/><ellipse cx="0" cy="-7" rx="22" ry="8" fill="#5a9dbb" stroke="#1f5872"/><path d="M-11 -7h7M4 -7h7M-1 -12v4M-1 -5v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>';}
+
+/* ===== Animation ===== */
+var VIC={ip:'192.168.1.50',mac:'0a:0a:0a:00:00:50'},GW={ip:'192.168.1.1',mac:'bb:bb:bb:00:00:01'},ATT={ip:'192.168.1.66',mac:'ee:ee:ee:00:00:66'};
+var CLI=[150,80],GWP=[700,80],ATTP=[430,250],SWP=[430,80];
+function topo(st){
+ var W=860,H=310,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="ARP-Spoofing">';
+ [CLI,GWP,ATTP].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+SWP[0]+'" y2="'+SWP[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ if(st&&st.mitm){[[CLI,SWP],[ATTP,SWP],[GWP,SWP]].forEach(function(e){h+='<line x1="'+e[0][0]+'" y1="'+e[0][1]+'" x2="'+e[1][0]+'" y2="'+e[1][1]+'" stroke="#c62828" stroke-width="5" opacity=".45"/>';});}
+ h+='<g transform="translate('+SWP[0]+' '+SWP[1]+')">'+ICON_S+'</g>'+tx(SWP[0],SWP[1]-20,'Switch',{fs:12,fw:700});
+ h+='<g transform="translate('+CLI[0]+' '+CLI[1]+')">'+pc('#455a64')+'</g>'+tx(CLI[0],CLI[1]+30,'Opfer',{fs:12,fw:700})+tx(CLI[0],CLI[1]-28,VIC.ip,{fs:11,mono:1,c:'#546e7a'});
+ h+='<g transform="translate('+GWP[0]+' '+GWP[1]+')">'+rtr()+'</g>'+tx(GWP[0],GWP[1]+30,'Gateway',{fs:12,fw:700})+tx(GWP[0],GWP[1]-24,GW.ip,{fs:11,mono:1,c:'#546e7a'});
+ h+='<g transform="translate('+ATTP[0]+' '+ATTP[1]+')">'+pc('#c62828')+'</g>'+tx(ATTP[0],ATTP[1]+30,'Angreifer',{fs:12,fw:700,c:'#c62828'})+tx(ATTP[0],ATTP[1]+44,ATT.ip+' · '+ATT.mac,{fs:11,mono:1,c:'#546e7a'});
+ if(st&&st.msgs)st.msgs.forEach(function(m){var a=m.from,b=m.to,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,w=m.lbl.length*6.3+16;
+  h+='<g><rect x="'+(mx-w/2)+'" y="'+(my-10)+'" width="'+w+'" height="19" rx="9" fill="'+m.col+'"/>'+tx(mx,my+3.5,m.lbl,{fs:10.5,fw:700,c:'#fff'})+'</g>';});
+ return h+'</svg>';
+}
+function cacheCard(title,ip,mac,bad){return'<div style="border:1.5px solid '+(bad?'#c62828':'#cfd8dc')+';border-radius:6px;padding:8px 12px;font:12.5px var(--mono);background:'+(bad?'#fdecea':'#fff')+'"><b style="font-family:var(--ui);font-size:13px;display:block;margin-bottom:3px">'+title+' · arp -a</b>'+ip+' → <span style="font-weight:700'+(bad?';color:#c62828':'')+'">'+mac+'</span></div>';}
+var S=[
+ {t:'Normale ARP-Auflösung',txt:'Das Opfer will ins Internet und braucht die MAC des Gateways. Es fragt per Broadcast, das Gateway antwortet ehrlich. Im Cache steht die echte Gateway-MAC.',vg:GW.mac,gv:VIC.mac,msgs:[{from:CLI,to:SWP,lbl:'Who has '+GW.ip+'?',col:'#455a64'}]},
+ {t:'Gateway antwortet',txt:'Das Gateway antwortet dem Opfer mit seiner echten MAC. Das Opfer trägt sie ein – alles korrekt.',vg:GW.mac,gv:VIC.mac,msgs:[{from:GWP,to:CLI,lbl:GW.ip+' is at '+GW.mac,col:'#1565c0'}]},
+ {t:'Angreifer vergiftet das Opfer',txt:'Der Angreifer schickt dem Opfer eine <b>gefälschte</b> ARP-Reply: „'+GW.ip+' is at '+ATT.mac+'“ – also seine eigene MAC fürs Gateway. Unaufgefordert, und das Opfer glaubt es.',vg:ATT.mac,gv:VIC.mac,poisonV:1,msgs:[{from:ATTP,to:CLI,lbl:GW.ip+' is at '+ATT.mac,col:'#c62828'}]},
+ {t:'… und das Gateway',txt:'Dasselbe in die andere Richtung: Dem Gateway sagt der Angreifer „'+VIC.ip+' is at '+ATT.mac+'“. Jetzt zeigen <b>beide</b> Caches auf den Angreifer.',vg:ATT.mac,gv:ATT.mac,poisonV:1,poisonG:1,msgs:[{from:ATTP,to:GWP,lbl:VIC.ip+' is at '+ATT.mac,col:'#c62828'}]},
+ {t:'Man-in-the-Middle',txt:'Der gesamte Verkehr zwischen Opfer und Gateway läuft nun über den Angreifer. Er liest alles mit (Wireshark, Passwörter, Cookies) und leitet weiter – beide merken nichts. Ettercap wiederholt die Fälschung ständig, damit sie im Cache bleibt.',vg:ATT.mac,gv:ATT.mac,poisonV:1,poisonG:1,mitm:1},
+ {t:'Mit Schutz: Dynamic ARP Inspection',txt:'Mit <b>DAI</b> prüft der Switch jede ARP-Antwort an untrusted Ports gegen die DHCP-Snooping-Tabelle. Die IP des Gateways gehört laut Tabelle nicht zur Angreifer-MAC am Angreifer-Port → die gefälschte Reply wird <b>verworfen</b>. Der Cache bleibt sauber.',vg:GW.mac,gv:VIC.mac,msgs:[{from:ATTP,to:SWP,lbl:'gefälschtes ARP verworfen ✕',col:'#90a4ae'}]}
+];
+var si=0,playing=false,timer=0;
+function arender(){
+ var st=S[si];$('asvg').innerHTML=topo(st);
+ $('caches').innerHTML=cacheCard('Opfer',GW.ip,st.vg,st.poisonV)+cacheCard('Gateway',VIC.ip,st.gv,st.poisonG);
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;
+ if(playing)sched();
+}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){if(!playing)return;if(si<S.length-1){si++;arender();}else stop();},[0,3400,2600,1800,1200,700][+$('spd').value]);}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('prev').onclick=function(){stop();if(si>0){si--;arender();}};
+$('next').onclick=function(){stop();if(si<S.length-1){si++;arender();}};
+$('play').onclick=function(){if(playing){stop();return;}playing=true;$('play').textContent='❚❚ Pause';if(si>=S.length-1){si=0;arender();}else{si++;arender();}};
+arender();
+
+/* ===== Wireshark ===== */
+var ws=R_rng();function R_rng(){return A.mulberry32(20261114);}
+var wsS={net:'192.168.1.',victim:VIC,gateway:GW,attacker:ATT,poisoning:true,defense:'none',extraHost:null};wsS.res=A.evaluate(wsS);
+function rowHTML(x){return'<div class="rw'+(x.tag==='rogue'?' rogue':x.tag==='real'?' real':x.tag==='drop'?' drop':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}
+(function(){var rows=A.capture(ws,wsS);$('pcap').innerHTML=rows.map(rowHTML).join('');
+ $('pcaphint').innerHTML='Mehrere <b>unaufgeforderte</b> Replies behaupten „'+GW.ip+' is at '+ATT.mac+'“ (rot) – obwohl das Gateway schon mit seiner echten MAC geantwortet hat (blau). Dieselbe Angreifer-MAC beansprucht auch '+VIC.ip+'. Wireshark warnt: „duplicate use of '+GW.ip+' detected“.';})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was macht ARP-Spoofing?',['Es überflutet den Switch mit MAC-Adressen','Es schickt gefälschte ARP-Antworten, damit Geräte die Angreifer-MAC für eine fremde IP eintragen','Es stiehlt IP-Adressen vom DHCP-Server','Es verschlüsselt den ARP-Cache'],1,'So leitet der Angreifer den Verkehr über sich um – ein Man-in-the-Middle auf Layer 2.'],
+ ['Welche Eigenschaft von ARP macht den Angriff möglich?',['ARP ist verschlüsselt','ARP hat keine Authentifizierung und übernimmt auch unaufgeforderte Antworten','ARP braucht zu viel Bandbreite','ARP kennt keine Broadcasts'],1,'Jede Antwort wird geglaubt, auch ohne vorherige Frage. Die letzte Antwort überschreibt den Cache.'],
+ ['Was zeigt der ARP-Cache des Opfers nach erfolgreichem Angriff?',['Gar keine Einträge','Für Gateway-IP und Angreifer-IP dieselbe (Angreifer-)MAC','Zwei Gateways','Nur die eigene MAC'],1,'Zwei verschiedene IPs zeigen auf eine MAC – das ist das klare Zeichen.'],
+ ['Wie warnt Wireshark typischerweise?',['„TCP retransmission“','„duplicate use of … detected“ – eine IP mit zwei MACs','„malformed packet“','„checksum error“'],1,'Die IP des Gateways taucht mit zwei verschiedenen MACs auf – echte und gefälschte.'],
+ ['Welches Ettercap-Menü startet den Angriff?',['Hosts ▸ Scan','MITM ▸ ARP poisoning','View ▸ Connections','Filters ▸ Load'],1,'Nach dem Festlegen von Target 1/2 startet man im MITM-Menü das ARP-Poisoning (mit „Sniff remote connections“).'],
+ ['Worauf baut Cisco Dynamic ARP Inspection (DAI) auf?',['Auf Spanning Tree','Auf der DHCP-Snooping-Bindungstabelle (IP↔MAC↔Port)','Auf VLAN-Trunking','Auf dem Routing-Protokoll'],1,'DAI vergleicht jedes ARP-Paket an untrusted Ports mit der Snooping-Tabelle und verwirft Fälschungen.'],
+ ['Warum hilft HTTPS/VPN gegen den Schaden?',['Es verhindert ARP-Spoofing','Der Angreifer sieht den Verkehr dann nur verschlüsselt','Es schaltet ARP ab','Es macht den Switch schneller'],1,'ARP-Spoofing wird dadurch nicht verhindert, aber der mitgelesene Verkehr ist für den Angreifer unbrauchbar.'],
+ ['Warum sollte man Ettercap sauber über „Stop MITM attack(s)“ beenden?',['Sonst stürzt Kali ab','Ettercap schickt dann die echten ARP-Einträge nach, sonst bleiben Opfer/Gateway ohne Verbindung','Sonst bleibt der Switch gesperrt','Das ist egal'],1,'Beim sauberen Stop „heilt“ Ettercap die Caches wieder (Re-ARP). Sonst zeigen die Caches weiter auf den verschwundenen Angreifer.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return A.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function defHTML(s){
+ if(s.defense==='dai')return'<b>Cisco:</b> DHCP Snooping + Dynamic ARP Inspection aktiv.\nSwitch(config)# ip dhcp snooping vlan 10\nSwitch(config)# ip arp inspection vlan 10\nSwitch(config)# interface Gi0/24\nSwitch(config-if)#  ip arp inspection trust   ! nur Uplink';
+ if(s.defense==='static')return'<b>Opfer:</b> statischer ARP-Eintrag fürs Gateway.\nC:\\> arp -s '+s.gateway.ip+' '+s.gateway.mac.replace(/:/g,'-');
+ return'<b>Keine Abwehr aktiv</b> (kein DAI, kein statischer ARP-Eintrag).';
+}
+function taskHTML(s,id,label){
+ var r=A.mulberry32((s.code.charCodeAt(0)*131+parseInt(s.code.split('-')[1]))>>>0);
+ var rows=A.capture(r,s);
+ var cap='<div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (MAC)</span><span>Destination</span><span>Prot.</span><span>Info</span></div><div class="rows">'+rows.map(function(x){return'<div class="rw'+(x.tag==='rogue'?' rogue':x.tag==='real'?' real':x.tag==='drop'?' drop':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}).join('')+'</div></div>';
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+A.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+
+  '<div class="slist"><li><b>Szenario:</b> Opfer '+s.victim.ip+' ('+s.victim.mac+'), Gateway '+s.gateway.ip+' ('+s.gateway.mac+'), Angreifer '+s.attacker.ip+' ('+s.attacker.mac+'). '+(s.poisoning?'Der Angreifer macht <b>ARP-Spoofing</b> gegen Opfer und Gateway.':'Kein ARP-Spoofing im Netz.')+'</li></div>'+
+  '<p class="ph" style="margin-top:8px;font:600 13.5px var(--ui)">Mitschnitt (Filter arp)</p>'+cap+
+  '<p class="ph" style="margin-top:10px;font:600 13.5px var(--ui)">Gegenmaßnahme</p><pre class="cli">'+esc(defHTML(s))+'</pre>'+
+  '<p class="qh">1. Welche MAC steht beim Opfer fürs Gateway ('+s.gateway.ip+') im Cache?</p><div class="opts col"><label><input type="radio" name="'+id+'-g" value="real"> <span class="mono">'+s.gateway.mac+'</span> (echtes Gateway)</label><label><input type="radio" name="'+id+'-g" value="att"> <span class="mono">'+s.attacker.mac+'</span> (Angreifer)</label></div>'+
+  '<p class="qh">2. Liegt ein Man-in-the-Middle vor?</p><div class="opts"><label><input type="radio" name="'+id+'-m" value="1"> Ja</label><label><input type="radio" name="'+id+'-m" value="0"> Nein</label></div>'+
+  '<p class="qh">3. Welche Maßnahme schützt (bzw. würde schützen)?</p><select class="one eff"><option value="">– wählen –</option><option value="dai">Dynamic ARP Inspection</option><option value="static">statischer ARP-Eintrag</option><option value="none">keine ist hier aktiv</option></select>'+
+  '<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),e=s.res,ok=0,tot=3;
+ var gw=card.querySelector('input[name$="-g"]:checked'),gwWant=e.mitm?'att':'real';card.querySelectorAll('input[name$="-g"]').forEach(function(rb){rb.closest('label').classList.remove('right','wrong');if(rb.checked)rb.closest('label').classList.add(rb.value===gwWant?'right':'wrong');});if(gw&&gw.value===gwWant)ok++;
+ var m=card.querySelector('input[name$="-m"]:checked');card.querySelectorAll('input[name$="-m"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add((rb.value==='1')===e.mitm?'right':'wrong');});if(m&&(m.value==='1')===e.mitm)ok++;
+ var eff=card.querySelector('.eff'),want=s.poisoning&&s.defense!=='none'?s.defense:'none';mark(eff,eff.value===''?null:eff.value===want);if(eff.value===want)ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var e=s.res;
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. Fürs Gateway im Cache: '+(e.mitm?s.attacker.mac+' (Angreifer)':s.gateway.mac+' (echtes Gateway)')+'</b><br><span class="hint">'+(!s.poisoning?'Kein Angriff – der Eintrag ist echt.':e.blocked?('Der Angriff läuft, aber '+(s.defense==='dai'?'DAI verwirft die gefälschten ARP-Replies':'der statische Eintrag lässt sich nicht überschreiben')+' – der Cache bleibt echt.'):'Die gefälschte Reply überschreibt den Eintrag mit der Angreifer-MAC.')+'</span></li>';
+ h+='<li><b>2. '+(e.mitm?'Ja – Man-in-the-Middle':'Nein')+'</b><br><span class="hint">'+(e.mitm?'Opfer- und Gateway-Cache zeigen auf den Angreifer – sein Verkehr läuft über ihn.':'Der Cache ist (wieder) korrekt, kein Umweg über den Angreifer.')+'</span></li>';
+ h+='<li><b>3. '+(s.poisoning&&s.defense==='dai'?'Dynamic ARP Inspection':s.poisoning&&s.defense==='static'?'statischer ARP-Eintrag':'keine ist hier aktiv')+'</b></li></ul>';
+ return h;
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=A.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=A.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
