@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IP-Adresse, Subnetzmaske und Gateway</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font:600 13px var(--ui)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.c-IL{color:#1565c0}.c-IG{color:#e65100}.c-OL{color:#6a1b9a}.c-OG{color:#2e7d32}
+/* Begriffs-Matrix */
+.mx{width:100%;border-collapse:separate;border-spacing:6px;margin-top:10px;table-layout:fixed}
+.mx th{font:600 14px var(--ui);padding:6px;text-align:center;color:var(--mute);vertical-align:bottom}
+.mx th b{display:block;color:var(--ink);font-size:16px}
+.mx th.rowh{text-align:right;width:25%;vertical-align:middle}
+.mx button{width:100%;border:2px solid;border-radius:6px;background:#fff;padding:10px 8px;cursor:pointer;text-align:center;line-height:1.35}
+.mx button b{display:block;font:700 16px var(--ui)}
+.mx button span{font:13.5px var(--mono);color:var(--ink)}
+.mx button.on{color:#fff!important}.mx button.on span{color:#fff}
+@media(max-width:600px){.mx{border-spacing:3px}.mx th{font-size:11.5px;padding:2px}.mx th b{font-size:13px}.mx th.rowh{width:21%}.mx button{padding:8px 2px}.mx button b{font-size:13px}.mx button span{font-size:10.5px;letter-spacing:-.3px}}
+.mxinfo{background:var(--soft);border-left:5px solid var(--ink);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:15.5px;min-height:4.6em}
+.memo{background:#eef6e6;border:1px solid #c5e1a5;border-radius:4px;padding:10px 14px;font-size:15.5px;margin-top:10px}
+.memo b.w1{background:#1c2b33;color:#fff;padding:1px 7px;border-radius:3px}
+.memo b.w2{background:#61a229;color:#fff;padding:1px 7px;border-radius:3px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.ntab{border-collapse:collapse;font:13.5px var(--mono);margin-top:6px;min-width:560px}
+.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left;white-space:nowrap}
+.ntab th{background:var(--soft);font:600 13px var(--ui)}
+.ntab input{width:21ch}
+.ntab tr.hit td{background:#fff8e1}
+.rule{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.mt td,.mt th{text-align:center;font-family:var(--mono);font-size:13.5px;white-space:nowrap}.mt th{font-family:var(--ui)}
+.rules{margin-bottom:22px}
+.h3{font:400 19px var(--head);margin:0 0 6px}
+.mini{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:15px}
+.cn{color:#1565c0}.ch{color:#e65100}
+.mono{font-family:var(--mono)}
+.big{font-size:22px}
+.pres{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:600 13.5px var(--ui)}
+.btn.sm{padding:4px 10px;font-size:13.5px}
+.bitrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.bit{width:62px;border:2px solid #90a4ae;border-radius:6px;background:#fff;cursor:pointer;padding:4px 0 6px;display:flex;flex-direction:column;align-items:center}
+.bit .bw{font:600 12px var(--ui);color:var(--mute)}
+.bit .bb{font:700 26px var(--mono);color:#90a4ae}
+.bit.on{border-color:#1565c0;background:#e3f2fd}.bit.on .bb{color:#1565c0}
+@media(max-width:520px){.bitrow{gap:4px}.bit{width:calc((100% - 28px)/8)}.bit .bb{font-size:21px}.bit .bw{font-size:10.5px}}
+.sum{font-size:17px;margin:8px 0}
+.slrow{display:flex;align-items:center;gap:12px;font:600 15px var(--ui);margin-bottom:6px}
+.slrow input{flex:1;max-width:420px;accent-color:#1565c0}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:5.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0}
+#s-flow svg{max-width:420px;margin:0 auto;border:0;background:none}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.quiz .q .ex,.tq .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open,.tq .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>IP-Adresse, Subnetzmaske und Gateway – einfach erklärt</h1>
+<p class="sub">Damit ein Computer im Netzwerk mitreden kann, braucht er drei Einstellungen: eine <b>IP-Adresse</b>, eine <b>Subnetzmaske</b> und ein <b>Standardgateway</b>. Hier lernst du, was jede davon bedeutet – ganz ohne Vorwissen.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#ip">IP-Adresse</a><a href="#dotted">Dotted Decimal</a><a href="#maske">Subnetzmaske</a><a href="#cidr">CIDR</a><a href="#gateway">Gateway</a><a href="#ipv6">IPv6</a><a href="#alles">Alles zusammen</a><a href="#quiz">Teste dich</a><a href="#training">Training</a></nav>
+
+<h2 class="part" id="ip">Die IP-Adresse: die Adresse eines Geräts</h2>
+<p class="sub">Damit ein Brief ankommt, braucht ein Haus eine Adresse. Damit Daten ankommen, braucht jedes Gerät im Netz eine <b>IP-Adresse</b>. Und so wie eine Postadresse aus <b>Straße</b> und <b>Hausnummer</b> besteht, hat auch die IP-Adresse zwei Teile.</p>
+<div class="card"><div id="s-street"></div>
+ <div class="rules" style="margin:12px 0 0">
+  <div class="mini"><b class="cn">Netzanteil = die Straße</b><br>Alle Geräte im selben Netz haben denselben Netzanteil – so wie alle Häuser in derselben Straße.</div>
+  <div class="mini"><b class="ch">Hostanteil = die Hausnummer</b><br>Er unterscheidet die Geräte innerhalb des Netzes. Jede Nummer darf es nur <b>einmal</b> geben.</div></div>
+ <p class="hint">„Host“ ist das Fachwort für ein Gerät mit IP-Adresse: PC, Handy, Drucker, Server …</p></div>
+
+<h2 class="part" id="dotted">Dotted Decimal Notation: vier Zahlen mit Punkten</h2>
+<p class="sub">Für den Computer ist eine IP-Adresse eine lange Reihe aus <b>32 Nullen und Einsen</b> (Bits). Das kann sich kein Mensch merken. Darum teilt man sie in <b>4 Päckchen zu je 8 Bit</b> (ein Päckchen heißt <b>Oktett</b>), schreibt jedes als normale Zahl und setzt <b>Punkte</b> dazwischen. Das ist die <b>Dotted Decimal Notation</b> – „gepunktete Dezimalschreibweise“.</p>
+<div class="card"><div id="s-dotted"></div></div>
+<div class="card"><h3 class="h3">Probier es aus: Klick auf die Bits eines Oktetts</h3>
+ <p style="margin:0 0 8px">Jedes Bit hat einen <b>Stellenwert</b>. Steht dort eine 1, zählt der Wert mit. Alle acht zusammen ergeben höchstens <b>255</b> – darum kann jede der vier Zahlen nur zwischen 0 und 255 liegen.</p>
+ <div class="bitrow" id="bits"></div>
+ <p class="sum" id="bsum"></p>
+ <div class="pres">Schnell setzen: <button type="button" class="btn ghost sm" data-v="0">0</button><button type="button" class="btn ghost sm" data-v="1">1</button><button type="button" class="btn ghost sm" data-v="10">10</button><button type="button" class="btn ghost sm" data-v="168">168</button><button type="button" class="btn ghost sm" data-v="192">192</button><button type="button" class="btn ghost sm" data-v="255">255</button></div></div>
+
+<h2 class="part" id="maske">Die Subnetzmaske: Wo endet die Straße?</h2>
+<p class="sub">Der IP-Adresse sieht man nicht an, wo die „Straße“ aufhört und die „Hausnummer“ anfängt. Das verrät erst die <b>Subnetzmaske</b>. Sie ist genauso aufgebaut (32 Bit, 4 Zahlen mit Punkten), aber sie enthält nur ein Muster: <b>vorne Einsen, hinten Nullen</b>.</p>
+<div class="card"><div id="s-mask"></div>
+ <p class="hint">Merke: <b>255</b> bedeutet „diese Zahl gehört zur Straße“ (8 Einsen), <b>0</b> bedeutet „diese Zahl gehört zur Hausnummer“ (8 Nullen). Die häufigste Maske im Heimnetz ist <b>255.255.255.0</b>: die ersten drei Zahlen sind die Straße, die letzte ist die Hausnummer.</p></div>
+
+<h2 class="part" id="cidr">CIDR: die Kurzschreibweise /24</h2>
+<p class="sub">Weil in der Maske immer nur vorne Einsen und hinten Nullen stehen, genügt es, die <b>Anzahl der Einsen</b> anzugeben – mit einem Schrägstrich hinter der IP-Adresse: <code>192.168.1.10/24</code> heißt „Maske mit 24 Einsen“ = 255.255.255.0. Diese Schreibweise heißt <b>CIDR</b> (Classless Inter-Domain Routing) oder <b>Präfix-Schreibweise</b>.</p>
+<div class="card"><div class="slrow"><label for="cs">Präfix</label><input type="range" id="cs" min="8" max="30" value="24"><b id="cv" class="big">/24</b></div>
+ <div id="s-cidr"></div>
+ <p class="sum" id="cinfo"></p></div>
+<div class="card"><h3 class="h3">Die wichtigsten auswendig</h3><div class="scroll"><table class="cmp mt"><tr><th>CIDR</th><td>/8</td><td>/16</td><td>/24</td><td>/25</td><td>/26</td><td>/27</td><td>/28</td><td>/30</td></tr><tr><th>Maske</th><td>255.0.0.0</td><td>255.255.0.0</td><td>255.255.255.0</td><td>…255.128</td><td>…255.192</td><td>…255.224</td><td>…255.240</td><td>…255.252</td></tr><tr><th>nutzbare Adressen</th><td>16 777 214</td><td>65 534</td><td>254</td><td>126</td><td>62</td><td>30</td><td>14</td><td>2</td></tr></table></div>
+ <p class="hint">Warum „nutzbar“ immer 2 weniger? Die <b>erste</b> Adresse ist die Netzadresse (der Name der Straße), die <b>letzte</b> die Broadcast-Adresse („an alle in der Straße“). Beide bekommt kein Gerät.</p></div>
+
+<h2 class="part" id="gateway">Das Standardgateway: die Tür nach draußen</h2>
+<p class="sub">Innerhalb seiner Straße kann ein Gerät jeden direkt erreichen. Aber was, wenn das Ziel <b>woanders</b> wohnt – zum Beispiel ein Webserver im Internet? Dann gibt das Gerät das Paket bei einer bestimmten Stelle ab, die den Weg nach draußen kennt: dem <b>Standardgateway</b>. Das ist der <b>Router</b>, meistens mit der Adresse .1 oder .254.</p>
+<div class="card"><div id="s-gw"></div>
+ <div class="pres" style="margin-top:8px"><button type="button" class="btn" data-g="drucker">🖨 An den Drucker drucken</button><button type="button" class="btn" data-g="web">🌐 Webseite aufrufen</button><button type="button" class="btn ghost" data-g="ohne">Webseite ohne Gateway</button></div>
+ <div class="explain" aria-live="polite"><h3 id="gt">Wähle ein Ziel</h3><p id="gx">Der PC stellt sich vor jedem Paket <b>eine</b> Frage: <i>Wohnt das Ziel in meiner Straße?</i></p></div></div>
+<div class="rules">
+ <div class="card"><h3 class="h3">Die eine Frage des PCs</h3><div id="s-flow"></div></div>
+ <div class="card check"><h3 class="h3">Gut zu wissen</h3><ul style="margin:0;padding-left:20px">
+  <li>Das Gateway muss in <b>derselben Straße</b> wohnen wie der PC – sonst kann er es gar nicht erreichen.</li>
+  <li>Ohne Gateway klappt alles im eigenen Netz (Drucker, Nachbar-PC), aber <b>nichts</b> außerhalb.</li>
+  <li>Zu Hause ist der WLAN-Router das Gateway. Er bekommt die Einstellungen meist per <b>DHCP</b> an alle Geräte verteilt.</li>
+  <li>Wie man rechnet, ob ein Ziel „in derselben Straße“ wohnt, lernst du bei <a href="../netzadresse/">Netzadresse berechnen</a>.</li></ul></div>
+</div>
+
+<h2 class="part" id="ipv6">Nebenbei: IPv6</h2>
+<p class="sub">Alles oben ist <b>IPv4</b>. Mit 32 Bit gibt es nur rund 4,3 Milliarden Adressen – zu wenig für alle Handys, PCs und Geräte der Welt. Deshalb gibt es den Nachfolger <b>IPv6</b>.</p>
+<div class="card"><div id="s-v6"></div>
+ <div class="scroll"><table class="cmp" style="margin-top:10px"><tr><th></th><th>IPv4</th><th>IPv6</th></tr>
+ <tr><td><b>Länge</b></td><td>32 Bit</td><td>128 Bit</td></tr>
+ <tr><td><b>Schreibweise</b></td><td>4 Dezimalzahlen mit Punkten</td><td>8 Blöcke aus je 4 <b>Hexadezimal</b>-Ziffern (0–9, a–f) mit Doppelpunkten</td></tr>
+ <tr><td><b>Anzahl Adressen</b></td><td>ca. 4,3 Milliarden</td><td>ca. 340 Sextillionen (eine Zahl mit 39 Stellen)</td></tr>
+ <tr><td><b>Maske</b></td><td>255.255.255.0 oder /24</td><td>nur noch CIDR, meist <b>/64</b></td></tr>
+ <tr><td><b>Gateway</b></td><td>meist .1 des eigenen Netzes</td><td>gibt es genauso – der Router meldet sich meist selbst</td></tr></table></div>
+ <p class="hint">Abkürzen ist erlaubt: <b>führende Nullen</b> in einem Block darf man weglassen (0db8 → db8), und <b>einmal</b> pro Adresse darf eine Folge von Null-Blöcken durch <code>::</code> ersetzt werden. Heute laufen IPv4 und IPv6 meist <b>parallel</b> („Dual Stack“).</p></div>
+
+<h2 class="part" id="alles">Alles zusammen: die Einstellungen am PC</h2>
+<div class="card"><div id="s-all"></div></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="training">Schnelltraining</h2>
+<p class="sub">Fünf zufällige Fragen – so oft du willst.</p>
+<div class="card" id="tr"></div>
+</main>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var MONO='ui-monospace,Menlo,Consolas,monospace',SANS='Open Sans,Arial,sans-serif',BL='#1565c0',OR='#e65100',GR='#2e7d32',INK='#1c2b33',MU='#546e7a';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||INK)+'"'+(o.op!=null?' opacity="'+o.op+'"':'')+' font-family="'+(o.mono?MONO:SANS)+'">'+esc(t)+'</text>';}
+function at(x,y,g){return'<g transform="translate('+x+' '+y+')">'+g+'</g>';}
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function rtr(){return'<ellipse cx="0" cy="7" rx="22" ry="8" fill="#1f5872"/><rect x="-22" y="-7" width="44" height="14" fill="#2f7392"/><ellipse cx="0" cy="-7" rx="22" ry="8" fill="#5a9dbb" stroke="#1f5872"/><path d="M-11 -7h7M4 -7h7M-1 -12v4M-1 -5v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>';}
+function sw(){return'<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';}
+function srv(col){col=col||GR;return'<rect x="-15" y="-22" width="30" height="44" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><path d="M-9 -13h18M-9 -5h18M-9 3h18" stroke="'+col+'" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="13" r="2.4" fill="'+col+'"/>';}
+function prn(col){return'<rect x="-14" y="-20" width="28" height="12" fill="#fff" stroke="'+col+'" stroke-width="2.2"/><rect x="-22" y="-9" width="44" height="20" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-14" y="6" width="28" height="12" fill="#fff" stroke="'+col+'" stroke-width="2.2"/><circle cx="14" cy="-2" r="2" fill="'+col+'"/>';}
+function cloud(){return'<path d="M-34 14a16 16 0 0 1 2 -31a22 22 0 0 1 41 -6a17 17 0 0 1 25 18a12 12 0 0 1 -4 19z" fill="#eef2f5" stroke="#78909c" stroke-width="2"/>';}
+function house(x,y,num,lab,icon){return'<g><path d="M'+(x-40)+' '+(y-30)+'L'+x+' '+(y-62)+'L'+(x+40)+' '+(y-30)+'z" fill="#ffccbc" stroke="#bf360c" stroke-width="2"/><rect x="'+(x-34)+'" y="'+(y-30)+'" width="68" height="50" fill="#fff" stroke="#bf360c" stroke-width="2"/>'+at(x,y-8,icon)+'<rect x="'+(x-20)+'" y="'+(y-56)+'" width="40" height="18" rx="4" fill="'+OR+'"/>'+tx(x,y-42.5,num,{fs:12.5,fw:700,c:'#fff',mono:1})+tx(x,y+36,lab,{fs:11.5,c:MU})+'</g>';}
+function brk(x1,x2,y,lab,col,down){var d=down?-1:1;return'<path d="M'+x1+' '+(y+8*d)+'V'+y+'H'+x2+'V'+(y+8*d)+'" stroke="'+col+'" stroke-width="2" fill="none"/>'+tx((x1+x2)/2,y-6*d+(down?10:0),lab,{fs:12.5,fw:700,c:col});}
+
+/* ===== Straße ===== */
+(function(){
+ var W=900,H=330,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="IP-Adresse als Hausadresse: Straße 192.168.1, Hausnummern .10 bis .20, Gateway .1 als Tor nach draußen">';
+ h+='<rect x="30" y="166" width="600" height="30" fill="#cfd8dc"/><path d="M40 181H620" stroke="#fff" stroke-width="3" stroke-dasharray="14 10"/>';
+ h+='<rect x="34" y="86" width="96" height="30" rx="4" fill="'+BL+'"/>'+tx(82,106,'192.168.1.',{fs:14,fw:700,c:'#fff',mono:1})+'<path d="M82 116V166" stroke="#546e7a" stroke-width="3"/>'+tx(82,80,'Straßenschild',{fs:11,c:MU});
+ h+=house(200,118,'.10','PC von Anna',pc(BL))+house(300,118,'.11','Laptop',pc(BL))+house(400,118,'.20','Drucker',prn(BL))+house(500,118,'.35','Handy',' <rect x="-9" y="-16" width="18" height="30" rx="3" fill="#fff" stroke="'+BL+'" stroke-width="2.4"/><path d="M-3 10h6" stroke="'+BL+'" stroke-width="2"/>');
+ h+=at(660,181,rtr())+tx(660,154,'Gateway .1',{fs:12.5,fw:700})+tx(660,214,'die Tür nach draußen',{fs:11,c:MU});
+ h+='<path d="M682 181H760" stroke="'+INK+'" stroke-width="2.2"/>'+at(810,181,cloud())+tx(810,186,'Internet',{fs:11.5,fw:600,c:MU})+tx(810,221,'andere Straßen,',{fs:11,c:MU})+tx(810,235,'andere Städte',{fs:11,c:MU});
+ var y=292,ax=270;h+=tx(ax,y,'192.168.1',{a:'end',fs:30,fw:700,c:BL,mono:1})+tx(ax,y,'.10',{a:'start',fs:30,fw:700,c:OR,mono:1});
+ h+=brk(ax-162,ax-2,y-30,'Straße = Netzanteil',BL)+brk(ax+4,ax+54,y-30,'Hausnr.',OR);
+ h+=tx(ax+90,y-8,'Die vollständige Adresse von Annas PC',{a:'start',fs:13,c:MU})+tx(ax+90,y+10,'– wie „Hauptstraße 10“, nur für Computer.',{a:'start',fs:13,c:MU});
+ $('s-street').innerHTML=h+'</svg>';
+})();
+
+/* ===== Dotted Decimal ===== */
+function bin8(o){return('0000000'+o.toString(2)).slice(-8);}
+(function(){
+ var o=[192,168,1,10],W=900,H=200,BW=23,G=22,X0=40,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="32 Bit werden zu vier Dezimalzahlen mit Punkten: 192.168.1.10">';
+ function bx(i){return X0+i*BW+Math.floor(i/8)*G;}
+ h+=tx(X0,22,'So sieht der Computer die Adresse: 32 Bit',{a:'start',fs:13,fw:700,c:MU});
+ for(var i=0;i<4;i++){var b=bin8(o[i]),x1=bx(i*8),x2=bx(i*8+7)+BW;
+  h+='<rect x="'+(x1-3)+'" y="34" width="'+(x2-x1+6)+'" height="34" rx="5" fill="'+(i%2?'#e3f2fd':'#f1f8e9')+'" stroke="#b0bec5"/>';
+  for(var j=0;j<8;j++)h+=tx(bx(i*8+j)+BW/2,57,b[j],{fs:16,fw:600,mono:1});
+  h+=tx((x1+x2)/2,86,'Oktett '+(i+1)+' · 8 Bit',{fs:11.5,c:MU});
+  h+='<path d="M'+((x1+x2)/2)+' 94V128M'+((x1+x2)/2)+' 130l-6 -10h12z" stroke="#90a4ae" stroke-width="2" fill="#90a4ae"/>';
+  h+=tx((x1+x2)/2,166,String(o[i]),{fs:34,fw:700,c:BL,mono:1});
+  if(i<3)h+=tx(x2+G/2,166,'.',{fs:34,fw:700,c:OR,mono:1});}
+ h+=tx(X0,192,'So schreibt ihn der Mensch: vier Zahlen, getrennt durch Punkte',{a:'start',fs:13,fw:700,c:MU});
+ $('s-dotted').innerHTML=h+'</svg>';
+})();
+var bv=192;
+function bitsRender(){var b=bin8(bv),h='';for(var j=0;j<8;j++){var w=Math.pow(2,7-j);h+='<button type="button" class="bit'+(b[j]==='1'?' on':'')+'" data-j="'+j+'" aria-pressed="'+(b[j]==='1')+'"><span class="bw">'+w+'</span><span class="bb">'+b[j]+'</span></button>';}
+ $('bits').innerHTML=h;var parts=[];for(j=0;j<8;j++)if(b[j]==='1')parts.push(Math.pow(2,7-j));
+ $('bsum').innerHTML='<span class="mono">'+b+'</span> = '+(parts.length?parts.join(' + ')+' = ':'')+'<b class="big">'+bv+'</b>';}
+$('bits').addEventListener('click',function(e){var t=e.target.closest('.bit');if(!t)return;bv^=Math.pow(2,7-(+t.dataset.j));bitsRender();});
+[].forEach.call(document.querySelectorAll('[data-v]'),function(b){b.onclick=function(){bv=+b.dataset.v;bitsRender();};});
+bitsRender();
+
+/* ===== Maske ===== */
+(function(){
+ var W=900,H=250,ip=[192,168,1,10],m=[255,255,255,0],BX=[150,330,510,690],BWd=150,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Subnetzmaske 255.255.255.0 unter der IP-Adresse 192.168.1.10: die drei 255 markieren die Straße, die 0 die Hausnummer">';
+ h+=brk(BX[0],BX[2]+BWd,28,'Netzanteil – die Straße',BL)+brk(BX[3],BX[3]+BWd,28,'Hostanteil – die Hausnummer',OR);
+ function row(y,lab,v,col,fill){var s=tx(20,y+26,lab,{a:'start',fs:14,fw:700});for(var i=0;i<4;i++){var c=i<3?BL:OR;s+='<rect x="'+BX[i]+'" y="'+y+'" width="'+BWd+'" height="40" rx="6" fill="'+(i<3?'#e3f2fd':'#fff3e0')+'" stroke="'+c+'" stroke-width="2"/>'+tx(BX[i]+BWd/2,y+28,String(v[i]),{fs:22,fw:700,mono:1,c:col||c});if(i<3)s+=tx(BX[i]+BWd+15,y+28,'.',{fs:22,fw:700});}return s;}
+ h+=row(46,'IP-Adresse',ip,INK)+row(114,'Subnetzmaske',m);
+ for(var i=0;i<4;i++)h+=tx(BX[i]+BWd/2,178,bin8(m[i]),{fs:14,mono:1,c:i<3?BL:OR});
+ h+=tx(20,182,'binär:',{a:'start',fs:12,c:MU});
+ h+=tx(BX[1]+BWd/2+90,214,'255 = 8 Einsen → „gehört zur Straße“',{fs:13.5,fw:600,c:BL})+tx(BX[3]+BWd/2,214,'0 = 8 Nullen → „Hausnummer“',{fs:13.5,fw:600,c:OR});
+ h+=tx(W/2,240,'Alle Geräte mit 192.168.1.irgendwas wohnen in derselben Straße.',{fs:13,c:MU});
+ $('s-mask').innerHTML=h+'</svg>';
+})();
+
+/* ===== CIDR ===== */
+function maskOf(p){var m=[];for(var i=0;i<4;i++){var b=Math.max(0,Math.min(8,p-8*i));m.push(256-Math.pow(2,8-b));}return m;}
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+function cidr(){
+ var p=+$('cs').value,m=maskOf(p),W=900,H=150,BW=23,G=22,X0=40,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Präfix /'+p+': '+p+' Einsen, Maske '+m.join('.')+'">';
+ function bx(i){return X0+i*BW+Math.floor(i/8)*G;}
+ for(var i=0;i<32;i++){var one=i<p;h+='<rect x="'+bx(i)+'" y="42" width="'+(BW-3)+'" height="34" rx="4" fill="'+(one?BL:'#ffe0b2')+'"/>'+tx(bx(i)+(BW-3)/2,65,one?'1':'0',{fs:16,fw:700,mono:1,c:one?'#fff':OR});}
+ for(i=0;i<4;i++){var x1=bx(i*8),x2=bx(i*8+7)+BW-3;h+=tx((x1+x2)/2,108,String(m[i]),{fs:26,fw:700,mono:1,c:m[i]===255?BL:m[i]===0?OR:'#6a1b9a'});if(i<3)h+=tx(x2+G/2+1,108,'.',{fs:26,fw:700});}
+ var pe=bx(p-1)+BW-1.5;h+='<path d="M'+pe+' 30V86" stroke="'+INK+'" stroke-width="2.5" stroke-dasharray="4 3"/>';
+ h+=tx(Math.max(bx(0)+60,Math.min(pe-6,860)),24,p+' Einsen →',{a:'end',fs:12.5,fw:700,c:BL});
+ if(p<32)h+=tx(Math.min(pe+6,780),24,'← '+(32-p)+' Nullen',{a:'start',fs:12.5,fw:700,c:OR});
+ h+=tx(40,138,'Maske: '+m.join('.'),{a:'start',fs:14,fw:700,mono:1});
+ $('s-cidr').innerHTML=h+'</svg>';$('cv').textContent='/'+p;
+ var n=Math.pow(2,32-p);$('cinfo').innerHTML='<b>/'+p+'</b> = '+m.join('.')+' · Hostanteil '+(32-p)+' Bit → 2<sup>'+(32-p)+'</sup> = '+fmt(n)+' Adressen, davon <b>'+fmt(n-2)+' nutzbar</b> für Geräte.';
+}
+$('cs').addEventListener('input',cidr);cidr();
+
+/* ===== Gateway-Animation ===== */
+var P={pc:[80,150],sw:[270,150],pr:[270,262],r:[450,150],cl:[640,150],sv:[820,150]};
+function gwSvg(pt,bubble,mark,hl){
+ var W=900,H=320,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="PC, Drucker und Router im eigenen Netz, dahinter das Internet mit einem Webserver">';
+ h+='<rect x="8" y="8" width="462" height="'+(H-16)+'" fill="#e8f0fe" opacity=".6"/><rect x="470" y="8" width="422" height="'+(H-16)+'" fill="#fff3e0" opacity=".6"/><line x1="470" y1="8" x2="470" y2="'+(H-8)+'" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5 4"/>';
+ h+=tx(20,28,'Eigenes Netz 192.168.1.0/24 – „unsere Straße“',{a:'start',fs:12,fw:700,c:BL})+tx(W-20,28,'Internet – „andere Straßen“',{a:'end',fs:12,fw:700,c:OR});
+ function ln(a,b,on){return'<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+(on?'#f9a825':INK)+'" stroke-width="'+(on?6:2.2)+'"/>';}
+ var on=hl||{};h+=ln([P.pc[0]+22,150],[P.sw[0]-30,150],on.a)+ln([P.sw[0],160],[P.pr[0],P.pr[1]-24],on.b)+ln([P.sw[0]+28,150],[P.r[0]-22,150],on.c)+ln([P.r[0]+22,150],[P.cl[0]-34,150],on.d)+ln([P.cl[0]+40,150],[P.sv[0]-16,150],on.e);
+ h+=at(P.pc[0],P.pc[1],pc(BL))+tx(P.pc[0],P.pc[1]+31,'PC',{fs:12.5,fw:700})+tx(P.pc[0],P.pc[1]+46,'192.168.1.10',{fs:11,mono:1,c:MU});
+ h+=at(P.sw[0],P.sw[1],sw())+tx(P.sw[0],P.sw[1]-22,'Switch',{fs:12,fw:700});
+ h+=at(P.pr[0],P.pr[1],prn(BL))+tx(P.pr[0]+34,P.pr[1]-2,'Drucker',{a:'start',fs:12.5,fw:700})+tx(P.pr[0]+34,P.pr[1]+13,'192.168.1.20',{a:'start',fs:11,mono:1,c:MU});
+ h+=at(P.r[0],P.r[1],rtr())+tx(P.r[0],P.r[1]-24,'Router',{fs:12.5,fw:700})+tx(P.r[0],P.r[1]+32,'Gateway',{fs:12,fw:700,c:'#3d6e14'})+tx(P.r[0],P.r[1]+47,'192.168.1.1',{fs:11,mono:1,c:MU});
+ h+=at(P.cl[0],P.cl[1],cloud())+tx(P.cl[0],P.cl[1]+5,'Internet',{fs:11.5,fw:600,c:MU});
+ h+=at(P.sv[0],P.sv[1],srv())+tx(P.sv[0],P.sv[1]+40,'Webserver',{fs:12.5,fw:700})+tx(P.sv[0],P.sv[1]+55,'203.0.113.80',{fs:11,mono:1,c:MU});
+ if(bubble){var bw=bubble.length*7.2+24,bx=Math.max(14,Math.min(P.pc[0]-30,W-bw-14));h+='<g><rect x="'+bx+'" y="58" width="'+bw+'" height="30" rx="15" fill="#fff" stroke="'+INK+'" stroke-width="1.8"/><path d="M'+(P.pc[0]-6)+' 88l6 26l8 -26" fill="#fff" stroke="'+INK+'" stroke-width="1.8"/><rect x="'+(P.pc[0]-7)+'" y="84" width="16" height="6" fill="#fff"/>'+tx(bx+bw/2,78,bubble,{fs:13,fw:600})+'</g>';}
+ if(pt)h+='<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="9" fill="#fbc02d" stroke="'+INK+'" stroke-width="2"/>';
+ if(mark)h+='<path d="M'+(mark[0]-16)+' '+(mark[1]-16)+'l32 32m0 -32l-32 32" stroke="#c62828" stroke-width="6" stroke-linecap="round"/>';
+ return h+'</svg>';
+}
+var ROUTES={drucker:{path:[P.pc,P.sw,P.pr],seg:['a','b'],bub:'192.168.1.20 – meine Straße? Ja!',t:'Drucken: das Ziel wohnt in derselben Straße',x:'Der Drucker hat die Adresse <b>192.168.1.20</b>. Der PC vergleicht mit seiner Maske 255.255.255.0: „192.168.1 – das ist <b>meine Straße</b>.“ Also schickt er das Paket <b>direkt</b> über den Switch zum Drucker. Das Gateway wird gar nicht gebraucht.'},
+ web:{path:[P.pc,P.sw,P.r,P.cl,P.sv],seg:['a','c','d','e'],bub:'203.0.113.80 – meine Straße? Nein!',t:'Webseite: das Ziel wohnt woanders',x:'Der Webserver hat die Adresse <b>203.0.113.80</b> – eine ganz andere Straße. Der PC kennt den Weg dorthin nicht. Also gibt er das Paket beim <b>Standardgateway 192.168.1.1</b> ab. Der Router kennt den Weg nach draußen und schickt es weiter ins Internet.'},
+ ohne:{path:[P.pc],seg:[],bub:'Nicht meine Straße – und kein Gateway …',fail:1,t:'Ohne Gateway: Sackgasse',x:'Ist am PC <b>kein Gateway</b> eingetragen (oder ein falsches), weiß er bei Zielen außerhalb seiner Straße nicht, wohin. Das Paket bleibt liegen – die Webseite lädt nicht. Drucken würde trotzdem funktionieren!'}};
+var graf=0,gT=0;
+function runGw(k){
+ cancelAnimationFrame(graf);clearTimeout(gT);var R=ROUTES[k];$('gt').textContent=R.t;$('gx').innerHTML=R.x;
+ var hl={},segs=[];for(var i=0;i<R.path.length-1;i++)segs.push([R.path[i],R.path[i+1]]);
+ if(!segs.length){$('s-gw').innerHTML=gwSvg([P.pc[0]+30,150],R.bub,null);gT=setTimeout(function(){$('s-gw').innerHTML=gwSvg([P.pc[0]+30,150],R.bub,[P.pc[0]+30,150]);},reduce?0:900);return;}
+ var lens=segs.map(function(s){return Math.hypot(s[1][0]-s[0][0],s[1][1]-s[0][1]);}),tot=lens.reduce(function(a,b){return a+b;},0),dur=reduce?1:tot*4.2,t0=null,wait=reduce?0:1100;
+ $('s-gw').innerHTML=gwSvg(R.path[0],R.bub,null);
+ gT=setTimeout(function(){function fr(ts){if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur),d=p*tot,i=0;while(i<lens.length-1&&d>lens[i]){d-=lens[i];i++;}var s=segs[i],f=Math.min(1,d/lens[i]),pt=[s[0][0]+(s[1][0]-s[0][0])*f,s[0][1]+(s[1][1]-s[0][1])*f];
+   for(var j=0;j<=i;j++)hl[R.seg[j]]=1;$('s-gw').innerHTML=gwSvg(pt,R.bub,null,hl);if(p<1)graf=requestAnimationFrame(fr);}
+  graf=requestAnimationFrame(fr);},wait);
+}
+[].forEach.call(document.querySelectorAll('[data-g]'),function(b){b.onclick=function(){runGw(b.dataset.g);};});
+$('s-gw').innerHTML=gwSvg(null,null,null);
+window.__gw=runGw;
+
+/* ===== Entscheidungs-Grafik ===== */
+(function(){
+ var W=420,H=300,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Entscheidung des PCs: Ziel in meinem Netz? Ja: direkt. Nein: an das Gateway">';
+ h+='<rect x="110" y="12" width="200" height="38" rx="8" fill="#fff" stroke="'+INK+'" stroke-width="2"/>'+tx(210,36,'Paket an ein Ziel',{fs:13.5,fw:700});
+ h+='<path d="M210 50V78" stroke="'+INK+'" stroke-width="2"/><path d="M210 80l-6 -10h12z" fill="'+INK+'"/>';
+ h+='<path d="M210 82L330 136L210 190L90 136z" fill="#fff8e1" stroke="#f9a825" stroke-width="2.2"/>'+tx(210,132,'Wohnt das Ziel',{fs:13,fw:700})+tx(210,149,'in meiner Straße?',{fs:13,fw:700});
+ h+='<path d="M90 136H52V226" stroke="'+INK+'" stroke-width="2" fill="none"/><path d="M52 228l-6 -10h12z" fill="'+INK+'"/>'+tx(70,128,'Ja',{fs:13,fw:700,c:GR});
+ h+='<path d="M330 136H368V226" stroke="'+INK+'" stroke-width="2" fill="none"/><path d="M368 228l-6 -10h12z" fill="'+INK+'"/>'+tx(350,128,'Nein',{fs:13,fw:700,c:'#c62828'});
+ h+='<rect x="4" y="230" width="196" height="56" rx="8" fill="#e3f4e6" stroke="'+GR+'" stroke-width="2"/>'+tx(102,254,'direkt hinschicken',{fs:13,fw:700,c:GR})+tx(102,272,'(z. B. Drucker)',{fs:12,c:MU});
+ h+='<rect x="220" y="230" width="196" height="56" rx="8" fill="#fff3e0" stroke="'+OR+'" stroke-width="2"/>'+tx(318,254,'ans Gateway geben',{fs:13,fw:700,c:OR})+tx(318,272,'(z. B. Webseite)',{fs:12,c:MU});
+ $('s-flow').innerHTML=h+'</svg>';
+})();
+
+/* ===== IPv6 ===== */
+(function(){
+ var W=900,H=230,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="IPv4 mit 4 Zahlen im Vergleich zu IPv6 mit 8 Hex-Blöcken">';
+ h+=tx(20,30,'IPv4 · 32 Bit',{a:'start',fs:13.5,fw:700,c:BL});
+ ['192','168','1','10'].forEach(function(v,i){var x=150+i*84;h+='<rect x="'+x+'" y="12" width="68" height="30" rx="5" fill="#e3f2fd" stroke="'+BL+'" stroke-width="1.8"/>'+tx(x+34,33,v,{fs:16,fw:700,mono:1,c:BL});if(i<3)h+=tx(x+76,33,'.',{fs:18,fw:700});});
+ h+=tx(20,98,'IPv6 · 128 Bit',{a:'start',fs:13.5,fw:700,c:'#6a1b9a'});
+ ['2001','0db8','0000','0000','0000','0000','0000','0001'].forEach(function(v,i){var x=150+i*92;h+='<rect x="'+x+'" y="80" width="76" height="30" rx="5" fill="#f3e5f5" stroke="#6a1b9a" stroke-width="1.8"/>'+tx(x+38,101,v,{fs:16,fw:700,mono:1,c:'#6a1b9a'});if(i<7)h+=tx(x+84,101,':',{fs:18,fw:700});});
+ h+=tx(150,132,'8 Blöcke · je 4 Hex-Ziffern · getrennt durch Doppelpunkte',{a:'start',fs:12,c:MU});
+ h+='<path d="M430 140V170M430 172l-6 -10h12z" stroke="#90a4ae" stroke-width="2" fill="#90a4ae"/>'+tx(446,160,'abgekürzt',{a:'start',fs:12.5,fw:600,c:MU});
+ h+='<rect x="330" y="180" width="200" height="38" rx="6" fill="#6a1b9a"/>'+tx(430,205,'2001:db8::1',{fs:20,fw:700,mono:1,c:'#fff'});
+ h+=tx(550,196,'führende Nullen weg (0db8 → db8),',{a:'start',fs:12.5,c:MU})+tx(550,213,'einmal :: für mehrere 0000-Blöcke',{a:'start',fs:12.5,c:MU});
+ $('s-v6').innerHTML=h+'</svg>';
+})();
+
+/* ===== Alles zusammen ===== */
+(function(){
+ var W=900,H=280,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="IPv4-Einstellungen am PC mit Erklärungen zu IP-Adresse, Subnetzmaske und Standardgateway">';
+ var dx=20,dy=20,w=400;
+ h+='<rect x="'+dx+'" y="'+dy+'" width="'+w+'" height="240" fill="#f0f0f0" stroke="#7a7a7a"/><rect x="'+(dx+1)+'" y="'+(dy+1)+'" width="'+(w-2)+'" height="30" fill="#fff"/>'+tx(dx+12,dy+20,'Eigenschaften von Internetprotokoll, Version 4 (TCP/IPv4)',{a:'start',fs:12})+tx(dx+w-16,dy+21,'✕',{fs:13,c:'#333'});
+ h+='<rect x="'+(dx+10)+'" y="'+(dy+42)+'" width="'+(w-20)+'" height="188" fill="#fff" stroke="#adadad"/>';
+ h+='<circle cx="'+(dx+28)+'" cy="'+(dy+64)+'" r="6" fill="#fff" stroke="#333"/><circle cx="'+(dx+28)+'" cy="'+(dy+64)+'" r="3.2" fill="#1c1c1c"/>'+tx(dx+40,dy+68,'Folgende IP-Adresse verwenden:',{a:'start',fs:11.5});
+ var F=[['IP-Adresse','192.168.1.10',dy+102,BL,'IP-Adresse – die Hausadresse des PCs','Straße 192.168.1, Hausnummer 10'],['Subnetzmaske','255.255.255.0',dy+150,'#6a1b9a','Subnetzmaske – wo die Straße endet','255.255.255.0 = /24'],['Standardgateway','192.168.1.1',dy+198,'#3d6e14','Standardgateway – die Tür nach draußen','der Router, für alle Ziele in anderen Straßen']];
+ F.forEach(function(f){var x0=dx+214,o=f[1].split('.');h+=tx(dx+30,f[2]+5,f[0]+':',{a:'start',fs:11.5});h+='<rect x="'+x0+'" y="'+(f[2]-11)+'" width="164" height="22" fill="#fff" stroke="'+f[3]+'" stroke-width="2.2"/>';
+  for(var i=0;i<4;i++){h+=tx(x0+30+i*39,f[2]+5,o[i],{a:'end',fs:12.5});if(i<3)h+=tx(x0+37+i*39,f[2]+5,'.',{fs:12.5});}
+  h+='<path d="M'+(x0+166)+' '+f[2]+'H'+(dx+w+44)+'" stroke="'+f[3]+'" stroke-width="2"/><circle cx="'+(dx+w+46)+'" cy="'+f[2]+'" r="4" fill="'+f[3]+'"/>';
+  h+=tx(dx+w+58,f[2]-2,f[4],{a:'start',fs:14,fw:700,c:f[3]})+tx(dx+w+58,f[2]+16,f[5],{a:'start',fs:12.5,c:MU});});
+ $('s-all').innerHTML=h+'</svg>';
+})();
+/* ===== Quiz ===== */
+var Q=[
+ ['Wofür braucht ein Gerät eine IP-Adresse?',['Damit es schneller wird','Damit Daten im Netz bei genau diesem Gerät ankommen','Damit es WLAN hat','Damit es einen Namen hat'],1,'Wie eine Hausadresse: Ohne Adresse weiß niemand, wohin die Daten sollen.'],
+ ['Was bedeutet „Dotted Decimal Notation“?',['IP-Adresse als 32 Nullen und Einsen','IP-Adresse als vier Dezimalzahlen mit Punkten dazwischen','IP-Adresse in Hexadezimal mit Doppelpunkten','Die Adresse des Routers'],1,'Je 8 Bit (ein Oktett) werden als Zahl 0–255 geschrieben, getrennt durch Punkte – z. B. 192.168.1.10.'],
+ ['Welche dieser IPv4-Adressen ist UNGÜLTIG?',['10.0.0.1','192.168.300.1','172.16.5.20','8.8.8.8'],1,'Jede der vier Zahlen ist 8 Bit groß und kann daher nur 0 bis 255 sein. 300 geht nicht.'],
+ ['Was sagt die Subnetzmaske?',['Wie schnell das Netz ist','Welcher Teil der IP-Adresse die „Straße“ (Netz) und welcher die „Hausnummer“ (Host) ist','Wer das Gateway ist','Wie viele Router es gibt'],1,'Die Einsen der Maske markieren den Netzanteil, die Nullen den Hostanteil.'],
+ ['Was bedeutet /24 hinter einer IP-Adresse?',['Das Gerät hat die Nummer 24','Die Maske hat 24 Einsen, also 255.255.255.0','Es gibt 24 Geräte im Netz','Die Verbindung hat 24 Mbit/s'],1,'CIDR-Schreibweise: die Anzahl der Einsen in der Maske. 24 Einsen = 255.255.255.0.'],
+ ['Wann braucht ein PC das Standardgateway?',['Immer, für jedes Paket','Nur wenn das Ziel in einem anderen Netz liegt','Nur zum Drucken','Nie'],1,'Ziele in der eigenen „Straße“ erreicht der PC direkt. Nur für alles außerhalb gibt er das Paket beim Gateway ab.'],
+ ['Ein PC hat kein Gateway eingetragen. Was funktioniert noch?',['Nichts mehr','Das Internet, aber nicht der Drucker','Geräte im eigenen Netz (z. B. der Drucker), aber nicht das Internet','Alles wie vorher'],2,'Im eigenen Netz geht alles direkt. Für fremde Netze fehlt die „Tür nach draußen“.'],
+ ['Wie lang ist eine IPv6-Adresse?',['32 Bit','64 Bit','128 Bit','256 Bit'],2,'128 Bit, geschrieben als 8 Blöcke aus je 4 Hex-Ziffern mit Doppelpunkten, z. B. 2001:db8::1.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Schnelltraining ===== */
+function ri(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pk(a){return a[Math.floor(Math.random()*a.length)];}
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+var GEN=[
+ function(){var p=pk([8,16,24,25,26,27,28,29,30]),ok=maskOf(p).join('.'),set={};set[ok]=1;while(Object.keys(set).length<4){var q=pk([8,16,23,24,25,26,27,28,29,30]);set[maskOf(q).join('.')]=1;}
+  return{q:'Welche Subnetzmaske gehört zu <b>/'+p+'</b>?',opts:shuf(Object.keys(set)),ans:ok,why:'/'+p+' = '+p+' Einsen = '+ok};},
+ function(){var p=pk([8,16,24,25,26,27,28,30]);return{q:'Wie lautet die CIDR-Schreibweise für <b>'+maskOf(p).join('.')+'</b>? (nur die Zahl)',inp:1,ans:String(p),norm:function(v){return v.replace(/[\s\/]/g,'');},why:'Einsen zählen: '+maskOf(p).map(bin8).join('.')+' → '+p+' Einsen → /'+p};},
+ function(){var v=ri(1,255);return{q:'Welche Dezimalzahl ist das Oktett <b class="mono">'+bin8(v)+'</b>?',inp:1,ans:String(v),norm:function(x){return x.replace(/\s/g,'');},why:bin8(v)+' = '+bin8(v).split('').map(function(b,j){return b==='1'?Math.pow(2,7-j):0;}).filter(Boolean).join(' + ')+' = '+v};},
+ function(){var c=ri(0,254),me='192.168.'+c+'.'+ri(2,250),same=Math.random()<0.5,dest=same?'192.168.'+c+'.'+ri(2,250):pk(['192.168.'+((c+ri(1,5))%255)+'.'+ri(2,250),'10.'+ri(0,255)+'.'+ri(0,255)+'.'+ri(1,254),ri(11,223)+'.'+ri(0,255)+'.'+ri(0,255)+'.'+ri(1,254)]);
+  if(dest===me)dest=dest.replace(/\.\d+$/,'.'+(+me.split('.')[3]===2?3:2));
+  return{q:'Ein PC hat <b class="mono">'+me+'/24</b>. Er schickt ein Paket an <b class="mono">'+dest+'</b>. Wohin gibt er es?',opts:['direkt an das Ziel','an das Standardgateway'],ans:same?'direkt an das Ziel':'an das Standardgateway',why:same?'Die ersten drei Zahlen sind gleich – dieselbe „Straße“ (/24).':'Die ersten drei Zahlen unterscheiden sich – eine andere „Straße“. Also ans Gateway.'};},
+ function(){var o=[ri(1,223),ri(0,255),ri(0,255),ri(1,254)],k=ri(0,2),txt,ok=k===0;
+  if(k===1){var i=ri(1,3);o[i]=ri(256,399);}txt=o.join('.');if(k===2)txt=o.join('.')+'.'+ri(1,254);
+  return{q:'Ist <b class="mono">'+txt+'</b> eine gültige IPv4-Adresse?',opts:['Ja','Nein'],ans:ok?'Ja':'Nein',why:ok?'Vier Zahlen, jede zwischen 0 und 255 – passt.':k===1?'Eine Zahl ist größer als 255 – mit 8 Bit geht höchstens 255.':'Das sind fünf Zahlen – IPv4 hat genau vier.'};}
+];
+var TQ=[];
+function trNew(){TQ=shuf([0,1,2,3,4]).map(function(i){return GEN[i]();});
+ $('tr').innerHTML=TQ.map(function(t,n){return'<div class="tq" data-n="'+n+'"><p class="qh" style="margin-top:'+(n?14:0)+'px">'+(n+1)+'. '+t.q+'</p>'+(t.inp?'<input class="one ti" autocomplete="off" spellcheck="false" aria-label="Antwort '+(n+1)+'">':'<div class="opts">'+t.opts.map(function(o){return'<label><input type="radio" name="t'+n+'" value="'+esc(o)+'"> '+esc(o)+'</label>';}).join('')+'</div>')+'<div class="ex">'+t.why+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="tcheck">Prüfen</button><button class="btn ghost" type="button" id="tnew">Neue Fragen</button><span class="fb" id="tfb" aria-live="polite"></span></div>';
+ $('tcheck').onclick=trCheck;$('tnew').onclick=trNew;}
+function trCheck(){var ok=0;TQ.forEach(function(t,n){var box=document.querySelector('.tq[data-n="'+n+'"]'),g=false;
+  if(t.inp){var i=box.querySelector('.ti'),v=t.norm(i.value);g=v===t.ans;i.classList.remove('right','wrong');if(v!=='')i.classList.add(g?'right':'wrong');}
+  else box.querySelectorAll('label').forEach(function(l){var rb=l.querySelector('input');l.classList.remove('right','wrong');if(rb.checked){g=rb.value===t.ans;l.classList.add(g?'right':'wrong');}});
+  box.querySelector('.ex').classList.add('open');if(g)ok++;});
+ var fb=$('tfb');fb.className='fb '+(ok===5?'good':'bad');fb.textContent=ok+' von 5 richtig'+(ok===5?' ✓':'.');}
+trNew();
+window.__tr={TQ:function(){return TQ;},check:trCheck,renew:trNew};
+})();
+</script>
+</body>
+</html>

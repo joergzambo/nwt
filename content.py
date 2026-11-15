@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Übungen und Zufallsgenerator. '
+    'news': ['<strong>Neu:</strong> <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
+             'Außerdem <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Übungen und Zufallsgenerator. '
              'Außerdem <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
              'Außerdem <a href="ip-services/pat/">PAT</a> – Animation mit NAT-Tabelle (Port merken, IP tauschen), die vier Adressbegriffe, CGNAT und der Anspruch auf eine öffentliche IP in Österreich. '
              'Außerdem <a href="routing/show-ip-route/">Die Routing-Tabelle lesen</a> – show ip route Zeile für Zeile, administrative Distanzen und welche Route bei mehreren Protokollen gewinnt. '
@@ -41,6 +42,8 @@ AREAS = [
      'topics': [
          {'slug': 'osi-modell', 'title': 'Das OSI- und TCP/IP-Modell', 'tool': 'osi-modell',
           'text': 'Schichten, PDUs, Geräte und Protokolle per Drag-and-Drop zuordnen – plus Lückentext-Generator, Eselsbrücken und Kapselung.'},
+         {'slug': 'ip-grundlagen', 'title': 'IP-Adresse, Subnetzmaske und Gateway', 'tool': 'ip-grundlagen',
+          'text': 'Ganz einfach erklärt: IP-Adresse als Hausadresse, Dotted Decimal, Subnetzmaske, CIDR, wozu das Gateway da ist – und ein Blick auf IPv6. Mit Quiz und Schnelltraining.'},
          {'slug': 'netzadresse', 'title': 'Netzadresse berechnen', 'tool': 'netzadresse',
           'text': 'IP-Adresse UND Subnetzmaske, Bit für Bit als Animation. Gleiches Netz?, passt das Gateway? – mit Übungen und Zufallsgenerator.'},
          {'slug': 'subnetting', 'title': 'Subnetting und VLSM', 'tool': 'subnetting',
