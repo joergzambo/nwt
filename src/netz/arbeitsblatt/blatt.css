@@ -1,0 +1,22 @@
+/* Arbeitsblatt */
+.paper{background:#fff;border:1px solid #cfd8dc;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:28px 34px;margin:18px 0;font-size:14.5px}
+.paper .ph{display:flex;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:6px;font-size:16px}
+.namel{display:flex;flex-wrap:wrap;gap:8px 26px;margin:14px 0 6px;font-size:14px}
+.wt{border-top:1px solid #cfd8dc;margin-top:12px;padding-top:6px;break-inside:avoid}
+.wt h4{font:600 16px var(--ui);margin:0 0 4px}
+.wt p{margin:6px 0}
+.wgrid{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}
+.wgrid svg.dlg{max-width:250px}
+.lines{min-height:140px;background:repeating-linear-gradient(#fff 0 27px,#b0bec5 27px 28px);border-radius:2px}
+.lines.sm{min-height:28px}
+.wt>.lines{min-height:84px}
+.solp .rw{font-size:12.5px}.solp .rwl{font-size:13px}
+@media print{
+ body.printing>*:not(main){display:none!important}
+ body.printing main>*:not(#sheet){display:none!important}
+ body.printing main{padding:0!important;margin:0!important;max-width:none!important}
+ body.printing #sheet{display:block!important}
+ body.printing .paper{box-shadow:none;border:0;margin:0;padding:0 4mm;break-after:page}
+ body.printing .paper:last-child{break-after:auto}
+ @page{size:A4;margin:14mm 12mm}
+}

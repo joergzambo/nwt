@@ -1,0 +1,11 @@
+<h2 class="part" id="blatt">📄 Arbeitsblatt zum Ausdrucken</h2>
+<p class="sub">Erstellt ein Blatt im Stil der Schularbeit – mit Platz für den Rechenweg und auf Wunsch mit Lösungsblatt und zwei Gruppen. Die Blattnummer erzeugt jederzeit wieder genau dasselbe Blatt.</p>
+<div class="card">
+ <div class="genbar" style="margin:0"><label for="wlvl">Stufe</label><select id="wlvl"><option value="L">Leicht</option><option value="M" selected>Mittel</option><option value="S">Schwer</option><option value="X">Gemischt (M + S)</option></select>
+ <label for="wn">Aufgaben</label><select id="wn"><option>2</option><option selected>3</option><option>4</option><option>6</option></select>
+ <label><input type="checkbox" id="wab"> Gruppe A und B</label><label><input type="checkbox" id="wsol" checked> Lösungsblatt</label>
+ <label for="wcode">Blatt-Nr.</label><input id="wcode" size="8" placeholder="zufällig" autocomplete="off">
+ <button class="btn" id="wgo" type="button">Arbeitsblatt erstellen</button><button class="btn ghost" id="wprint" type="button" disabled>🖨 Drucken</button></div>
+ <p class="hint" id="wmsg"></p>
+</div>
+<div id="sheet"></div>
