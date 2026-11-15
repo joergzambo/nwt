@@ -134,7 +134,7 @@ R1# debug ip nat</pre>
 <p class="sub">Auch den Internetanbietern gehen die IPv4-Adressen aus. Viele geben ihren Kunden deshalb gar keine öffentliche Adresse mehr, sondern machen in ihrem eigenen Netz <b>noch einmal PAT</b> – für Hunderte Kunden gleichzeitig. Das heißt <b>CGNAT</b> (Carrier-Grade NAT). Besonders häufig ist das bei Mobilfunk- und LTE/5G-Internet.</p>
 <div class="card">
  <div id="cgsvg"></div>
- <p class="hint">Der Heimrouter bekommt außen nur eine Adresse aus <code>100.64.0.0/10</code> (100.64.0.0 – 100.127.255.255). Dieser Bereich ist eigens für CGNAT reserviert und wird im Internet nicht geroutet. Das Paket wird also <b>zweimal</b> übersetzt – und der Kunde hat auf die zweite NAT-Tabelle keinen Zugriff.</p>
+ <p class="hint">Der Heimrouter bekommt auf seiner <b>WAN-Seite</b> selbst nur eine <b>private Adresse</b> – bei vielen Providern eine aus <code>10.0.0.0/8</code>. Manche verwenden stattdessen den eigens für CGNAT reservierten Bereich <code>100.64.0.0/10</code> (100.64.0.0 – 100.127.255.255). Beides wird im Internet nicht geroutet. Das Paket wird also <b>zweimal</b> übersetzt – und der Kunde hat auf die zweite NAT-Tabelle keinen Zugriff.</p>
 </div>
 <div class="rules">
  <div class="card"><h3>Die Probleme</h3><ul style="margin:0;padding-left:20px">
@@ -145,7 +145,7 @@ R1# debug ip nat</pre>
   <li><b>Begrenzte Ports.</b> Jeder Kunde bekommt nur einen Teil der rund 64 000 Ports – bei sehr vielen gleichzeitigen Verbindungen wird es eng.</li>
   <li><b>Nachvollziehbarkeit.</b> Wer hinter einer Verbindung steckt, lässt sich nur noch mit IP, <b>Port und genauer Uhrzeit</b> feststellen.</li></ul></div>
  <div class="card check"><h3>Erkennen und lösen</h3>
-  <p style="margin:0 0 6px"><b>Bin ich hinter CGNAT?</b> Am Heimrouter die WAN-Adresse ansehen. Beginnt sie mit <code>100.64</code> bis <code>100.127</code> (oder ist sie privat), oder zeigt eine „Wie ist meine IP“-Seite eine <b>andere</b> Adresse als der Router – dann ja.</p>
+  <p style="margin:0 0 6px"><b>Bin ich hinter CGNAT?</b> Am Heimrouter die WAN-Adresse ansehen. Ist sie <b>privat</b> (<code>10.x</code>, <code>172.16–31.x</code>, <code>192.168.x</code>) oder beginnt sie mit <code>100.64</code> bis <code>100.127</code>, oder zeigt eine „Wie ist meine IP“-Seite eine <b>andere</b> Adresse als der Router – dann ja.</p>
   <ul style="margin:0;padding-left:20px">
    <li><b>Öffentliche IPv4-Adresse beim Provider verlangen</b> (siehe unten).</li>
    <li><b>IPv6</b> verwenden – dort hat jedes Gerät eine eigene, weltweit gültige Adresse, NAT ist nicht nötig.</li>
@@ -381,16 +381,16 @@ window.__pat={draw:draw,S:S,go:go};
 (function(){
  var W=900,H=300,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="CGNAT: Heimrouter und Provider übersetzen nacheinander">';
  h+='<rect x="8" y="8" width="332" height="'+(H-16)+'" fill="#e8f0fe" opacity=".55"/><rect x="340" y="8" width="310" height="'+(H-16)+'" fill="#f3e5f5" opacity=".6"/><rect x="650" y="8" width="242" height="'+(H-16)+'" fill="#fff3e0" opacity=".55"/><path d="M340 8V'+(H-8)+'M650 8V'+(H-8)+'" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5 4"/>';
- h+=tx(20,H-18,'ZUHAUSE · private Adressen',{a:'start',fs:12,fw:700,c:'#1565c0'})+tx(495,H-18,'PROVIDER-NETZ · 100.64.0.0/10',{fs:12,fw:700,c:'#6a1b9a'})+tx(W-20,H-18,'INTERNET',{a:'end',fs:12,fw:700,c:'#e65100'});
+ h+=tx(20,H-18,'ZUHAUSE · private Adressen',{a:'start',fs:12,fw:700,c:'#1565c0'})+tx(495,H-18,'PROVIDER-NETZ · wieder private Adressen',{fs:12,fw:700,c:'#6a1b9a'})+tx(W-20,H-18,'INTERNET',{a:'end',fs:12,fw:700,c:'#e65100'});
  h+='<path d="M92 124H228M92 226H228M272 124L508 172M272 226L508 176M552 174H783" stroke="#1c2b33" stroke-width="2.2" fill="none"/>';
- [[124,'A','100.64.0.7'],[226,'B','100.64.0.8']].forEach(function(r){
+ [[124,'A','10.23.4.7'],[226,'B','10.23.4.8']].forEach(function(r){
   h+=at(70,r[0],pc('#1565c0'))+tx(70,r[0]+31,'192.168.1.10',{fs:11.5,mono:1,c:'#546e7a'})+at(250,r[0],rtr())+tx(250,r[0]+32,'Heimrouter '+r[1],{fs:12,fw:700});});
- h+=tx(352,128,'100.64.0.7',{a:'start',fs:11.5,fw:600,mono:1,c:'#6a1b9a'})+tx(352,232,'100.64.0.8',{a:'start',fs:11.5,fw:600,mono:1,c:'#6a1b9a'});
+ h+=tx(352,128,'WAN: 10.23.4.7',{a:'start',fs:11.5,fw:600,mono:1,c:'#6a1b9a'})+tx(352,232,'WAN: 10.23.4.8',{a:'start',fs:11.5,fw:600,mono:1,c:'#6a1b9a'});
  h+=at(530,174,rtr())+tx(530,206,'CGNAT-Router',{fs:12,fw:700})+tx(530,222,'des Providers',{fs:12,fw:700})+tx(560,162,'203.0.113.5',{a:'start',fs:11.5,fw:600,mono:1,c:'#e65100'});
  h+=at(800,174,srv())+tx(800,214,'Webserver',{fs:12,fw:700})+tx(800,230,'sieht nur 203.0.113.5',{fs:11.5,c:'#546e7a'});
  function badge(x,y,t){return'<rect x="'+(x-30)+'" y="'+(y-12)+'" width="60" height="20" rx="10" fill="#1c2b33"/>'+tx(x,y+2.5,t,{fs:11.5,fw:700,c:'#fff'});}
  h+=badge(250,92,'NAT 1')+badge(530,140,'NAT 2');
- [[150,'192.168.1.10','#1565c0'],[440,'100.64.0.7','#6a1b9a'],[745,'203.0.113.5','#e65100']].forEach(function(c){h+='<rect x="'+(c[0]-88)+'" y="26" width="176" height="24" rx="12" fill="'+c[2]+'"/>'+tx(c[0],42.5,'Quelle: '+c[1],{fs:12,fw:700,mono:1,c:'#fff'});});
+ [[150,'192.168.1.10','#1565c0'],[440,'10.23.4.7','#6a1b9a'],[745,'203.0.113.5','#e65100']].forEach(function(c){h+='<rect x="'+(c[0]-88)+'" y="26" width="176" height="24" rx="12" fill="'+c[2]+'"/>'+tx(c[0],42.5,'Quelle: '+c[1],{fs:12,fw:700,mono:1,c:'#fff'});});
  h+='<path d="M246 38H342M344 38l-9 -5v10zM536 38H652M654 38l-9 -5v10z" stroke="#1c2b33" stroke-width="2" fill="#1c2b33"/>';
  $('cgsvg').innerHTML=h+'</svg>';
 })();
@@ -404,7 +404,7 @@ var Q=[
  ['Welche Adresse im Paket ändert der Router auf dem Weg INS Internet?',['Die Zieladresse','Die Quelladresse','Beide','Keine'],1,'Hinaus wird die Quelle (privat → öffentlich) getauscht, auf dem Rückweg das Ziel (öffentlich → privat).'],
  ['Zwei PCs verwenden zufällig denselben Quellport. Was macht der Router?',['Er verwirft das zweite Paket','Er gibt der zweiten Verbindung einen anderen, freien Port','Er verwendet eine zweite öffentliche IP','Er wartet, bis die erste Verbindung fertig ist'],1,'Der Port auf der öffentlichen Adresse muss eindeutig sein. Ist er belegt, nimmt der Router den nächsten freien – und merkt sich die Zuordnung.'],
  ['Welches Wort macht in der Cisco-Konfiguration aus NAT erst PAT?',['static','pool','overload','trunk'],2,'<code>ip nat inside source list 1 interface Gi0/1 overload</code> – „overload“ = viele Geräte auf einer Adresse.'],
- ['Dein Heimrouter hat außen die Adresse 100.72.14.3. Du richtest eine Portweiterleitung für deinen Webserver ein. Ist er aus dem Internet erreichbar?',['Ja, sofort','Ja, aber nur über HTTPS','Nein – der Provider macht CGNAT, dort fehlt der Eintrag','Nein, weil Port 80 immer gesperrt ist'],2,'100.64.0.0/10 ist der CGNAT-Bereich. Das Paket von außen scheitert an der NAT-Tabelle des Providers. Lösung: öffentliche IPv4-Adresse verlangen (in Österreich auf Anfrage kostenlos) oder IPv6.'],
+ ['Dein Heimrouter hat auf der WAN-Seite die Adresse 10.72.14.3. Du richtest eine Portweiterleitung für deinen Webserver ein. Ist er aus dem Internet erreichbar?',['Ja, sofort','Ja, aber nur über HTTPS','Nein – der Provider macht CGNAT, dort fehlt der Eintrag','Nein, weil Port 80 immer gesperrt ist'],2,'Eine private Adresse auf der WAN-Seite heißt: Der Provider übersetzt noch einmal (CGNAT). Das Paket von außen scheitert an der NAT-Tabelle des Providers. Lösung: öffentliche IPv4-Adresse verlangen (in Österreich auf Anfrage kostenlos) oder IPv6.'],
  ['Von außen kommt ein Paket an einen Port, für den es keinen Eintrag in der NAT-Tabelle gibt. Was passiert?',['Es geht an alle PCs','Es geht an den ersten PC','Der Router verwirft es','Der Router legt einen neuen Eintrag an'],2,'Ohne Eintrag weiß der Router nicht, wohin. Einträge entstehen nur durch Verbindungen von innen nach außen (oder durch statisches NAT).']];
 $('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
  '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
