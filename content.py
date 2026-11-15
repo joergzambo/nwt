@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
+    'news': ['<strong>Neu:</strong> <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
+             'Außerdem <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
              'Außerdem <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
              'Außerdem <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Übungen und Zufallsgenerator. '
              'Außerdem <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
@@ -96,6 +97,8 @@ AREAS = [
           'text': 'Server aus dem Internet erreichbar machen: 1:1-NAT und Portweiterleitung als Animation, Heimrouter vs. Firewall mit DMZ, Proxy ARP – mit Übungen und Zufallsgenerator.'},
          {'slug': 'dhcp', 'title': 'DHCP und ip helper-address', 'tool': 'dhcp',
           'text': 'DORA als Animation, DHCP-Relay mit giaddr – und wo der Helper hin muss. Mit Übungen und Zufallsgenerator.'},
+         {'slug': 'hsrp-vrrp', 'title': 'HSRP (und VRRP)', 'tool': 'hsrp-vrrp',
+          'text': 'Ein Gateway, das nicht ausfällt: virtueller Router, Wahl und Preempt als Animation, Tracking mit IP SLA (inkl. Lizenzhinweis), Cisco-Konfiguration, VRRP im Vergleich – mit Übungen und Zufallsgenerator.'},
      ]},
     {'slug': 'netzwerksicherheit', 'title': 'Netzwerksicherheit', 'text': 'Angriffe im LAN verstehen und abwehren.',
      'topics': [

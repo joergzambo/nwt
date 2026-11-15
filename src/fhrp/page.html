@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HSRP</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font:600 13px var(--ui)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.c-IL{color:#1565c0}.c-IG{color:#e65100}.c-OL{color:#6a1b9a}.c-OG{color:#2e7d32}
+/* Begriffs-Matrix */
+.mx{width:100%;border-collapse:separate;border-spacing:6px;margin-top:10px;table-layout:fixed}
+.mx th{font:600 14px var(--ui);padding:6px;text-align:center;color:var(--mute);vertical-align:bottom}
+.mx th b{display:block;color:var(--ink);font-size:16px}
+.mx th.rowh{text-align:right;width:25%;vertical-align:middle}
+.mx button{width:100%;border:2px solid;border-radius:6px;background:#fff;padding:10px 8px;cursor:pointer;text-align:center;line-height:1.35}
+.mx button b{display:block;font:700 16px var(--ui)}
+.mx button span{font:13.5px var(--mono);color:var(--ink)}
+.mx button.on{color:#fff!important}.mx button.on span{color:#fff}
+@media(max-width:600px){.mx{border-spacing:3px}.mx th{font-size:11.5px;padding:2px}.mx th b{font-size:13px}.mx th.rowh{width:21%}.mx button{padding:8px 2px}.mx button b{font-size:13px}.mx button span{font-size:10.5px;letter-spacing:-.3px}}
+.mxinfo{background:var(--soft);border-left:5px solid var(--ink);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:15.5px;min-height:4.6em}
+.memo{background:#eef6e6;border:1px solid #c5e1a5;border-radius:4px;padding:10px 14px;font-size:15.5px;margin-top:10px}
+.memo b.w1{background:#1c2b33;color:#fff;padding:1px 7px;border-radius:3px}
+.memo b.w2{background:#61a229;color:#fff;padding:1px 7px;border-radius:3px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.ntab{border-collapse:collapse;font:13.5px var(--mono);margin-top:6px;min-width:560px}
+.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left;white-space:nowrap}
+.ntab th{background:var(--soft);font:600 13px var(--ui)}
+.ntab input{width:21ch}
+.ntab tr.hit td{background:#fff8e1}
+.rule{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.rules{margin-bottom:22px}.rules.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:860px){.rules.three{grid-template-columns:minmax(0,1fr)}}
+.h3{font:400 19px var(--head);margin:0 0 6px}
+.mono{font-family:var(--mono)}.mute{color:var(--mute)}
+.atabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+.atabs button{padding:8px 14px;border:1.5px solid var(--ink);border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
+.atabs button.on{background:var(--ink);color:#fff}
+.tog{font:600 14px var(--ui);display:inline-flex;gap:6px;align-items:center;margin-left:8px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}.explain p{margin:0}
+.stack .card h3{margin-bottom:6px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.cfgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px}
+.kbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.lbl{font:600 14px var(--ui);min-width:130px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-right:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 12px;font:600 14px var(--ui);cursor:pointer}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--ink);color:#fff}
+.lic{background:#fff8e1;border:2px solid #f9a825}
+.cfgs .ph{font:600 14px var(--ui);margin:0}
+.cfgs pre{font-size:12.5px}
+.evs{margin:0 0 8px;padding-left:22px}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>HSRP: ein Gateway, das nicht ausfällt</h1>
+<p class="sub">Jeder PC kennt genau <b>ein</b> Standardgateway. Fällt dieser Router aus, ist das ganze Netz vom Internet abgeschnitten – obwohl vielleicht ein zweiter Router danebensteht. <b>First Hop Redundancy Protocols</b> (FHRP) lösen das: Zwei Router teilen sich eine <b>virtuelle</b> Gateway-Adresse. Bei Cisco ist das <b>HSRP</b> (Hot Standby Router Protocol). Darum geht es auf dieser Seite. Den offenen Standard <b>VRRP</b> gibt es am Ende kurz im Vergleich.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#problem">Das Problem</a><a href="#anim">Animation</a><a href="#regeln">Wahl, Preempt, Tracking</a><a href="#ipsla">Tracking mit IP SLA</a><a href="#cisco">Cisco-Konfiguration</a><a href="#vrrp">Kurz: VRRP</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="problem">Das Problem und die Idee</h2>
+<div class="rules">
+ <div class="card"><h3 class="h3">Ein Gateway = ein Single Point of Failure</h3><p style="margin:0">Am PC steht als Gateway z. B. <code>192.168.1.2</code> – die Adresse von R1. Fällt R1 aus, schickt der PC weiter alles an 192.168.1.2 und bekommt keine Antwort. Ein zweiter Router mit <code>192.168.1.3</code> nützt nichts: Der PC weiß nichts von ihm, und man kann nicht an hundert PCs schnell das Gateway umstellen.</p></div>
+ <div class="card check"><h3 class="h3">Die Lösung: ein virtueller Router</h3><p style="margin:0">R1 und R2 bilden eine <b>Gruppe</b> und teilen sich eine <b>virtuelle IP-Adresse</b> (z. B. <code>192.168.1.1</code>) und eine <b>virtuelle MAC-Adresse</b>. Diese virtuelle IP tragen alle PCs als Gateway ein. Einer der Router „hält“ die virtuelle Adresse, der andere wartet. Fällt der aktive aus, übernimmt der zweite – mit <b>derselben</b> IP und <b>derselben</b> MAC. Die PCs merken nichts.</p></div>
+</div>
+
+<h2 class="part" id="anim">Schritt für Schritt</h2>
+<div class="card">
+ <div class="atabs"><label class="tog" style="margin-left:0"><input type="checkbox" id="apre"> <span>Preempt auf R1 (<code>standby 10 preempt</code>) – wirkt im letzten Schritt</span></label></div>
+ <div id="asvg"></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="regeln">Wahl, Preempt und Tracking</h2>
+<div class="rules three">
+ <div class="card"><h3 class="h3">Wer wird aktiv?</h3><ol style="margin:0;padding-left:20px"><li>Die höchste <b>Priorität</b> gewinnt (0–255, Standard <b>100</b>).</li><li>Bei Gleichstand gewinnt die höchste <b>IP-Adresse</b> des Interfaces.</li></ol>
+  <p class="hint">Mit <code>standby 10 priority 110</code> macht man den gewünschten Router zum Active.</p></div>
+ <div class="card"><h3 class="h3">Preempt: zurückholen</h3><p style="margin:0 0 6px">Kommt ein Router mit <b>höherer</b> Priorität (wieder) ins Netz, übernimmt er <b>nur</b>, wenn bei ihm <b>Preempt</b> eingeschaltet ist. Sonst bleibt der bisherige aktiv.</p>
+  <p class="hint">Bei HSRP ist Preempt standardmäßig <b>aus</b> – man muss <code>standby 10 preempt</code> selbst eintragen.</p></div>
+ <div class="card"><h3 class="h3">Tracking: Uplink überwachen</h3><p style="margin:0 0 6px">Was, wenn R1 läuft, aber seine Leitung ins Internet ausfällt? Mit <b>Tracking</b> senkt R1 dann seine Priorität um einen Wert (z. B. 110 − 20 = 90). Ist R2 jetzt höher <b>und hat Preempt</b>, übernimmt R2.</p>
+  <p class="hint">Merke: Beim Tracking braucht der <b>andere</b> Router Preempt – er muss sich die Rolle ja aktiv holen. Wie man auch Störungen <b>hinter</b> dem Uplink erkennt, zeigt der nächste Abschnitt.</p></div>
+</div>
+
+<h2 class="part" id="ipsla">HSRP mit Tracking und IP SLA</h2>
+<p class="sub">Interface-Tracking merkt nur, wenn das <b>eigene Kabel</b> (Gi0/1) ausfällt. Was aber, wenn die Leitung physisch steht, der <b>Provider</b> dahinter aber eine Störung hat? Dann bleibt Gi0/1 „up“, R1 bleibt Active – und alle Pakete landen im Nichts. Abhilfe schafft <b>IP SLA</b>: R1 pingt regelmäßig ein Ziel beim Provider. Antwortet es nicht mehr, sinkt die HSRP-Priorität.</p>
+<div class="card">
+ <div class="kbar"><span class="lbl">Was passiert?</span><span class="seg" id="slasc"><button type="button" data-s="ok" class="on">✅ Alles in Ordnung</button><button type="button" data-s="cable">🔌 Kabel an Gi0/1 gezogen</button><button type="button" data-s="isp">🌩 Störung beim Provider</button></span></div>
+ <div class="kbar"><span class="lbl">R1 überwacht mit</span><span class="seg" id="slatr"><button type="button" data-t="if">Interface-Tracking</button><button type="button" data-t="sla" class="on">IP SLA (Ping)</button></span></div>
+ <div id="slasvg"></div>
+ <div class="explain" aria-live="polite"><p id="slatxt"></p></div>
+</div>
+<div class="stack">
+ <div class="card"><h3 class="h3">Konfiguration auf R1</h3><pre class="cli">! 1. IP SLA: alle 5 Sekunden das Provider-Gateway anpingen
+R1(config)# ip sla 1
+R1(config-ip-sla)#  icmp-echo 203.0.113.1 source-interface Gi0/1
+R1(config-ip-sla-echo)#  frequency 5
+R1(config)# ip sla schedule 1 life forever start-time now
+!
+! 2. Track-Objekt: folgt der Erreichbarkeit
+R1(config)# track 1 ip sla 1 reachability
+R1(config-track)#  delay down 10 up 30          ! optional: nicht bei jedem Ausreißer umschalten
+!
+! 3. HSRP: Priorität um 20 senken, wenn Track 1 „down“ ist
+R1(config)# interface Gi0/0
+R1(config-if)#  standby 10 ip 192.168.1.1
+R1(config-if)#  standby 10 priority 110
+R1(config-if)#  standby 10 preempt
+R1(config-if)#  standby 10 track 1 decrement 20
+!
+! Auf R2 nicht vergessen:
+R2(config-if)#  standby 10 preempt
+
+R1# show ip sla statistics
+R1# show track 1
+R1# show standby brief</pre>
+  <p class="hint">Rechnung: 110 − 20 = <b>90</b> &lt; 100 (R2). Der Abzug muss so groß sein, dass R1 unter R2 fällt – sonst passiert nichts. Mit <code>delay down 10 up 30</code> wartet der Router kurz, bevor er umschaltet, und nach der Störung länger, bis die Leitung wirklich stabil ist.</p></div>
+ <div class="card lic"><h3 class="h3">⚠️ Achtung: IP SLA braucht eine Cisco-Lizenz</h3>
+  <p style="margin:0 0 6px">Die <b>Grundlizenz</b> vieler Cisco-Geräte enthält IP SLA <b>nicht</b> – oft nur den „IP SLA Responder“ (das Gerät kann angepingt werden, aber selbst nicht messen). Gibt der Router bei <code>ip sla 1</code> einen Fehler aus oder fehlt der Befehl, liegt es meist an der Lizenz.</p>
+  <ul style="margin:0 0 6px;padding-left:20px">
+   <li><b>ISR-Router 1900/2900 (ISR G2):</b> IP Base reicht nicht. Nötig ist ein höheres Technologiepaket, z. B. <b>securityk9</b> oder <b>datak9</b>. Aktivieren: <code>license boot module c2900 technology-package securityk9</code>, dann <code>reload</code>.</li>
+   <li><b>ISR 4000:</b> Im Datenblatt ist IP SLA dem Paket <b>Application Experience (appxk9)</b> zugeordnet, nicht IP Base. In der Praxis wird auch die Security-Lizenz genannt – im Zweifel beim konkreten Gerät prüfen.</li>
+   <li><b>Catalyst-9200-Switches:</b> IP SLA – und übrigens auch <b>HSRP selbst</b> – gibt es erst mit <b>Network Advantage</b>. Network Essentials kann nur den IP SLA Responder (und VRRP).</li></ul>
+  <p class="hint">Prüfen mit <code>show license summary</code> oder <code>show version</code> (Abschnitt „Technology Package License“). Im Labor bzw. in Packet Tracer muss das Paket je nach Modell erst aktiviert werden.</p></div>
+</div>
+
+<h2 class="part" id="cisco">Cisco-Konfiguration</h2>
+<div class="stack">
+ <div class="card"><h3 class="h3">HSRP</h3><pre class="cli">R1(config)# interface Gi0/0
+R1(config-if)#  ip address 192.168.1.2 255.255.255.0
+R1(config-if)#  standby 10 ip 192.168.1.1          ! virtuelle IP der Gruppe 10
+R1(config-if)#  standby 10 priority 110            ! Standard wäre 100
+R1(config-if)#  standby 10 preempt                 ! Rolle zurückholen
+!
+R2(config)# interface Gi0/0
+R2(config-if)#  ip address 192.168.1.3 255.255.255.0
+R2(config-if)#  standby 10 ip 192.168.1.1
+R2(config-if)#  standby 10 preempt                 ! nötig, falls R1 per Tracking absinkt
+
+R1# show standby brief
+Interface   Grp  Pri P State   Active          Standby         Virtual IP
+Gi0/0       10   110 P Active  local           192.168.1.3     192.168.1.1</pre></div>
+ <div class="card"><h3 class="h3">Interface-Tracking (Uplink überwachen)</h3><pre class="cli">R1(config)# track 1 interface Gi0/1 line-protocol
+R1(config)# interface Gi0/0
+R1(config-if)#  standby 10 track 1 decrement 20</pre>
+  <p class="hint">Fällt Gi0/1 aus, sinkt die Priorität von 110 auf 90 – unter die 100 von R2. Hat R2 Preempt, übernimmt er.</p></div>
+ <div class="card"><h3 class="h3">Lastverteilung mit zwei Gruppen</h3><p style="margin:0">Ein Router allein arbeitet, der andere wartet – das verschenkt Leistung. Mit <b>mehreren Gruppen</b> (z. B. je VLAN eine) macht man R1 in Gruppe 10 aktiv und R2 in Gruppe 20. Jeder Router ist Reserve für den anderen.</p></div>
+</div>
+
+<h2 class="part" id="vrrp">Kurz erwähnt: VRRP</h2>
+<p class="sub"><b>VRRP</b> (Virtual Router Redundancy Protocol) macht dasselbe wie HSRP, ist aber ein <b>offener Standard</b> und läuft daher auch auf Routern und Firewalls anderer Hersteller. Die Idee ist gleich, nur Namen und Standardwerte unterscheiden sich:</p>
+<div class="card"><div class="scroll"><table class="cmp">
+ <tr><th></th><th>HSRP</th><th>VRRP</th></tr>
+ <tr><td><b>Herkunft</b></td><td>Cisco-eigen</td><td>offener Standard (RFC 5798, Version 3), auf vielen Herstellern</td></tr>
+ <tr><td><b>Rollen</b></td><td><b>Active</b> / <b>Standby</b> (weitere: Listen)</td><td><b>Master</b> / <b>Backup</b></td></tr>
+ <tr><td><b>Wer sendet?</b></td><td>Active <b>und</b> Standby senden Hellos</td><td>nur der <b>Master</b> sendet Advertisements</td></tr>
+ <tr><td><b>Timer (Standard)</b></td><td>Hello alle 3 s, Hold-Timer 10 s</td><td>Advertisement jede 1 s, Ausfall nach ca. 3 × 1 s + Skew (≈ 3,6 s)</td></tr>
+ <tr><td><b>Preempt</b></td><td>standardmäßig <b>aus</b></td><td>standardmäßig <b>an</b></td></tr>
+ <tr><td><b>Virtuelle MAC</b></td><td>v1: <code>0000.0c07.ac<i>XX</i></code><br>v2: <code>0000.0c9f.f<i>XXX</i></code></td><td><code>0000.5e00.01<i>XX</i></code></td></tr>
+ <tr><td><b>Gruppen</b></td><td>v1: 0–255, v2: 0–4095</td><td>VRID 1–255</td></tr>
+ <tr><td><b>Multicast</b></td><td>v1: 224.0.0.2, v2: 224.0.0.102 (UDP 1985)</td><td>224.0.0.18 (eigenes IP-Protokoll 112)</td></tr>
+ <tr><td><b>Virtuelle IP = Interface-IP?</b></td><td>nein, muss eine eigene Adresse sein</td><td>erlaubt (Router ist dann „Owner“)</td></tr>
+</table></div>
+<p class="hint"><b>XX</b> ist die Gruppennummer in <b>Hexadezimal</b>: Gruppe 10 → <code>0a</code>, Gruppe 255 → <code>ff</code>. Wie man umrechnet: <a href="../../grundlagen/zahlensysteme/">Zahlensysteme</a>. Ein dritter Cisco-Vertreter ist <b>GLBP</b>: Er verteilt die Last auf mehrere Router gleichzeitig.</p>
+<pre class="cli">R1(config-if)# vrrp 10 ip 192.168.1.1
+R1(config-if)# vrrp 10 priority 110        ! Preempt ist bei VRRP schon an
+R1# show vrrp brief</pre>
+<p class="hint">Auf neueren IOS-XE-Geräten (VRRP Version 3): <code>fhrp version vrrp v3</code>, dann <code>vrrp 10 address-family ipv4</code> und <code>address 192.168.1.1 primary</code>.</p></div>
+
+
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies die Konfiguration: Wer ist zu Beginn aktiv, wie lautet die virtuelle MAC, und wer ist es nach den Ereignissen?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Ausfall)</option><option value="M" selected>Mittel (Preempt)</option><option value="S">Schwer (Tracking, 3 Router, HSRPv2)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+</main>
+<script>
+/*FHJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},F=window.FH,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var MONO='ui-monospace,Menlo,Consolas,monospace',SANS='Open Sans,Arial,sans-serif',INK='#1c2b33',MU='#546e7a',BL='#1565c0',GR='#2e7d32',OR='#e65100',RD='#c62828';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||INK)+'"'+(o.op!=null?' opacity="'+o.op+'"':'')+' font-family="'+(o.mono?MONO:SANS)+'">'+esc(t)+'</text>';}
+function at(x,y,g){return'<g transform="translate('+x+' '+y+')">'+g+'</g>';}
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function rtr(dead){var a=dead?'#90a4ae':'#1f5872',b=dead?'#b0bec5':'#2f7392',c=dead?'#cfd8dc':'#5a9dbb';return'<ellipse cx="0" cy="7" rx="22" ry="8" fill="'+a+'"/><rect x="-22" y="-7" width="44" height="14" fill="'+b+'"/><ellipse cx="0" cy="-7" rx="22" ry="8" fill="'+c+'" stroke="'+a+'"/><path d="M-11 -7h7M4 -7h7M-1 -12v4M-1 -5v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>';}
+function sw(){return'<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';}
+function srv(){return'<rect x="-15" y="-22" width="30" height="44" rx="3" fill="#fff" stroke="'+GR+'" stroke-width="2.5"/><path d="M-9 -13h18M-9 -5h18M-9 3h18" stroke="'+GR+'" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="13" r="2.4" fill="'+GR+'"/>';}
+function cloud(){return'<path d="M-34 14a16 16 0 0 1 2 -31a22 22 0 0 1 41 -6a17 17 0 0 1 25 18a12 12 0 0 1 -4 19z" fill="#eef2f5" stroke="#78909c" stroke-width="2"/>';}
+
+/* ===== Animation ===== */
+var W=900,H=420,P={pc1:[70,120],pc2:[70,300],sw:[250,210],r1:[480,145],r2:[480,295],cl:[700,210],sv:[840,210]};
+function pt(a,b){return[a,b];}
+var mode='HSRP',pre=false;
+function C(){var h=mode==='HSRP';return{h:h,A:h?'Active':'Master',S:h?'Standby':'Backup',mac:F.vmac(mode,10,1),mc:h?'224.0.0.2':'224.0.0.18',hello:h?'Hello':'Advertisement'};}
+function steps(){
+ var c=C(),S=[];
+ S.push({st:{vip:0,r1:0,act:null,mac:null},pk:[{path:[P.pc1,P.sw,P.r1],lab:'an Gateway .2',col:BL,stop:1}],t:'Das Problem: nur ein Gateway',
+  txt:'Ohne FHRP hat der PC als Gateway die echte Adresse von R1 (<b>192.168.1.2</b>). Fällt R1 aus, kommt kein Paket mehr hinaus – obwohl R2 bereitstünde. Der PC kennt R2 einfach nicht.'});
+ S.push({st:{vip:1,r1:1,act:null,mac:null},pk:[],t:'Die Idee: ein virtueller Router',
+  txt:'R1 (.2) und R2 (.3) bilden die '+mode+'-Gruppe <b>10</b> mit der virtuellen IP <b>192.168.1.1</b> und der virtuellen MAC <b>'+c.mac+'</b>. Bei allen PCs steht jetzt <b>192.168.1.1</b> als Gateway. Diese Adresse gehört keinem Router fest – sie „wandert“.'});
+ S.push({st:{vip:1,r1:1,act:null,mac:null},pk:c.h?[{path:[P.r1,P.sw,P.r2],lab:'Hello · Prio 110',col:'#6a1b9a'},{path:[P.r2,P.sw,P.r1],lab:'Hello · Prio 100',col:'#6a1b9a',t0:.15}]:[{path:[P.r1,P.sw,P.r2],lab:'Advert. · Prio 110',col:'#6a1b9a'},{path:[P.r2,P.sw,P.r1],lab:'Advert. · Prio 100',col:'#6a1b9a',t0:.15,ghost:1}],t:c.hello+'-Nachrichten',
+  txt:c.h?'Beide Router schicken regelmäßig <b>Hellos</b> an die Multicast-Adresse <b>224.0.0.2</b> (alle 3 Sekunden). Darin steht ihre <b>Priorität</b>: R1 hat 110, R2 den Standard 100.':'Bei VRRP schickt nur der <b>Master</b> <b>Advertisements</b> an <b>224.0.0.18</b> – jede Sekunde. Kurz nach dem Start hören die Router voneinander und vergleichen die Prioritäten: R1 hat 110, R2 den Standard 100.'});
+ S.push({st:{vip:1,r1:1,act:'R1',mac:null},pk:[],t:'Die Wahl: R1 wird '+c.A,
+  txt:'Die höchste Priorität gewinnt: R1 mit 110 wird <b>'+c.A+'</b>, R2 wird <b>'+c.S+'</b>. Bei gleicher Priorität hätte die höhere IP-Adresse entschieden (.3 vor .2).'+(c.h?'':' Ab jetzt sendet nur noch R1 Advertisements.')});
+ S.push({st:{vip:1,r1:1,act:'R1',mac:'R1'},pk:[{path:[P.pc1,P.sw],lab:'ARP: Who has .1?',col:MU,t1:.45},{path:[P.r1,P.sw,P.pc1],lab:'.1 is at '+c.mac,col:'#00838f',t0:.5}],t:'Der PC fragt nach der MAC des Gateways',
+  txt:'PC1 will ins Internet und fragt per ARP nach der MAC von 192.168.1.1. Nur der <b>'+c.A+'</b> antwortet – mit der <b>virtuellen MAC '+c.mac+'</b>. Der Switch lernt: Diese MAC liegt am Port zu R1.'});
+ S.push({st:{vip:1,r1:1,act:'R1',mac:'R1'},pk:[{path:[P.pc1,P.sw,P.r1,P.cl,P.sv],lab:'Daten',col:BL}],t:'Der Verkehr läuft über R1',
+  txt:'PC1 schickt seine Pakete an die virtuelle MAC. Der Switch leitet sie zu R1, R1 routet sie ins Internet. R2 wartet und hört weiter auf die '+c.hello+'s.'});
+ S.push({st:{vip:1,r1:0,act:'R1x',mac:'R1'},pk:c.h?[{path:[P.r2,P.sw,P.r1],lab:'Hello · Prio 100',col:'#6a1b9a',stop:1}]:[],timer:1,t:'R1 fällt aus',
+  txt:'R1 ist plötzlich weg. Bei R2 kommen keine '+c.hello+'s mehr an. '+(c.h?'R2 wartet den <b>Hold-Timer</b> ab: <b>10 Sekunden</b> ohne Hello (Standard).':'R2 wartet das <b>Master-Down-Intervall</b> ab: 3 × 1 s plus eine kleine Wartezeit je nach Priorität – rund <b>3,6 Sekunden</b>.')+' In dieser kurzen Zeit gehen Pakete verloren.'});
+ S.push({st:{vip:1,r1:0,act:'R2',mac:'R2'},pk:[{path:[P.r2,P.sw,P.pc1],lab:'Gratuitous ARP: .1 is at '+c.mac,col:'#00838f'},{path:[P.r2,P.sw,P.pc2],lab:'',col:'#00838f'}],t:'R2 übernimmt',
+  txt:'R2 wird <b>'+c.A+'</b> und übernimmt <b>dieselbe</b> virtuelle IP und MAC. Er schickt ein <b>Gratuitous ARP</b> („192.168.1.1 is at '+c.mac+'“) – ungefragt. Damit lernt der Switch: Die virtuelle MAC liegt jetzt am Port zu R2.'});
+ S.push({st:{vip:1,r1:0,act:'R2',mac:'R2'},pk:[{path:[P.pc1,P.sw,P.r2,P.cl,P.sv],lab:'Daten',col:BL}],bubble:1,t:'Weiter geht’s – über R2',
+  txt:'PC1 schickt weiter an <b>192.168.1.1</b> und an <b>'+c.mac+'</b> – genau wie vorher. Er musste nichts ändern und hat vom Ausfall fast nichts bemerkt. Der Switch schickt die Pakete jetzt zu R2.'});
+ S.push({st:{vip:1,r1:1,act:pre?'R1':'R2',mac:pre?'R1':'R2',back:1},pk:c.h?[{path:[P.r1,P.sw,P.r2],lab:'Hello · Prio 110',col:'#6a1b9a'},{path:[P.r2,P.sw,P.r1],lab:'Hello · Prio 100',col:'#6a1b9a',t0:.15}]:[{path:[P.r2,P.sw,P.r1],lab:'Advert. · Prio 100',col:'#6a1b9a'}].concat(pre?[{path:[P.r1,P.sw,P.r2],lab:'Advert. · Prio 110',col:'#6a1b9a',t0:.5}]:[]),
+  t:'R1 kommt zurück – '+(pre?'mit Preempt':'ohne Preempt'),
+  txt:pre?'R1 ist wieder da und hat die höhere Priorität (110 > 100). Weil bei R1 <b>Preempt</b> eingeschaltet ist, holt er sich die Rolle als <b>'+c.A+'</b> zurück. R2 wird wieder '+c.S+'.'+(c.h?'':' Bei VRRP ist Preempt standardmäßig an.'):'R1 ist wieder da und hat die höhere Priorität – aber <b>ohne Preempt</b> bleibt R2 '+c.A+'. R1 wird nur '+c.S+'. Erst wenn R2 ausfällt, kommt R1 wieder dran.'+(c.h?' Bei HSRP ist Preempt standardmäßig aus.':' (Bei VRRP müsste man Preempt dafür extra abschalten: no vrrp 10 preempt.)')});
+ return S;
+}
+function along(path,f){var L=[],tot=0;for(var i=0;i<path.length-1;i++){var l=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]);L.push(l);tot+=l;}var d=f*tot,k=0;while(k<L.length-1&&d>L[k]){d-=L[k];k++;}var t=L[k]?d/L[k]:0;return[path[k][0]+(path[k+1][0]-path[k][0])*t,path[k][1]+(path[k+1][1]-path[k][1])*t];}
+function draw(i,p){
+ var c=C(),st=S[i],s=st.st,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(mode+': '+st.t)+'">';
+ h+='<rect x="8" y="8" width="600" height="'+(H-16)+'" fill="#e8f0fe" opacity=".5"/><rect x="608" y="8" width="284" height="'+(H-16)+'" fill="#fff3e0" opacity=".5"/>'+tx(20,28,'LAN 192.168.1.0/24',{a:'start',fs:12,fw:700,c:BL})+tx(W-20,28,'Internet',{a:'end',fs:12,fw:700,c:OR});
+ if(s.vip){h+='<rect x="400" y="44" width="166" height="342" rx="16" fill="#f3e5f5" stroke="#6a1b9a" stroke-width="2" stroke-dasharray="7 5"/>'+tx(483,63,'virtueller Router',{fs:12.5,fw:700,c:'#6a1b9a'})+tx(483,79,'192.168.1.1',{fs:12,fw:700,mono:1,c:'#6a1b9a'})+tx(483,95,c.mac,{fs:11.5,mono:1,c:'#6a1b9a'});}
+ function ln(a,b,dead){return'<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+(dead?'#cfd8dc':INK)+'" stroke-width="2.2"'+(dead?' stroke-dasharray="5 4"':'')+'/>';}
+ var r1d=!s.r1&&i>0;
+ h+=ln(P.pc1,P.sw)+ln(P.pc2,P.sw)+ln(P.sw,P.r1,r1d)+ln(P.sw,P.r2,i===0)+ln(P.r1,P.cl,r1d||i===0&&false)+ln(P.r2,P.cl,i===0)+ln(P.cl,P.sv);
+ h+=at(P.pc1[0],P.pc1[1],pc(BL))+tx(P.pc1[0],P.pc1[1]+31,'PC1 · .10',{fs:12,fw:600})+tx(P.pc1[0],P.pc1[1]+46,'Gateway '+(s.vip?'.1':'.2'),{fs:11.5,mono:1,c:s.vip?'#6a1b9a':MU});
+ h+=at(P.pc2[0],P.pc2[1],pc(BL))+tx(P.pc2[0],P.pc2[1]+31,'PC2 · .11',{fs:12,fw:600})+tx(P.pc2[0],P.pc2[1]+46,'Gateway '+(s.vip?'.1':'.2'),{fs:11.5,mono:1,c:s.vip?'#6a1b9a':MU});
+ h+=at(P.sw[0],P.sw[1],sw())+tx(P.sw[0],P.sw[1]-22,'Switch',{fs:12,fw:700});
+ if(s.mac){var port=s.mac==='R1'?'Gi0/23 (R1)':'Gi0/24 (R2)';h+='<path d="M'+P.sw[0]+' '+(P.sw[1]+12)+'V'+(P.sw[1]+128)+'" stroke="#00838f" stroke-width="1.4" stroke-dasharray="3 3"/><rect x="'+(P.sw[0]-100)+'" y="'+(P.sw[1]+128)+'" width="200" height="40" rx="5" fill="#fff" stroke="#00838f" stroke-width="1.6"/>'+tx(P.sw[0],P.sw[1]+144,'MAC-Tabelle des Switches',{fs:11,fw:700,c:'#00838f'})+tx(P.sw[0],P.sw[1]+160,c.mac+' → '+port,{fs:11,mono:1});}
+ function router(n,pos,ip,prio,dead){var role=s.act===n?c.A:(s.act&&s.act!=='R1x'&&!dead)?c.S:(s.act==='R1x'&&n==='R2')?c.S:'',col=role===c.A?GR:'#78909c',g=at(pos[0],pos[1],rtr(dead))+tx(pos[0],pos[1]-24,n+' · .'+ip,{fs:12.5,fw:700})+tx(pos[0],pos[1]+30,i>=1?'Prio '+prio:'',{fs:11.5,c:MU});
+  if(role&&s.vip&&i>=3)g+='<rect x="'+(pos[0]-36)+'" y="'+(pos[1]+38)+'" width="72" height="20" rx="10" fill="'+col+'"/>'+tx(pos[0],pos[1]+52,role,{fs:11.5,fw:700,c:'#fff'});
+  if(dead)g+='<path d="M'+(pos[0]-18)+' '+(pos[1]-18)+'l36 36m0 -36l-36 36" stroke="'+RD+'" stroke-width="6" stroke-linecap="round"/>';
+  return g;}
+ h+=router('R1',P.r1,2,110,!s.r1)+router('R2',P.r2,3,100,false);
+ h+=at(P.cl[0],P.cl[1],cloud())+tx(P.cl[0],P.cl[1]+5,'ISP',{fs:11.5,fw:600,c:MU})+at(P.sv[0],P.sv[1],srv())+tx(P.sv[0],P.sv[1]+40,'Webserver',{fs:12,fw:700});
+ if(st.timer){var lim=c.h?10:3.6,tv=Math.min(lim,p*lim*1.05);h+='<rect x="600" y="320" width="200" height="56" rx="8" fill="#fff8e1" stroke="#f9a825" stroke-width="2"/>'+tx(700,342,c.h?'Hold-Timer bei R2':'Master-Down bei R2',{fs:12,fw:700})+tx(700,364,tv.toFixed(1).replace('.',',')+' s / '+String(lim).replace('.',',')+' s',{fs:15,fw:700,mono:1,c:tv>=lim?RD:INK});}
+ if(st.bubble){h+='<rect x="20" y="40" width="190" height="34" rx="17" fill="#fff" stroke="'+INK+'" stroke-width="1.6"/>'+tx(115,62,'Gateway .1 – wie immer 😊',{fs:12.5,fw:600});}
+ /* Pakete */
+ st.pk.forEach(function(k){var t0=k.t0||0,t1=k.t1||1,f=Math.max(0,Math.min(1,(p-t0)/(t1-t0)));if(p<t0)return;var path=k.path;
+  if(k.stop&&f>.75){var q=along(path,.75);h+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="8" fill="'+k.col+'" opacity=".5"/><path d="M'+(q[0]-10)+' '+(q[1]-10)+'l20 20m0 -20l-20 20" stroke="'+RD+'" stroke-width="4"/>';return;}
+  var q2=along(path,f);if(k.ghost&&f>=1)return;
+  h+='<circle cx="'+q2[0]+'" cy="'+q2[1]+'" r="8" fill="'+k.col+'" stroke="#fff" stroke-width="2"'+(k.ghost?' opacity=".35"':'')+'/>';
+  if(k.lab&&f>.04&&f<.96){var w=k.lab.length*6.6+14,lx=Math.max(14+w/2,Math.min(W-14-w/2,q2[0]));h+='<rect x="'+(lx-w/2)+'" y="'+(q2[1]-32)+'" width="'+w+'" height="20" rx="10" fill="'+k.col+'"'+(k.ghost?' opacity=".35"':'')+'/>'+tx(lx,q2[1]-17.5,k.lab,{fs:11,fw:700,c:'#fff'});}});
+ return h+'</svg>';
+}
+var S=steps(),si=0,playing=false,raf=0,safe=0,timer=0;
+var PAUSE=[0,2600,1900,1300,800,450],DUR=[0,4200,3300,2500,1800,1200];
+function label(){var st=S[si];$('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;}
+function cancel(){cancelAnimationFrame(raf);clearTimeout(safe);clearTimeout(timer);}
+function finish(){cancel();$('asvg').innerHTML=draw(si,1);if(playing){if(si<S.length-1)timer=setTimeout(function(){if(playing)go(si+1,true);},PAUSE[+$('spd').value]);else stop();}}
+function go(i,anim){cancel();si=i;label();if(!anim||reduce||(!S[si].pk.length&&!S[si].timer)){finish();return;}
+ var dur=DUR[+$('spd').value]*(S[si].timer?1.4:1),t0=null,mine=si,mm=mode;
+ function fr(ts){if(mine!==si||mm!==mode)return;if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur);$('asvg').innerHTML=draw(si,p);if(p<1)raf=requestAnimationFrame(fr);else finish();}
+ $('asvg').innerHTML=draw(si,0);raf=requestAnimationFrame(fr);safe=setTimeout(function(){if(mine===si&&mm===mode)finish();},dur+700);}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('prev').onclick=function(){stop();if(si>0)go(si-1,false);};
+$('next').onclick=function(){stop();if(si<S.length-1)go(si+1,true);};
+$('rst').onclick=function(){stop();go(0,true);};
+$('play').onclick=function(){if(playing){stop();finish();return;}playing=true;$('play').textContent='❚❚ Pause';go(si>=S.length-1?0:si+1,true);};
+function setMode(m){mode=m;pre=m==='VRRP';$('apre').checked=pre;[].forEach.call(document.querySelectorAll('.atabs [data-p]'),function(b){b.classList.toggle('on',b.dataset.p===m);});S=steps();stop();go(Math.min(si,S.length-1),false);}
+[].forEach.call(document.querySelectorAll('.atabs [data-p]'),function(b){b.onclick=function(){setMode(b.dataset.p);};});
+$('apre').onchange=function(){pre=this.checked;S=steps();stop();go(si,si===S.length-1);};
+setMode('HSRP');go(0,false);
+window.__fh={draw:draw,setMode:setMode,len:function(){return S.length;},S:function(){return S;}};
+/* ===== IP SLA ===== */
+var slaS='ok',slaT='sla',slaRaf=0;
+function slaDraw(ph){
+ var W=900,H=390,cable=slaS==='cable',isp=slaS==='isp',ifDown=cable,pingOk=!cable&&!isp,trkDown=slaT==='if'?ifDown:!pingOk,p1=trkDown?90:110,act=p1>100?'R1':'R2',lost=act==='R1'&&isp;
+ var Q={sw:[120,165],r1:[330,85],r2:[330,245],i1:[560,85],i2:[560,245],cl:[760,165]},h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="HSRP mit Tracking: R1 '+(act==='R1'?'Active':'Standby')+'">';
+ function ln(a,b,st){return'<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+(st==='dead'?'#cfd8dc':st==='hot'?'#f9a825':INK)+'" stroke-width="'+(st==='hot'?5:2.2)+'"'+(st==='dead'?' stroke-dasharray="5 4"':'')+'/>';}
+ h+=ln(Q.sw,Q.r1,act==='R1'?'hot':'')+ln(Q.sw,Q.r2,act==='R2'?'hot':'')+ln(Q.r1,Q.i1,cable?'dead':act==='R1'?'hot':'')+ln(Q.r2,Q.i2,act==='R2'?'hot':'')+ln(Q.i1,Q.cl,isp?'dead':act==='R1'&&!cable?'hot':'')+ln(Q.i2,Q.cl,act==='R2'?'hot':'');
+ h+=at(Q.sw[0],Q.sw[1],sw())+tx(Q.sw[0],Q.sw[1]-22,'LAN-Switch',{fs:12,fw:700})+tx(Q.sw[0],Q.sw[1]+30,'PCs → Gateway .1',{fs:11.5,c:MU});
+ function rbox(n,pos,prio,role){var g=at(pos[0],pos[1],rtr(false))+tx(pos[0],pos[1]-24,n,{fs:13,fw:700});var col=role==='Active'?GR:'#78909c';
+  g+='<rect x="'+(pos[0]-44)+'" y="'+(pos[1]+16)+'" width="88" height="20" rx="10" fill="'+col+'"/>'+tx(pos[0],pos[1]+30,role,{fs:11.5,fw:700,c:'#fff'})+tx(pos[0],pos[1]+52,'Prio '+prio,{fs:12.5,fw:700,c:prio<100?RD:INK});return g;}
+ h+=rbox('R1',Q.r1,p1,act==='R1'?'Active':'Standby')+rbox('R2',Q.r2,100,act==='R2'?'Active':'Standby');
+ h+=tx((Q.r1[0]+Q.i1[0])/2,Q.r1[1]-16,'Gi0/1 '+(cable?'down':'up'),{fs:11.5,fw:700,mono:1,c:cable?RD:GR});
+ if(cable)h+='<path d="M'+((Q.r1[0]+Q.i1[0])/2-10)+' '+(Q.r1[1]-8)+'l20 16m0 -16l-20 16" stroke="'+RD+'" stroke-width="4"/>';
+ function isp_(pos,n,bad){return at(pos[0],pos[1],rtr(bad))+tx(pos[0],pos[1]-24,n,{fs:12,fw:700})+tx(pos[0],pos[1]+30,n==='Provider A'?'203.0.113.1':'198.51.100.1',{fs:11,mono:1,c:MU})+(bad?tx(pos[0]+34,pos[1]-6,'🌩',{fs:24}):'');}
+ h+=isp_(Q.i1,'Provider A',isp)+isp_(Q.i2,'Provider B',false)+at(Q.cl[0],Q.cl[1],cloud())+tx(Q.cl[0],Q.cl[1]+5,'Internet',{fs:11.5,fw:600,c:MU});
+ /* Ping von R1 zu Provider A */
+ if(slaT==='sla'&&!cable){var f=ph%1,x=Q.r1[0]+22+(Q.i1[0]-22-Q.r1[0]-22)*(f<.5?f*2:2-f*2);var back=f>=.5;if(!(isp&&back))h+='<circle cx="'+x+'" cy="'+(Q.r1[1]+2)+'" r="5" fill="'+(back?GR:'#6a1b9a')+'"/>';if(isp&&back)h+=tx(Q.i1[0]-40,Q.i1[1]+50,'keine Antwort',{fs:11.5,fw:700,c:RD});}
+ /* Statusbox */
+ var bx=320,by=326;h+='<rect x="'+(bx-30)+'" y="'+by+'" width="320" height="54" rx="8" fill="#fff" stroke="#90a4ae"/>';
+ h+=tx(bx-18,by+20,slaT==='if'?'Track 1: interface Gi0/1 line-protocol':'Track 1: ip sla 1 (Ping 203.0.113.1)',{a:'start',fs:12,fw:600,mono:1});
+ h+=tx(bx-18,by+42,'→ Track '+(trkDown?'DOWN':'UP')+'  ·  R1-Priorität '+(trkDown?'110 − 20 = 90':'110'),{a:'start',fs:12.5,fw:700,c:trkDown?RD:GR});
+ if(lost)h+='<rect x="210" y="2" width="480" height="28" rx="6" fill="#fdecea" stroke="'+RD+'"/>'+tx(450,21,'⚠ R1 bleibt Active – alle Pakete gehen beim Provider verloren!',{fs:13,fw:700,c:RD});
+ return h+'</svg>';
+}
+function slaText(){
+ var cable=slaS==='cable',isp=slaS==='isp';
+ if(slaS==='ok')return slaT==='sla'?'R1 pingt alle 5 Sekunden das Gateway von Provider A an – die Antworten kommen. Track 1 ist <b>up</b>, R1 hat Priorität 110 und bleibt <b>Active</b>.':'Gi0/1 ist up, Track 1 ist <b>up</b>. R1 hat Priorität 110 und ist <b>Active</b>.';
+ if(cable)return'Das Kabel an Gi0/1 ist gezogen. Das merken <b>beide</b> Methoden: Interface-Tracking sieht „line-protocol down“, und der Ping kommt natürlich auch nicht mehr durch. R1 sinkt auf <b>90</b>, R2 (100, mit Preempt) wird <b>Active</b>.';
+ return slaT==='if'?'Die Leitung zum Provider steht, nur <b>hinter</b> dem Provider-Router ist eine Störung. Für das Interface-Tracking ist alles in Ordnung: Gi0/1 ist <b>up</b>. R1 bleibt Active – <b>alle Pakete gehen verloren</b>. Genau diesen Fall erkennt Interface-Tracking nicht.':'Die Leitung steht, aber das Provider-Gateway antwortet nicht mehr auf den Ping. IP SLA meldet „Timeout“, Track 1 geht auf <b>down</b>, R1 sinkt auf <b>90</b>. R2 hat Preempt und wird <b>Active</b> – der Verkehr läuft über Provider B weiter.';
+}
+function slaRender(){$('slatxt').innerHTML=slaText();cancelAnimationFrame(slaRaf);var t0=null;
+ function fr(ts){if(t0===null)t0=ts;$('slasvg').innerHTML=slaDraw((ts-t0)/1600);slaRaf=requestAnimationFrame(fr);}
+ if(reduce||slaT!=='sla'||slaS==='cable')$('slasvg').innerHTML=slaDraw(.25);else slaRaf=requestAnimationFrame(fr);
+ [].forEach.call(document.querySelectorAll('#slasc button'),function(b){b.classList.toggle('on',b.dataset.s===slaS);});
+ [].forEach.call(document.querySelectorAll('#slatr button'),function(b){b.classList.toggle('on',b.dataset.t===slaT);});}
+[].forEach.call(document.querySelectorAll('#slasc button'),function(b){b.onclick=function(){slaS=b.dataset.s;slaRender();};});
+[].forEach.call(document.querySelectorAll('#slatr button'),function(b){b.onclick=function(){slaT=b.dataset.t;slaRender();};});
+slaRender();
+window.__sla={draw:slaDraw,set:function(a,b){slaS=a;slaT=b;slaRender();}};
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Welches Problem lösen HSRP und VRRP?',['Zu wenige IP-Adressen','Das Standardgateway als einziger Ausfallpunkt','Schleifen im Switch-Netz','Zu langsames Routing'],1,'Fällt das einzige Gateway aus, kommt niemand mehr aus dem Netz. FHRP stellt einen Ersatz-Router bereit.'],
+ ['Was tragen die PCs als Standardgateway ein?',['Die IP von R1','Die IP von R2','Die virtuelle IP der Gruppe','Die Multicast-Adresse'],2,'Die virtuelle IP gehört immer dem gerade aktiven Router – die PCs müssen nie umgestellt werden.'],
+ ['Zwei HSRP-Router haben beide Priorität 100. Wer wird Active?',['Der zuerst eingeschaltete','Der mit der höheren IP-Adresse','Der mit der niedrigeren IP-Adresse','Keiner'],1,'Bei gleicher Priorität entscheidet die höhere IP-Adresse.'],
+ ['Beim Provider gibt es eine Störung, das Interface Gi0/1 von R1 bleibt aber up. R1 hat nur Interface-Tracking. Was passiert?',['R2 übernimmt sofort','R1 bleibt Active – die Pakete gehen verloren','Beide Router werden Active','HSRP schaltet sich ab'],1,'Interface-Tracking sieht nur das eigene Interface. Für Störungen dahinter braucht man IP SLA.'],
+ ['Was macht IP SLA im Zusammenspiel mit HSRP?',['Es verschlüsselt die Hellos','Es pingt regelmäßig ein Ziel; antwortet es nicht, wird ein Track-Objekt down und HSRP senkt die Priorität','Es verteilt die Last','Es ersetzt die virtuelle IP'],1,'ip sla → track … ip sla … reachability → standby … track … decrement.'],
+ ['Der Befehl ip sla 1 wird auf einem Router nicht angenommen. Was ist die häufigste Ursache?',['Falsche IP-Adresse','Es fehlt die nötige Lizenz – die Grundlizenz enthält oft nur den IP SLA Responder','HSRP ist nicht konfiguriert','Der Router ist zu schnell'],1,'Auf vielen Cisco-Geräten braucht IP SLA ein höheres Lizenzpaket (z. B. securityk9/appxk9, bei Catalyst 9200 Network Advantage).'],
+ ['R1 (Prio 120) fällt aus, R2 übernimmt. R1 kommt zurück. HSRP ohne preempt – wer ist Active?',['R1','R2','beide','keiner'],1,'Ohne Preempt holt sich R1 die Rolle nicht zurück. Bei HSRP ist Preempt standardmäßig aus.'],
+ ['Wie lautet die virtuelle MAC von HSRP (Version 1), Gruppe 10?',['0000.0c07.ac10','0000.0c07.ac0a','0000.5e00.010a','0000.0c9f.f00a'],1,'Gruppe 10 in Hex ist 0a → 0000.0c07.ac0a. 0000.5e00.01xx wäre VRRP, 0000.0c9f.fxxx HSRP Version 2.'],
+ ['Wozu dient Tracking?',['Um Pakete zu zählen','Um die Priorität zu senken, wenn z. B. der Uplink ausfällt','Um die virtuelle MAC zu ändern','Um Hellos zu verschlüsseln'],1,'Ohne Uplink ist der Router als Gateway nutzlos. Tracking senkt seine Priorität, damit ein anderer (mit Preempt) übernimmt.'],
+ ['Und kurz zu VRRP: Was ist sein Vorteil gegenüber HSRP?',['Es ist schneller zu tippen','Es ist ein offener Standard und läuft auch auf Geräten anderer Hersteller','Es braucht keine IP-Adressen','Es funktioniert ohne Switch'],1,'HSRP ist Cisco-eigen, VRRP ist ein RFC-Standard.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return F.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function role(t){return t.proto==='HSRP'?'Active':'Master';}
+function evText(t,e){var n=t.R[e.r].name;return e.t==='fail'?n+' fällt aus (Strom weg).':e.t==='back'?n+' kommt wieder zurück.':e.t==='linkdown'?'Bei '+n+' wird das Kabel an Gi0/1 (Uplink) gezogen.':e.t==='linkup'?'Das Kabel an Gi0/1 von '+n+' steckt wieder.':e.t==='ispdown'?'Beim Provider von '+n+' gibt es eine Störung: Gi0/1 bleibt up, aber '+t.isp+' antwortet nicht mehr.':'Die Störung beim Provider von '+n+' ist behoben – '+t.isp+' antwortet wieder.';}
+function sel(cls,t){return'<select class="one '+cls+'"><option value="">– wählen –</option>'+t.R.map(function(r,i){return'<option value="'+i+'">'+r.name+'</option>';}).join('')+'</select>';}
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+F.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span><span class="tag">'+s.proto+(s.proto==='HSRP'?' v'+s.ver:'')+'</span></h3>';
+ h+='<p style="margin:4px 0 6px">Alle Router hängen am selben LAN, die Gruppe '+s.g+' hat die virtuelle IP <b>'+s.vip+'</b>. Alle starten gleichzeitig.</p><div class="cfgs">'+s.R.map(function(r,i){return'<div><p class="ph">'+r.name+'</p><pre class="cli">'+esc(F.config(s,i))+'</pre></div>';}).join('')+'</div>';
+ h+='<p class="qh">1. Wer ist zu Beginn '+role(s)+'?</p>'+sel('a0',s);
+ h+='<p class="qh">2. Welche virtuelle MAC-Adresse verwendet die Gruppe?</p><div class="opts col">'+s.macOpts.map(function(m){return'<label><input type="radio" name="'+id+'-mac" value="'+m+'"> <span class="mono">'+m+'</span></label>';}).join('')+'</div>';
+ h+='<p class="qh">3. Danach passiert:</p><ol class="evs">'+s.events.map(function(e){return'<li>'+evText(s,e)+'</li>';}).join('')+'</ol><p style="margin:0 0 4px">Wer ist jetzt '+role(s)+'?</p>'+sel('a1',s);
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),ok=0,a0=card.querySelector('.a0'),a1=card.querySelector('.a1'),w0=s.hist[0].active,w1=s.hist[s.hist.length-1].active;
+ mark(a0,a0.value===''?null:+a0.value===w0);if(a0.value!==''&&+a0.value===w0)ok++;
+ mark(a1,a1.value===''?null:+a1.value===w1);if(a1.value!==''&&+a1.value===w1)ok++;
+ card.querySelectorAll('input[name$="-mac"]').forEach(function(rb){var l=rb.parentNode;l.classList.remove('right','wrong');if(rb.checked){l.classList.add(rb.value===s.mac?'right':'wrong');if(rb.value===s.mac)ok++;}});
+ var fb=card.querySelector('.fb'),all=ok===3;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von 3 richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var R=s.R,A=role(s),h0=s.hist[0],ix=R.map(function(r,i){return i;}).sort(function(a,b){return h0.eff[b]-h0.eff[a]||(ipn(R[b].ip)-ipn(R[a].ip));});
+ function ipn(ip){return ip.split('.').reduce(function(a,b){return a*256+(+b);},0);}
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. '+R[h0.active].name+' ist '+A+'.</b><br><span class="hint">Prioritäten: '+R.map(function(r){return r.name+' '+r.prio+(r.prio===100?' (Standard)':'');}).join(', ')+'.'+(ix.length>1&&h0.eff[ix[0]]===h0.eff[ix[1]]?' Gleichstand → die höhere IP-Adresse ('+R[ix[0]].ip+') entscheidet.':' Die höchste Priorität gewinnt.')+'</span></li>';
+ var g=s.g,gh=s.proto==='HSRP'&&s.ver===2?g.toString(16).padStart(3,'0'):g.toString(16).padStart(2,'0');
+ h+='<li><b>2. '+s.mac+'</b><br><span class="hint">'+(s.proto==='VRRP'?'VRRP: 0000.5e00.01':s.ver===2?'HSRP v2: 0000.0c9f.f':'HSRP v1: 0000.0c07.ac')+' + Gruppe '+g+' in Hex = '+gh+'.</span></li>';
+ h+='<li><b>3. '+R[s.hist[s.hist.length-1].active].name+' ist '+A+'.</b><span class="hint">';
+ s.events.forEach(function(e,k){var hb=s.hist[k],ha=s.hist[k+1],n=R[e.r].name,why='';
+  if(e.t==='fail')why=hb.active===e.r?' Der '+A+' ist weg → '+R[ha.active].name+' übernimmt (nächsthöhere Priorität).':' Das war nicht der '+A+' – nichts ändert sich.';
+  else if(e.t==='back'){why=ha.active===e.r&&hb.active!==e.r?' '+n+' hat die höhere Priorität ('+R[e.r].prio+') und Preempt → er holt sich die Rolle zurück.':R[e.r].prio>ha.eff[ha.active]&&!R[e.r].pre?' '+n+' hat zwar die höhere Priorität, aber <b>kein Preempt</b> → '+R[ha.active].name+' bleibt '+A+'.':' '+n+' hat keine höhere Priorität → '+R[ha.active].name+' bleibt '+A+'.';}
+  else if(e.t==='ispdown'&&R[e.r].trk==='if')why=' '+n+' überwacht nur das Interface (track … interface … line-protocol). Gi0/1 ist weiter up → Track bleibt up, Priorität bleibt '+R[e.r].prio+' → '+R[ha.active].name+' bleibt '+A+' (und die Pakete gehen beim Provider verloren!).';
+  else if(e.t==='linkdown'||e.t==='ispdown'){why=' '+(e.t==='ispdown'?'Der IP-SLA-Ping zu '+s.isp+' schlägt fehl → Track 1 down.':(R[e.r].trk==='sla'?'Ohne Kabel kommt auch der IP-SLA-Ping nicht durch → Track 1 down.':'Track 1 (Interface) geht down.'))+' Priorität von '+n+' sinkt auf '+R[e.r].prio+' − '+R[e.r].dec+' = '+ha.eff[e.r]+'.';var hi=R.map(function(r,i){return i;}).filter(function(i){return i!==e.r&&ha.eff[i]>ha.eff[e.r];});
+   why+=ha.active!==hb.active?' '+R[ha.active].name+' ist jetzt höher und hat Preempt → übernimmt.':hi.length?' '+hi.map(function(i){return R[i].name;}).join(' und ')+' wäre höher, hat aber <b>kein Preempt</b> → keine Übernahme.':' Niemand ist höher → '+n+' bleibt '+A+'.';}
+  else if(e.t==='ispup'&&R[e.r].trk==='if')why=' Keine Änderung – das Interface-Tracking hatte ohnehin nichts bemerkt.';
+  else why=' Track 1 wieder up, Priorität von '+n+' wieder '+R[e.r].prio+'.'+(ha.active!==hb.active?' '+n+' ist höher und hat Preempt → zurück als '+A+'.':(R[e.r].prio>ha.eff[ha.active]?' Ohne Preempt bleibt '+R[ha.active].name+' '+A+'.':' Keine Änderung.'));
+  h+='<br>'+(k+1)+'. '+evText(s,e)+why;});
+ return h+'</span></li></ul>';
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=F.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=F.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
