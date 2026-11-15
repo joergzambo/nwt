@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Static NAT</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font:600 13px var(--ui)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.c-IL{color:#1565c0}.c-IG{color:#e65100}.c-OL{color:#6a1b9a}.c-OG{color:#2e7d32}
+/* Begriffs-Matrix */
+.mx{width:100%;border-collapse:separate;border-spacing:6px;margin-top:10px;table-layout:fixed}
+.mx th{font:600 14px var(--ui);padding:6px;text-align:center;color:var(--mute);vertical-align:bottom}
+.mx th b{display:block;color:var(--ink);font-size:16px}
+.mx th.rowh{text-align:right;width:25%;vertical-align:middle}
+.mx button{width:100%;border:2px solid;border-radius:6px;background:#fff;padding:10px 8px;cursor:pointer;text-align:center;line-height:1.35}
+.mx button b{display:block;font:700 16px var(--ui)}
+.mx button span{font:13.5px var(--mono);color:var(--ink)}
+.mx button.on{color:#fff!important}.mx button.on span{color:#fff}
+@media(max-width:600px){.mx{border-spacing:3px}.mx th{font-size:11.5px;padding:2px}.mx th b{font-size:13px}.mx th.rowh{width:21%}.mx button{padding:8px 2px}.mx button b{font-size:13px}.mx button span{font-size:10.5px;letter-spacing:-.3px}}
+.mxinfo{background:var(--soft);border-left:5px solid var(--ink);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:15.5px;min-height:4.6em}
+.memo{background:#eef6e6;border:1px solid #c5e1a5;border-radius:4px;padding:10px 14px;font-size:15.5px;margin-top:10px}
+.memo b.w1{background:#1c2b33;color:#fff;padding:1px 7px;border-radius:3px}
+.memo b.w2{background:#61a229;color:#fff;padding:1px 7px;border-radius:3px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.ntab{border-collapse:collapse;font:13.5px var(--mono);margin-top:6px;min-width:560px}
+.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left;white-space:nowrap}
+.ntab th{background:var(--soft);font:600 13px var(--ui)}
+.ntab input{width:21ch}
+.ntab tr.hit td{background:#fff8e1}
+.rule{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.atabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.atabs button{padding:8px 14px;border:1.5px solid var(--ink);border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
+.atabs button.on{background:var(--ink);color:#fff}
+.pk{font-family:var(--mono);font-size:13.5px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Static NAT: Server aus dem Internet erreichbar machen</h1>
+<p class="sub">Bei <a href="../pat/">PAT</a> entsteht ein Eintrag in der NAT-Tabelle erst, wenn ein Gerät <b>von innen</b> eine Verbindung aufbaut. Ein Webserver im eigenen Netz wäre so von außen nie erreichbar. <b>Static NAT</b> löst das: ein <b>fester Eintrag</b>, der immer in der Tabelle steht – auch für Verbindungen, die <b>von außen</b> kommen.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#idee">Die Idee</a><a href="#anim">Animation</a><a href="#cisco">Cisco-Konfiguration</a><a href="#soho">Portweiterleitung vs. Firewall</a><a href="#proxyarp">Proxy ARP</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="idee">Die Idee: ein fester Eintrag</h2>
+<div class="rules">
+ <div class="card"><h3>Static NAT (1:1)</h3><p style="margin:0 0 6px">Eine öffentliche Adresse wird <b>fest</b> einer privaten zugeordnet – in beide Richtungen, für <b>alle Ports</b>.</p>
+  <p class="pk" style="margin:0 0 6px"><b class="c-IG">203.0.113.10</b> ↔ <b class="c-IL">192.168.10.50</b></p>
+  <p class="hint">Braucht eine <b>eigene</b> öffentliche Adresse pro Server. Der Server ist damit unter dieser Adresse komplett erreichbar – was offen sein darf, muss eine Firewall-Regel oder ACL festlegen.</p></div>
+ <div class="card check"><h3>Portweiterleitung (statisches PAT)</h3><p style="margin:0 0 6px">Nur <b>ein Port</b> einer öffentlichen Adresse wird fest auf einen Port eines Servers gelegt. Der Port darf sich dabei ändern.</p>
+  <p class="pk" style="margin:0 0 6px"><b class="c-IG">203.0.113.5:8080</b> ↔ <b class="c-IL">192.168.10.50:80</b></p>
+  <p class="hint">Kommt mit <b>einer einzigen</b> öffentlichen Adresse aus – der des Routers. Über verschiedene Ports lassen sich mehrere Server dahinter erreichen. Das ist die „Portweiterleitung“ der Heimrouter.</p></div>
+</div>
+
+<h2 class="part" id="anim">Schritt für Schritt: ein Zugriff von außen</h2>
+<p class="sub">Wähle die Variante. Der Eintrag steht <b>von Anfang an</b> in der Tabelle – er wurde konfiguriert, nicht gelernt.</p>
+<div class="card">
+ <div class="atabs" role="group" aria-label="Variante"><button type="button" data-m="nat">Static NAT 1:1</button><button type="button" data-m="pf">Portweiterleitung</button></div>
+ <div id="asvg"></div>
+ <div class="legend"><span><i style="background:#1565c0"></i>Inside Local (Server privat)</span><span><i style="background:#e65100"></i>Inside Global (Server öffentlich)</span><span><i style="background:#2e7d32"></i>Outside (Client im Internet)</span></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+<div class="card check"><h3 style="font:400 19px var(--head);margin:0 0 6px">Der Unterschied zu PAT</h3><ul style="margin:0;padding-left:20px">
+ <li><b>PAT:</b> Eintrag entsteht von selbst, wenn innen jemand hinaus will – und verfällt wieder. Von außen kommt niemand herein.</li>
+ <li><b>Static NAT:</b> Eintrag ist konfiguriert und bleibt. Von außen kommend wird die <b>Ziel</b>-Adresse getauscht, auf dem Rückweg die <b>Quell</b>-Adresse – genau umgekehrt wie bei PAT.</li></ul></div>
+
+<h2 class="part" id="cisco">Cisco-Konfiguration</h2>
+<div class="stack">
+ <div class="card"><h3>Einrichten</h3>
+  <pre class="cli" style="margin:0">! Static NAT 1:1  (innen  →  außen)
+R1(config)# ip nat inside source static 192.168.10.50 203.0.113.10
+!
+! Portweiterleitung: außen Port 8080 → Server Port 80
+R1(config)# ip nat inside source static tcp 192.168.10.50 80 203.0.113.5 8080
+!
+! Innen und außen festlegen – wie bei PAT
+R1(config)# interface Gi0/0
+R1(config-if)#  ip nat inside
+R1(config)# interface Gi0/1
+R1(config-if)#  ip nat outside</pre>
+  <p class="hint">Reihenfolge merken: zuerst die <b>private</b> (Inside Local), dann die <b>öffentliche</b> Adresse (Inside Global). Bei der Portweiterleitung steht der Port jeweils direkt hinter seiner Adresse.</p></div>
+ <div class="card"><h3>Kontrollieren</h3>
+  <pre class="cli" style="margin:0">R1# show ip nat translations
+Pro Inside global      Inside local       Outside local  Outside global
+--- 203.0.113.10       192.168.10.50      ---            ---
+tcp 203.0.113.5:8080   192.168.10.50:80   ---            ---</pre>
+  <p class="hint">Statische Einträge stehen <b>sofort und dauerhaft</b> in der Tabelle – auch ohne Verkehr. Die Outside-Spalten bleiben leer (<code>---</code>), weil der Eintrag für <b>jeden</b> Partner im Internet gilt. Beim 1:1-Eintrag steht auch bei „Pro“ nur <code>---</code>: Er gilt für alle Protokolle und Ports.</p></div>
+</div>
+
+<h2 class="part" id="soho">„Portweiterleitung“ am Heimrouter vs. Weiterleiten auf einer Firewall</h2>
+<p class="sub">Technisch passiert in beiden Fällen dasselbe: Die Ziel-Adresse wird getauscht. Der Unterschied liegt darin, <b>was rundherum</b> geschieht.</p>
+<div class="card"><div id="fsvg"></div></div>
+<div class="card"><div class="scroll"><table class="cmp">
+ <tr><th></th><th>Portweiterleitung (SOHO-Router)</th><th>Firewall im Unternehmen</th></tr>
+ <tr><td><b>Wie viele Regeln?</b></td><td><b>Eine.</b> Die Weiterleitung öffnet stillschweigend auch gleich die Firewall.</td><td><b>Zwei getrennte:</b> eine <b>NAT-Regel</b> (wohin wird übersetzt?) und eine <b>Firewall-Regel</b> (wer darf überhaupt?). Ohne die zweite kommt nichts durch.</td></tr>
+ <tr><td><b>Wer darf zugreifen?</b></td><td>Meist das ganze Internet.</td><td>Einschränkbar nach Quelle, Dienst, Uhrzeit – mit Protokollierung, oft mit Angriffserkennung (IPS).</td></tr>
+ <tr><td><b>Öffentliche Adressen</b></td><td>Nur die eine des Routers, oft dynamisch → DynDNS nötig.</td><td>Meist mehrere fixe Adressen – eine eigene pro Dienst ist möglich (→ <a href="#proxyarp">Proxy ARP</a>).</td></tr>
+ <tr><td><b>Wo steht der Server?</b></td><td>Mitten im Heimnetz. Wird er gehackt, ist der Angreifer im LAN.</td><td>In einer <b>DMZ</b> – einem eigenen Netz, von dem aus das LAN nicht erreichbar ist.</td></tr>
+ <tr><td><b>Automatik</b></td><td><b>UPnP</b>: Geräte und Programme öffnen Ports selbst – bequem, aber riskant.</td><td>Keine Automatik. Jede Freischaltung ist eine bewusste, dokumentierte Entscheidung.</td></tr>
+ <tr><td><b>Begriffe</b></td><td>Portweiterleitung, Portfreigabe, Port Forwarding, „Virtueller Server“</td><td>Destination NAT (DNAT), Static NAT, je nach Hersteller auch „Virtual IP“</td></tr>
+</table></div>
+<p class="hint">Merke: <b>NAT ist keine Sicherheitsfunktion.</b> Die Übersetzung sagt nur, <b>wohin</b> ein Paket geht. Ob es <b>darf</b>, entscheidet die Firewall-Regel. Der Heimrouter versteckt diese zweite Entscheidung – die Firewall macht sie sichtbar. Hinter <a href="../pat/#cgnat">CGNAT</a> funktioniert übrigens keine der beiden Varianten.</p></div>
+
+<h2 class="part" id="proxyarp">Proxy ARP: wer antwortet für die zusätzliche Adresse?</h2>
+<p class="sub">Beim 1:1-NAT verwendet man oft eine öffentliche Adresse, die <b>kein Gerät wirklich hat</b> – im Beispiel 203.0.113.10. Der Router selbst hat außen 203.0.113.5.</p>
+<div class="card"><div id="psvg"></div>
+ <p style="margin:10px 0 0">Der Router des Providers will das Paket für 203.0.113.10 zustellen. Die Adresse liegt in seinem eigenen Netz, also fragt er per <b>ARP</b>: „Who has 203.0.113.10?“ Kein Gerät besitzt diese Adresse – eigentlich bliebe die Frage unbeantwortet. Deshalb antwortet <b>R1 stellvertretend</b> mit seiner <b>eigenen MAC-Adresse</b>. Das nennt man <b>Proxy ARP</b>. Erst dadurch landen die Pakete bei R1, der sie dann übersetzt.</p></div>
+<div class="rules">
+ <div class="card"><h3>Wann braucht man es?</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Ja:</b> Die NAT-Adresse liegt im <b>selben Netz</b> wie das Outside-Interface, ist aber <b>nicht</b> dessen eigene Adresse.</li>
+  <li><b>Nein:</b> Portweiterleitung auf die <b>eigene Interface-Adresse</b> – auf die antwortet der Router ohnehin.</li>
+  <li><b>Nein:</b> Der Provider <b>routet</b> ein zusätzliches Netz zum Router. Dann wird gar nicht per ARP gefragt.</li></ul></div>
+ <div class="card check"><h3>In der Praxis</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Cisco IOS</b> beantwortet ARP-Anfragen für statische NAT-Adressen automatisch.</li>
+  <li>Auf manchen <b>Firewalls</b> muss man Proxy ARP für die NAT-Adresse eigens einschalten oder eintragen.</li>
+  <li><b>Typischer Fehler:</b> NAT-Regel und Firewall-Regel stimmen, trotzdem kommt kein einziges Paket an – weil niemand auf die ARP-Anfrage antwortet. Kontrolle: im Mitschnitt nach unbeantworteten ARP-Requests suchen.</li></ul></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies die Konfiguration und spiel den Router: Wohin gehen die Pakete von außen? Was sieht der Client? Und wer antwortet auf ARP?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (1 Server)</option><option value="M" selected>Mittel (2 Server, 1:1 + Port)</option><option value="S">Schwer (3 Server)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/*SNJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},SN=window.SN,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var MONO='ui-monospace,Menlo,Consolas,monospace',SANS='Open Sans,Arial,sans-serif';
+var COL={IL:'#1565c0',IG:'#e65100',OL:'#6a1b9a',OG:'#2e7d32'},NAME={IL:'Inside Local',IG:'Inside Global',OL:'Outside Local',OG:'Outside Global'};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'"'+(o.op!=null?' opacity="'+o.op+'"':'')+' font-family="'+(o.mono?MONO:SANS)+'">'+esc(t)+'</text>';}
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function rtr(){return'<ellipse cx="0" cy="7" rx="22" ry="8" fill="#1f5872"/><rect x="-22" y="-7" width="44" height="14" fill="#2f7392"/><ellipse cx="0" cy="-7" rx="22" ry="8" fill="#5a9dbb" stroke="#1f5872"/><path d="M-11 -7h7M4 -7h7M-1 -12v4M-1 -5v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>';}
+function srv(){return'<rect x="-15" y="-22" width="30" height="44" rx="3" fill="#fff" stroke="#2e7d32" stroke-width="2.5"/><path d="M-9 -13h18M-9 -5h18M-9 3h18" stroke="#2e7d32" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="13" r="2.4" fill="#2e7d32"/>';}
+function cloud(){return'<path d="M-34 14a16 16 0 0 1 2 -31a22 22 0 0 1 41 -6a17 17 0 0 1 25 18a12 12 0 0 1 -4 19z" fill="#eef2f5" stroke="#78909c" stroke-width="2"/>';}
+function at(x,y,g){return'<g transform="translate('+x+' '+y+')">'+g+'</g>';}
+function zones(xb,y0,y1,W){return'<rect x="8" y="'+y0+'" width="'+(xb-8)+'" height="'+(y1-y0)+'" fill="#e8f0fe" opacity=".55"/><rect x="'+xb+'" y="'+y0+'" width="'+(W-8-xb)+'" height="'+(y1-y0)+'" fill="#fff3e0" opacity=".55"/><line x1="'+xb+'" y1="'+y0+'" x2="'+xb+'" y2="'+y1+'" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5 4"/>';}
+
+/* ===== Animation ===== */
+var W=900,LANE=72,NY=178,XP=126,XR=370,XS=776;
+var NSV=[70,NY],NR=[XR,NY],NC=[600,NY],NCL=[820,NY];
+var TX=96,TW=708,TY=306,RH=27,CW=[50,172,172,157,157],CN=['Pro','Inside global','Inside local','Outside local','Outside global'],CK=[null,'IG','IL','OL','OG'];
+var HH=TY+2*RH+52;
+function cellX(c){var x=TX;for(var i=0;i<c;i++)x+=CW[i];return x;}
+function cellC(c){return[cellX(c)+CW[c]/2,TY+RH+RH/2];}
+function ease(p){return p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;}
+function seg(p,a,b){return Math.max(0,Math.min(1,(p-a)/(b-a)));}
+function lerp(a,b,t){return a+(b-a)*t;}
+function F(v,k){return{v:v,k:k};}
+var CL=F('198.51.100.77:51000','OG'),EV=F('192.0.2.66:40022','OG');
+function IGs(t){return'<b class="c-IG">'+t+'</b>';}function ILs(t){return'<b class="c-IL">'+t+'</b>';}function OGs(t){return'<b class="c-OG">'+t+'</b>';}
+function steps(mode){
+ var nat=mode==='nat',G=F(nat?'203.0.113.10:443':'203.0.113.5:8080','IG'),L=F(nat?'192.168.10.50:443':'192.168.10.50:80','IL'),
+  G2=F(nat?'203.0.113.10:22':'203.0.113.5:22','IG'),L2=F('192.168.10.50:22','IL');
+ var S=[
+  {type:'move',from:XS,to:XR,d0:NCL,d1:NR,src:CL,dst:G,t:'Ein Client aus dem Internet ruft den Server auf',
+   txt:'Irgendwo im Internet tippt jemand die Adresse des Servers ein. Das Paket geht an die <b>öffentliche</b> Adresse '+IGs(G.v)+'. '+(nat?'Das ist eine zusätzliche Adresse, die fest dem Server zugeordnet ist.':'Das ist die Adresse des Routers selbst, mit dem freigegebenen Port 8080.')+' Von der privaten Adresse des Servers weiß der Client nichts.'},
+  {type:'lookup',field:'dst',src:CL,dst:G,msg:nat?'Ziel-IP 203.0.113.10 steht fest in der Tabelle  →  192.168.10.50':'Ziel 203.0.113.5:8080 steht fest in der Tabelle  →  192.168.10.50:80',t:'Der Router findet den festen Eintrag',
+   txt:'R1 sucht das <b>Ziel</b> in der NAT-Tabelle. Der Eintrag ist da, <b>obwohl von innen noch nie jemand hinaus wollte</b> – er wurde konfiguriert. '+(nat?'Er gilt für die ganze Adresse, egal welcher Port.':'Er gilt nur für genau diesen einen Port.')},
+  {type:'swap',field:'dst',old:G,src:CL,dst:L,msg:'Ziel im Paket:  Inside Global  →  Inside Local',t:nat?'Der Router tauscht die Ziel-IP':'Der Router tauscht Ziel-IP und Port',
+   txt:'Von außen kommend wird das <b>Ziel</b> umgeschrieben: Aus '+IGs(G.v)+' wird '+ILs(L.v)+'. '+(nat?'Der Port bleibt gleich.':'Auch der Port ändert sich: außen 8080, am Server 80.')+' Die Quelle – der Client – bleibt unverändert.'},
+  {type:'move',from:XR,to:XP,d0:NR,d1:NSV,src:CL,dst:L,t:'Das Paket erreicht den Server',
+   txt:'Der Server sieht als Absender die <b>echte Adresse des Clients</b> '+OGs(CL.v)+' und kann ihm ganz normal antworten.'},
+  {type:'move',from:XP,to:XR,d0:NSV,d1:NR,src:L,dst:CL,t:'Der Server antwortet',
+   txt:'Die Antwort trägt als Quelle die <b>private</b> Adresse des Servers: '+ILs(L.v)+'. So darf sie nicht ins Internet – der Client würde sie auch gar nicht als Antwort erkennen.'},
+  {type:'lookup',field:'src',src:L,dst:CL,msg:'Quelle '+(nat?'192.168.10.50':L.v)+' steht in der Tabelle  →  '+(nat?'203.0.113.10':G.v),t:'Derselbe Eintrag, andere Richtung',
+   txt:'R1 findet die <b>Quelle</b> in der Spalte „Inside local“. Der feste Eintrag gilt in <b>beide Richtungen</b>.'},
+  {type:'swap',field:'src',old:L,src:G,dst:CL,msg:'Quelle im Paket:  Inside Local  →  Inside Global',t:'Der Router tauscht die Quelle zurück',
+   txt:'Aus '+ILs(L.v)+' wird wieder '+IGs(G.v)+' – genau die Adresse, an die der Client seine Anfrage geschickt hat.'},
+  {type:'move',from:XR,to:XS,d0:NR,d1:NCL,src:G,dst:CL,t:'Die Antwort kommt beim Client an',
+   txt:'Für den Client sieht es so aus, als hätte '+IGs(G.v)+' geantwortet. Dass dahinter ein Server mit privater Adresse steht, bleibt verborgen.'},
+  {type:'move',from:XS,to:XR,d0:NCL,d1:NR,src:EV,dst:G2,evil:1,t:'Jemand probiert Port 22 (SSH)',
+   txt:'Ein Fremder versucht sein Glück auf einem ganz anderen Port: '+IGs(G2.v)+'.'}];
+ if(nat){
+  S.push({type:'lookup',field:'dst',src:EV,dst:G2,evil:1,msg:'Eintrag gilt für die ganze Adresse  →  auch Port 22 passt',t:'Bei 1:1-NAT passt jeder Port',
+   txt:'Der Eintrag kennt keine Ports – er gilt für <b>alles</b>, was an 203.0.113.10 geht.'});
+  S.push({type:'swap',field:'dst',old:G2,src:EV,dst:L2,evil:1,warn:1,msg:'⚠ Auch SSH wird durchgereicht – das muss eine Firewall-Regel oder ACL verhindern',t:'Achtung: Der ganze Server ist offen',
+   txt:'Auch dieses Paket wird übersetzt und zum Server geschickt. <b>Static NAT 1:1 macht alle Ports erreichbar.</b> Welche wirklich offen sein dürfen, muss eine <b>Firewall-Regel</b> bzw. ACL festlegen – NAT allein schützt nicht.'});
+ }else S.push({type:'drop',src:EV,dst:G2,evil:1,msg:'Für Port 22 gibt es keinen Eintrag  →  nicht weitergeleitet',t:'Kein Eintrag für diesen Port',
+   txt:'Weitergeleitet wird nur Port 8080. Für Port 22 gibt es keinen Eintrag, also geht das Paket <b>nicht</b> zum Server. Jeder freigegebene Port ist aber eine Tür ins eigene Netz – so wenige wie möglich öffnen.'});
+ S.row=nat?['---','203.0.113.10','192.168.10.50','---','---']:['tcp','203.0.113.5:8080','192.168.10.50:80','---','---'];
+ S.nat=nat;return S;
+}
+function chip(x,y,f,op,sc){var w=f.v.length*7.25+14;return'<g opacity="'+op+'" transform="translate('+x+' '+y+') scale('+(sc||1)+')"><rect x="'+(-w/2)+'" y="-11" width="'+w+'" height="22" rx="11" fill="'+COL[f.k]+'" stroke="#fff" stroke-width="1.5"/>'+tx(0,4.5,f.v,{fs:12,fw:700,mono:1,c:'#fff'})+'</g>';}
+function packet(x,st,fx,hi,dead){
+ var w=228,h=50,x0=x-w/2,y0=LANE-h/2,g='<g'+(dead?' opacity="'+dead+'"':'')+'><rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" rx="6" fill="#fff" stroke="'+(st.evil?'#c62828':'#1c2b33')+'" stroke-width="2.2"/>';
+ [['src','Von',y0+19],['dst','An',y0+40]].forEach(function(r){
+  var f=st[r[0]],isFx=fx&&fx.field===r[0];
+  if(hi===r[0]||isFx)g+='<rect x="'+(x0+4)+'" y="'+(r[2]-15)+'" width="'+(w-8)+'" height="21" rx="4" fill="#fff59d"'+(isFx?' opacity="'+(0.35+0.65*Math.sin(Math.PI*fx.p))+'"':'')+'/>';
+  g+=tx(x0+11,r[2],r[1],{a:'start',fs:12,fw:600,c:'#546e7a'});
+  if(isFx){var a=seg(fx.p,0,.45),b=seg(fx.p,.5,1);
+   if(a<1){var tw=fx.old.v.length*7.5;g+=tx(x0+44,r[2]-a*9,fx.old.v,{a:'start',fs:12.5,fw:700,mono:1,c:COL[fx.old.k],op:1-a})+'<line x1="'+(x0+42)+'" y1="'+(r[2]-4-a*9)+'" x2="'+(x0+42+tw*Math.min(1,a*2.2)+4)+'" y2="'+(r[2]-4-a*9)+'" stroke="#c62828" stroke-width="2" opacity="'+(1-a)+'"/>';}
+   if(b>0)g+=tx(x0+44,r[2]+(1-b)*9,f.v,{a:'start',fs:12.5,fw:700,mono:1,c:COL[f.k],op:b});
+  }else g+=tx(x0+44,r[2],f.v,{a:'start',fs:12.5,fw:700,mono:1,c:COL[f.k]});
+ });
+ return g+'</g>';
+}
+function fieldPos(x,which){return[x+1,LANE+(which==='src'?-10:11)];}
+function table(S,o){
+ var h=tx(TX,TY-10,'NAT-Tabelle von R1 – fester Eintrag',{a:'start',fs:13,fw:700})+tx(TX+TW,TY-10,'R1# show ip nat translations',{a:'end',fs:11.5,mono:1,c:'#546e7a'});
+ h+='<rect x="'+TX+'" y="'+TY+'" width="'+TW+'" height="'+(RH*2)+'" fill="#fff" stroke="#90a4ae" stroke-width="1.5"/><rect x="'+TX+'" y="'+TY+'" width="'+TW+'" height="'+RH+'" fill="#eceff1"/>';
+ if(o.hi>0)h+='<rect x="'+TX+'" y="'+(TY+RH)+'" width="'+TW+'" height="'+RH+'" fill="#fff59d" opacity="'+o.hi+'"/>';
+ h+='<path d="M'+TX+' '+(TY+RH)+'h'+TW+'" stroke="#cfd8dc"/>';
+ for(var c=0;c<5;c++){if(c)h+='<line x1="'+cellX(c)+'" y1="'+TY+'" x2="'+cellX(c)+'" y2="'+(TY+2*RH)+'" stroke="#cfd8dc"/>';h+=tx(cellX(c)+8,TY+18,CN[c],{a:'start',fs:12,fw:700,c:CK[c]?COL[CK[c]]:'#1c2b33'});
+  var col=c===1?COL.IG:c===2?COL.IL:'#78909c';h+=tx(cellX(c)+8,TY+RH+18,S.row[c],{a:'start',fs:12,fw:c===1||c===2?600:400,mono:1,c:col});
+  (o.cells||[]).forEach(function(q){if(q[0]===c&&q[1]>0)h+='<rect x="'+(cellX(c)+2)+'" y="'+(TY+RH+2)+'" width="'+(CW[c]-4)+'" height="'+(RH-4)+'" rx="4" fill="none" stroke="'+col+'" stroke-width="2.5" opacity="'+q[1]+'"/>';});}
+ return h;
+}
+var mode='nat',S=steps(mode);
+function draw(i,p){
+ var st=S[i],e=ease(p),h='<svg viewBox="0 0 '+W+' '+HH+'" role="img" aria-label="Static-NAT-Animation: '+esc(st.t)+'">';
+ h+=zones(XR,8,258,W)+tx(22,27,'INSIDE · eigenes Netz',{a:'start',fs:12,fw:700,c:'#1565c0'})+tx(W-22,27,'OUTSIDE · Internet',{a:'end',fs:12,fw:700,c:'#e65100'});
+ h+='<path d="M92 '+NY+'H'+(XR-22)+'M'+(XR+22)+' '+NY+'H558M642 '+NY+'H798" stroke="#1c2b33" stroke-width="2.2" fill="none"/>';
+ h+=at(NSV[0],NSV[1],srv().replace(/#2e7d32/g,'#1565c0'))+tx(NSV[0],NSV[1]+40,'Webserver',{fs:12,fw:700})+tx(NSV[0],NSV[1]+55,'192.168.10.50',{fs:11.5,mono:1,c:'#546e7a'});
+ h+=at(XR,NY,rtr())+tx(XR,NY+32,'R1',{fs:13,fw:700})+tx(XR-30,NY+48,'Gi0/0 · .1',{a:'end',fs:11,mono:1,c:'#546e7a'})+tx(XR+30,NY+48,'Gi0/1 · 203.0.113.5',{a:'start',fs:11,mono:1,c:'#e65100'});
+ h+=at(NC[0],NC[1],cloud())+tx(NC[0],NC[1]+5,'Internet',{fs:11.5,fw:600,c:'#546e7a'});
+ h+=at(NCL[0],NCL[1],pc('#2e7d32'))+tx(NCL[0],NCL[1]+31,'Client',{fs:12,fw:700})+tx(NCL[0],NCL[1]+46,'198.51.100.77',{fs:11.5,mono:1,c:'#546e7a'});
+ var px=XR,dot=NR,tab={},over='',fx=null,hi=null,dead=0,my=TY+2*RH+28;
+ if(st.type==='move'){px=lerp(st.from,st.to,e);dot=[lerp(st.d0[0],st.d1[0],e),lerp(st.d0[1],st.d1[1],e)];}
+ if(st.type==='lookup'){
+  var c1=st.field==='dst'?1:2,c2=3-c1,b=ease(seg(p,.05,.5)),l2=seg(p,.5,.62),fp=fieldPos(px,st.field),t1=cellC(c1),arr=seg(p,.62,.9);hi=st.field;
+  tab.hi=l2;tab.cells=[[c1,l2],[c2,arr]];
+  if(b>0&&l2<1)over+=chip(lerp(fp[0],t1[0],b),lerp(fp[1],t1[1],b),st[st.field],1-l2,1+.25*Math.sin(Math.PI*b));
+  over+=tx(W/2,my,st.msg,{fs:13.5,fw:700,c:'#3d6e14',op:arr});
+  over+='<path d="M'+XR+' '+(NY+58)+'V'+(TY-26)+'" stroke="#61a229" stroke-width="2.5" stroke-dasharray="5 4" opacity="'+Math.sin(Math.PI*Math.min(1,p*1.1))+'"/>';
+ }
+ if(st.type==='swap'){fx={field:st.field,old:st.old,p:p};tab.hi=.5;over+=tx(W/2,my,st.msg,{fs:13.5,fw:700,c:st.warn?'#c62828':'#3d6e14'});}
+ if(st.type==='drop'){
+  var d2=ease(seg(p,.05,.45)),miss=seg(p,.5,.7),fp3=fieldPos(px,'dst'),q=cellC(1);hi='dst';
+  if(d2>0&&miss<1)over+=chip(lerp(fp3[0],q[0],d2),lerp(fp3[1],q[1],d2),st.dst,1-miss,1);
+  over+=tx(W/2,my,st.msg,{fs:13.5,fw:700,c:'#c62828',op:miss});dead=1-.65*seg(p,.7,1);
+  if(miss>0)over+='<path d="M'+(px-22)+' '+(LANE-22)+'l44 44m0 -44l-44 44" stroke="#c62828" stroke-width="7" stroke-linecap="round" opacity="'+miss+'"/>';
+ }
+ h+=table(S,tab);
+ h+='<line x1="'+px+'" y1="'+(LANE+25)+'" x2="'+dot[0]+'" y2="'+dot[1]+'" stroke="#90a4ae" stroke-width="1.4" stroke-dasharray="3 3"/><circle cx="'+dot[0]+'" cy="'+dot[1]+'" r="6.5" fill="'+(st.evil?'#c62828':'#fbc02d')+'" stroke="#1c2b33" stroke-width="1.8"/>';
+ h+=packet(px,st,fx,hi,dead)+over;
+ return h+'</svg>';
+}
+var si=0,playing=false,raf=0,safe=0,timer=0;
+var DUR={move:[0,2600,2000,1500,1050,700],swap:[0,3400,2700,2000,1500,1000],lookup:[0,4800,3800,2900,2100,1400],drop:[0,4200,3300,2500,1800,1200]};
+var PAUSE=[0,2600,1900,1300,800,450];
+function label(){var st=S[si];$('ttl').innerHTML=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;}
+function cancel(){cancelAnimationFrame(raf);clearTimeout(safe);clearTimeout(timer);}
+function finish(){cancel();$('asvg').innerHTML=draw(si,1);if(playing){if(si<S.length-1)timer=setTimeout(function(){if(playing)go(si+1,true);},PAUSE[+$('spd').value]);else stop();}}
+function go(i,anim){
+ cancel();si=i;label();
+ if(!anim||reduce){finish();return;}
+ var dur=DUR[S[si].type][+$('spd').value],t0=null,mine=si,mm=mode;
+ function fr(ts){if(mine!==si||mm!==mode)return;if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur);$('asvg').innerHTML=draw(si,p);if(p<1)raf=requestAnimationFrame(fr);else finish();}
+ $('asvg').innerHTML=draw(si,0);raf=requestAnimationFrame(fr);
+ safe=setTimeout(function(){if(mine===si&&mm===mode)finish();},dur+700);
+}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('prev').onclick=function(){stop();if(si>0)go(si-1,false);};
+$('next').onclick=function(){stop();if(si<S.length-1)go(si+1,true);};
+$('rst').onclick=function(){stop();go(0,true);};
+$('play').onclick=function(){if(playing){stop();finish();return;}playing=true;$('play').textContent='❚❚ Pause';go(si>=S.length-1?0:si+1,true);};
+function setMode(m){stop();mode=m;S=steps(m);[].forEach.call(document.querySelectorAll('.atabs button'),function(b){b.classList.toggle('on',b.dataset.m===m);b.setAttribute('aria-pressed',b.dataset.m===m);});go(0,false);}
+[].forEach.call(document.querySelectorAll('.atabs button'),function(b){b.onclick=function(){setMode(b.dataset.m);};});
+setMode('nat');
+window.__sn={draw:draw,setMode:setMode,len:function(){return S.length;}};
+
+/* ===== Grafik: SOHO vs. Firewall ===== */
+function fw(){return'<rect x="-22" y="-18" width="44" height="36" rx="3" fill="#ef9a9a" stroke="#c62828" stroke-width="2.2"/><path d="M-22 -6h44M-22 6h44M-8 -18v12M8 -18v12M0 -6v12M-14 -6v12M14 -6v12M-8 6v12M8 6v12" stroke="#c62828" stroke-width="1.6"/>';}
+(function(){
+ var W=900,H=320,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Vergleich: Portweiterleitung am Heimrouter und Weiterleitung auf einer Firewall mit DMZ">';
+ h+='<rect x="8" y="8" width="430" height="'+(H-16)+'" rx="6" fill="#fbfcfd" stroke="#cfd8dc"/><rect x="462" y="8" width="430" height="'+(H-16)+'" rx="6" fill="#fbfcfd" stroke="#cfd8dc"/>';
+ h+=tx(223,32,'Heimrouter: „Portweiterleitung“',{fs:14.5,fw:700})+tx(677,32,'Firewall: NAT-Regel + Firewall-Regel',{fs:14.5,fw:700});
+ /* links */
+ h+='<rect x="296" y="52" width="126" height="170" rx="6" fill="#e8f0fe" stroke="#90caf9"/>'+tx(359,68,'LAN',{fs:11.5,fw:700,c:'#1565c0'});
+ h+='<path d="M112 138H196M240 138L338 100M240 138L343 172" stroke="#1c2b33" stroke-width="2.2" fill="none"/>';
+ h+=at(70,138,cloud())+tx(70,143,'Internet',{fs:11.5,fw:600,c:'#546e7a'})+at(218,138,rtr())+tx(218,170,'Heimrouter',{fs:12,fw:700});
+ h+=at(360,100,pc('#1565c0'))+tx(360,128,'PCs',{fs:11,c:'#546e7a'})+at(360,176,srv())+tx(360,212,'Server',{fs:11.5,fw:700});
+ h+='<rect x="30" y="238" width="386" height="24" rx="12" fill="#1c2b33"/>'+tx(223,254.5,'Eine Regel:  TCP 443  →  192.168.1.50',{fs:12.5,fw:700,c:'#fff'});
+ h+=tx(223,286,'öffnet die Firewall gleich mit · Server steht im LAN',{fs:12.5,fw:600,c:'#c62828'});
+ /* rechts */
+ h+='<rect x="750" y="50" width="126" height="78" rx="6" fill="#e8f0fe" stroke="#90caf9"/>'+tx(768,66,'LAN',{a:'start',fs:11.5,fw:700,c:'#1565c0'})+'<rect x="750" y="140" width="126" height="84" rx="6" fill="#fff3e0" stroke="#ffcc80"/>'+tx(768,156,'DMZ',{a:'start',fs:11.5,fw:700,c:'#e65100'});
+ h+='<path d="M566 138H636M682 138L798 94M682 138L803 186" stroke="#1c2b33" stroke-width="2.2" fill="none"/>';
+ h+=at(524,138,cloud())+tx(524,143,'Internet',{fs:11.5,fw:600,c:'#546e7a'})+at(660,138,fw())+tx(660,172,'Firewall',{fs:12,fw:700});
+ h+=at(820,94,pc('#1565c0'))+at(820,186,srv());
+ h+='<rect x="480" y="238" width="394" height="24" rx="12" fill="#1c2b33"/>'+tx(677,254.5,'① NAT-Regel:  203.0.113.10  →  10.0.50.10',{fs:12.5,fw:700,c:'#fff'});
+ h+='<rect x="480" y="268" width="394" height="24" rx="12" fill="#2e7d32"/>'+tx(677,284.5,'② Firewall-Regel:  Internet → Server, nur TCP 443',{fs:12.5,fw:700,c:'#fff'});
+ $('fsvg').innerHTML=h+'</svg>';
+})();
+
+/* ===== Grafik: Proxy ARP ===== */
+(function(){
+ var W=900,H=250,y=128,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Proxy ARP: R1 antwortet für die NAT-Adresse">';
+ h+='<rect x="8" y="8" width="610" height="'+(H-16)+'" fill="#fff3e0" opacity=".55"/><rect x="618" y="8" width="274" height="'+(H-16)+'" fill="#e8f0fe" opacity=".55"/><line x1="618" y1="8" x2="618" y2="'+(H-8)+'" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5 4"/>';
+ h+=tx(20,H-18,'OUTSIDE · WAN-Netz 203.0.113.0/28',{a:'start',fs:12,fw:700,c:'#e65100'})+tx(W-20,H-18,'INSIDE',{a:'end',fs:12,fw:700,c:'#1565c0'});
+ h+='<path d="M122 '+y+'H596M640 '+y+'H784" stroke="#1c2b33" stroke-width="2.2"/>';
+ h+=at(100,y,rtr())+tx(100,y+32,'Provider-Router',{fs:12,fw:700})+tx(100,y+48,'203.0.113.1',{fs:11.5,mono:1,c:'#546e7a'});
+ h+=at(618,y,rtr())+tx(618,y+32,'R1',{fs:13,fw:700})+tx(606,y+48,'Gi0/1 · 203.0.113.5',{a:'end',fs:11.5,mono:1,c:'#e65100'})+tx(606,y+63,'MAC 00:1c:aa:aa:aa:05',{a:'end',fs:11.5,mono:1,c:'#546e7a'});
+ h+=at(805,y,srv().replace(/#2e7d32/g,'#1565c0'))+tx(805,y+40,'Webserver',{fs:12,fw:700})+tx(805,y+55,'192.168.10.50',{fs:11.5,mono:1,c:'#546e7a'});
+ h+='<rect x="170" y="34" width="378" height="26" rx="13" fill="#455a64"/>'+tx(359,51.5,'① ARP: Who has 203.0.113.10? Tell 203.0.113.1',{fs:12,fw:700,mono:1,c:'#fff'})+'<path d="M300 72H410M412 72l-10 -5v10z" stroke="#455a64" stroke-width="2.2" fill="#455a64"/>';
+ h+='<rect x="150" y="84" width="418" height="26" rx="13" fill="#e65100"/>'+tx(359,101.5,'② 203.0.113.10 is at 00:1c:aa:aa:aa:05  ← R1 antwortet',{fs:12,fw:700,mono:1,c:'#fff'});
+ h+=tx(320,y+24,'203.0.113.10 gehört keinem Interface –',{fs:12.5,fw:600,c:'#c62828'})+tx(320,y+41,'R1 antwortet stellvertretend (Proxy ARP)',{fs:12.5,fw:600,c:'#c62828'});
+ $('psvg').innerHTML=h+'</svg>';
+})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Wozu braucht man Static NAT?',['Damit PCs schneller surfen','Damit ein Server im privaten Netz aus dem Internet erreichbar ist','Damit der Router weniger Ports braucht','Um IPv6 zu aktivieren'],1,'Bei PAT entstehen Einträge nur durch Verbindungen von innen. Für Zugriffe von außen braucht es einen festen Eintrag.'],
+ ['Ein Paket kommt aus dem Internet zu einem Server hinter Static NAT. Was ändert der Router?',['Die Quell-Adresse','Die Ziel-Adresse','Beide Adressen','Nur die MAC-Adresse'],1,'Von außen kommend wird das Ziel getauscht (öffentlich → privat). Auf dem Rückweg wird die Quelle getauscht.'],
+ ['Was bedeutet: ip nat inside source static tcp 192.168.10.50 80 203.0.113.5 8080 ?',['Port 80 außen geht an Port 8080 des Servers','Port 8080 der öffentlichen Adresse geht an Port 80 des Servers','Der Server darf nur über Port 8080 hinaus','Alle Ports von 80 bis 8080 werden weitergeleitet'],1,'Erst private Adresse mit Port (Inside Local), dann öffentliche Adresse mit Port (Inside Global).'],
+ ['Was ist der wichtigste Unterschied zwischen Static NAT 1:1 und einer Portweiterleitung?',['1:1 gilt für alle Ports einer Adresse, die Portweiterleitung nur für einen Port','1:1 ist verschlüsselt','Portweiterleitung funktioniert nur mit UDP','Es gibt keinen'],0,'Bei 1:1 ist der ganze Server unter der öffentlichen Adresse erreichbar – was offen sein darf, muss eine Firewall-Regel/ACL bestimmen.'],
+ ['Auf einer Firewall richtest du nur die NAT-Regel für den Webserver ein. Was passiert?',['Der Server ist erreichbar','Nichts kommt durch – es fehlt die Firewall-Regel, die den Verkehr erlaubt','Die Firewall legt die Regel automatisch an','Der Server ist nur per HTTPS erreichbar'],1,'Auf Firewalls sind Übersetzung (NAT-Regel) und Erlaubnis (Firewall-Regel) getrennt. Der Heimrouter macht beides in einem Schritt.'],
+ ['Warum stellt man öffentlich erreichbare Server in eine DMZ?',['Dort ist das Internet schneller','Wird der Server gehackt, kommt der Angreifer nicht direkt ins LAN','Weil dort kein NAT nötig ist','Damit sie private Adressen sparen'],1,'Die DMZ ist ein eigenes Netz. Die Firewall erlaubt von dort keinen freien Zugriff ins LAN.'],
+ ['R1 hat außen 203.0.113.5 und einen 1:1-Eintrag für 203.0.113.10. Der Provider-Router fragt per ARP nach 203.0.113.10. Wer antwortet?',['Der Server im LAN','Niemand','R1 mit seiner eigenen MAC – Proxy ARP','Der Provider-Router sich selbst'],2,'Die Adresse gehört keinem Interface. R1 antwortet stellvertretend, damit die Pakete bei ihm landen.'],
+ ['Wann ist Proxy ARP für die NAT-Adresse NICHT nötig?',['Wenn die Portweiterleitung die eigene Interface-Adresse des Routers verwendet','Wenn der Server Linux verwendet','Wenn HTTPS verwendet wird','Wenn der Server DHCP verwendet'],0,'Auf seine eigene Adresse antwortet der Router ohnehin. Ebenfalls nicht nötig: wenn der Provider ein zusätzliches Netz zum Router routet.'],
+ ['Was macht UPnP auf einem Heimrouter?',['Es verschlüsselt das WLAN','Geräte und Programme können selbst Portweiterleitungen anlegen','Es vergibt IP-Adressen','Es blockiert alle eingehenden Ports'],1,'Bequem für Spielkonsolen – aber auch Schadsoftware im LAN kann so Türen nach außen öffnen.']];
+
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return SN.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function miniTopo(s){
+ var ns=s.servers.length,sp=70,H=Math.max(ns*sp,120)+40,mid=H/2-2,Wd=780,xr=330,h='<svg viewBox="0 0 '+Wd+' '+H+'" role="img" aria-label="Netz der Aufgabe">';
+ h+=zones(xr,6,H-6,Wd)+tx(Wd-16,22,'OUTSIDE',{a:'end',fs:11,fw:700,c:'#e65100'})+tx(xr-12,22,'INSIDE',{a:'end',fs:11,fw:700,c:'#1565c0'});
+ var sy=function(k){return mid-(ns-1)*sp/2+k*sp-8;};
+ s.servers.forEach(function(o,k){h+='<line x1="106" y1="'+sy(k)+'" x2="'+(xr-22)+'" y2="'+mid+'" stroke="#1c2b33" stroke-width="2"/>';});
+ h+='<path d="M'+(xr+22)+' '+mid+'H528M572 '+mid+'H658" stroke="#1c2b33" stroke-width="2"/>';
+ s.servers.forEach(function(o,k){h+=at(90,sy(k),srv().replace(/#2e7d32/g,'#1565c0'))+tx(90,sy(k)+37,o.name+' · '+o.ip,{fs:11.5,fw:600});});
+ h+=at(xr,mid,rtr())+tx(xr,mid-24,'R1',{fs:13,fw:700})+tx(xr+14,mid+34,'Gi0/1 · '+s.wan+' /29',{a:'start',fs:11.5,fw:600,mono:1,c:'#e65100'});
+ h+=at(550,mid,rtr())+tx(550,mid-24,'Provider',{fs:12,fw:700})+tx(550,mid+34,s.isp,{fs:11.5,mono:1,c:'#546e7a'});
+ h+=at(700,mid,cloud())+tx(700,mid+5,'Internet',{fs:11.5,fw:600,c:'#546e7a'});
+ return h+'</svg>';
+}
+var ARPTXT={own:'R1 – es ist seine eigene Interface-Adresse',proxy:'R1 stellvertretend mit seiner MAC (Proxy ARP)',server:'der Server selbst',none:'niemand'};
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+SN.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+miniTopo(s);
+ h+='<p class="ph" style="margin-top:10px;font:600 13.5px var(--ui)">Konfiguration von R1</p><pre class="cli">'+esc(s.entries.map(SN.cmd).join('\n')+'\n!\ninterface Gi0/0\n ip nat inside\ninterface Gi0/1\n ip address '+s.wan+' 255.255.255.248\n ip nat outside')+'</pre>';
+ h+='<p class="qh">1. Aus dem Internet kommen diese Pakete. Wohin leitet R1 sie weiter?</p>';
+ s.pkts.forEach(function(p,k){h+='<p style="margin:8px 0 4px" class="pk">'+String.fromCharCode(97+k)+') '+p.src+' → <b>'+p.ip+':'+p.port+'</b></p><select class="one pin" data-k="'+k+'" aria-label="Ziel von Paket '+String.fromCharCode(97+k)+'"><option value="">– wählen –</option>'+p.opts.map(function(o){return'<option value="'+o+'">an '+o+'</option>';}).join('')+'<option value="drop">gar nicht – kein passender Eintrag</option></select>';});
+ h+='<p class="qh">2. Der Server antwortet von <span class="pk">'+s.back.from+'</span> an den Client <span class="pk">'+s.back.client+'</span>. Welche Quelle sieht der Client?</p><select class="one back"><option value="">– wählen –</option>'+s.back.opts.map(function(o){return'<option value="'+o+'">'+o+'</option>';}).join('')+'</select>';
+ h+='<p class="qh">3. Der Provider-Router fragt per ARP: „Who has <span class="pk">'+s.arp.ip+'</span>?“ Wer antwortet?</p><select class="one arp"><option value="">– wählen –</option>'+['own','proxy','server','none'].map(function(k){return'<option value="'+k+'">'+ARPTXT[k]+'</option>';}).join('')+'</select>';
+ h+='<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+ return h;
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),ok=0,tot=s.pkts.length+2;
+ card.querySelectorAll('.pin').forEach(function(sel){var p=s.pkts[+sel.dataset.k],good=sel.value===(p.to||'drop');mark(sel,sel.value===''?null:good);if(good)ok++;});
+ var b=card.querySelector('.back'),g2=b.value===s.back.want;mark(b,b.value===''?null:g2);if(g2)ok++;
+ var a=card.querySelector('.arp'),g3=a.value===s.arp.want;mark(a,a.value===''?null:g3);if(g3)ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>1. Eingehende Pakete</b>';
+ s.pkts.forEach(function(p,k){var e=p.res?s.entries[p.res.entry]:null;
+  h+='<span class="hint" style="display:block;color:var(--ink)">'+String.fromCharCode(97+k)+') <span class="pk">'+p.ip+':'+p.port+'</span> → <b>'+(p.to?'<span class="pk">'+p.to+'</span>':'nicht weitergeleitet')+'</b> – '+
+   (e?(e.type==='nat'?'1:1-Eintrag für '+p.ip+': gilt für alle Ports, der Port bleibt '+p.port+'.':'Portweiterleitung: außen Port '+e.gport+' → Server-Port '+e.lport+'.'):(p.ip===s.wan?'Für Port '+p.port+' auf '+s.wan+' gibt es keine Portweiterleitung.':'Für die Adresse '+p.ip+' gibt es keinen Eintrag.'))+'</span>';});
+ h+='</li><li><b>2. Der Client sieht <span class="pk">'+s.back.want+'</span></b><br><span class="hint">Auf dem Rückweg tauscht R1 die Quelle zurück – der Client bekommt die Antwort genau von der Adresse (und dem Port), die er angesprochen hat.</span></li>';
+ h+='<li><b>3. '+ARPTXT[s.arp.want].charAt(0).toUpperCase()+ARPTXT[s.arp.want].slice(1)+'</b><br><span class="hint">'+(s.arp.want==='own'?s.arp.ip+' ist die Adresse von Gi0/1 – ganz normales ARP.':s.arp.want==='proxy'?s.arp.ip+' gehört keinem Interface, ist aber eine statische NAT-Adresse. R1 antwortet stellvertretend, sonst kämen die Pakete nie bei ihm an.':s.arp.ip+' ist weder eine Interface-Adresse noch eine NAT-Adresse – die Anfrage bleibt unbeantwortet.')+'</span></li></ul>';
+ return h;
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=SN.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=SN.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

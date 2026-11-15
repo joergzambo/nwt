@@ -3,15 +3,105 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NAT und PAT</title>
+<title>PAT</title>
 <style>
-/*BASECSS*/
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
 .rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 @media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
 .cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
 .cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
 .cmp th{background:var(--soft);font:600 14px var(--ui)}
 .scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
 .stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
 .tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
@@ -55,7 +145,7 @@
 </head>
 <body>
 <main class="vmain">
-<h1>NAT und PAT: viele Geräte, eine öffentliche Adresse</h1>
+<h1>PAT: viele Geräte, eine öffentliche Adresse</h1>
 <p class="sub">Zu Hause und in der Schule haben alle Geräte <b>private</b> IP-Adressen – im Internet sind die nicht erlaubt. Der Router <b>tauscht</b> deshalb beim Hinausgehen die Absenderadresse gegen seine eigene, öffentliche aus. Damit er die Antworten wieder dem richtigen Gerät zustellen kann, <b>merkt er sich die Portnummer</b>. Genau das ist <b>PAT</b> (Port Address Translation).</p>
 <nav class="jumps" aria-label="Abschnitte"><a href="#warum">Wozu NAT?</a><a href="#begriffe">Die vier Adressen</a><a href="#anim">PAT als Animation</a><a href="#cisco">Cisco-Konfiguration</a><a href="#cgnat">CGNAT</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
 
@@ -70,7 +160,7 @@
 </div>
 <div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Drei Arten im Vergleich</h3><div class="scroll"><table class="cmp">
  <tr><th>Art</th><th>Zuordnung</th><th>Wofür?</th><th>Cisco</th></tr>
- <tr><td><b>Statisches NAT</b></td><td>1 private ↔ 1 öffentliche Adresse, fest</td><td>Server, der von außen erreichbar sein soll</td><td><code>ip nat inside source static …</code></td></tr>
+ <tr><td><b><a href="../static-nat/">Statisches NAT</a></b></td><td>1 private ↔ 1 öffentliche Adresse, fest</td><td>Server, der von außen erreichbar sein soll – eigene Einheit: <a href="../static-nat/">Static NAT und Portweiterleitung</a></td><td><code>ip nat inside source static …</code></td></tr>
  <tr><td><b>Dynamisches NAT</b></td><td>1 private ↔ 1 öffentliche Adresse aus einem Pool, auf Zeit</td><td>selten – der Pool ist schnell leer</td><td><code>ip nat inside source list … pool …</code></td></tr>
  <tr><td><b>PAT</b> (NAT Overload)</td><td><b>viele</b> private ↔ <b>1</b> öffentliche Adresse, unterschieden durch Ports</td><td>praktisch jeder Internetanschluss</td><td><code>… overload</code></td></tr>
 </table></div></div>
@@ -103,7 +193,7 @@
  <li><b>Kein Eintrag, kein Einlass:</b> Pakete von außen, zu denen es keinen Tabelleneintrag gibt, werden verworfen.</li></ul></div>
 
 <h2 class="part" id="cisco">Cisco-Konfiguration</h2>
-<div class="rules">
+<div class="stack">
  <div class="card"><h3>PAT einrichten</h3>
   <pre class="cli" style="margin:0">! 1. Wer darf übersetzt werden?
 R1(config)# access-list 1 permit 192.168.10.0 0.0.0.255
@@ -173,7 +263,80 @@ R1# debug ip nat</pre>
 <div id="gout"></div>
 </main>
 <script>
-/*PATJS*/
+/* NWT · IP-Services: NAT und PAT. Port-Vergabe, NAT-Tabelle, Aufgaben-Generator.
+   Browser: window.PAT · Node: globalThis.PAT */
+(function (G) {
+'use strict';
+var LVNAME = {L: 'Leicht', M: 'Mittel', S: 'Schwer'};
+var LVCODE = {L: 3, M: 4, S: 5};
+var FIRST_FREE = 1024;
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function ri(r, a, b) { return a + Math.floor(r() * (b - a + 1)); }
+function pick(r, a) { return a[Math.floor(r() * a.length)]; }
+
+/* ---------- Modell ----------
+   PAT (ip nat inside source ... overload) auf EINE öffentliche Adresse pub.
+   Regel (vereinfachtes Cisco-Verhalten): Der Router versucht, den Quellport zu behalten.
+   Ist der Port auf pub schon vergeben, nimmt er den ersten freien Port ab 1024.
+   conns: [{ip, sport, dip, dport}] in Reihenfolge des Eintreffens.
+   Ergebnis: Zeilen {il, ig, ol, og, port} wie in show ip nat translations. */
+function translate(pub, conns) {
+  var used = {}, rows = [];
+  conns.forEach(function (c) {
+    var p = c.sport;
+    if (used[p]) { p = FIRST_FREE; while (used[p]) p++; }
+    used[p] = true;
+    rows.push({il: c.ip + ':' + c.sport, ig: pub + ':' + p, ol: c.dip + ':' + c.dport, og: c.dip + ':' + c.dport, port: p, kept: p === c.sport});
+  });
+  return rows;
+}
+/* Antwort aus dem Internet an pub:port -> Index der Verbindung oder -1 (verworfen) */
+function lookup(rows, port) {
+  for (var i = 0; i < rows.length; i++) if (rows[i].port === port) return i;
+  return -1;
+}
+
+/* ---------- Generator ---------- */
+function build(r, lvl) {
+  var kind = ri(r, 0, 2), net = kind === 0 ? '192.168.' + ri(r, 1, 250) + '.' : kind === 1 ? '10.' + ri(r, 0, 250) + '.' + ri(r, 0, 250) + '.' : '172.' + ri(r, 16, 31) + '.' + ri(r, 0, 250) + '.';
+  var pub = '203.0.113.' + ri(r, 2, 254);
+  var nH = lvl === 'L' ? 2 : lvl === 'M' ? 3 : 4, hosts = [], seen = {};
+  while (hosts.length < nH) { var h = ri(r, 10, 99); if (!seen[h]) { seen[h] = 1; hosts.push({name: 'PC' + (hosts.length + 1), ip: net + h}); } }
+  var nS = lvl === 'S' ? 2 : 1, servers = [], seenS = {};
+  while (servers.length < nS) { var o = ri(r, 2, 254); if (!seenS[o]) { seenS[o] = 1; servers.push({name: nS > 1 ? 'Server ' + 'AB'[servers.length] : 'Server', ip: (servers.length ? '192.0.2.' : '198.51.100.') + o, port: pick(r, [80, 443, 443, 22, 25])}); } }
+  var conns = [], ports = {};
+  function fresh() { var p; do { p = ri(r, 49152, 65535); } while (ports[p]); ports[p] = 1; return p; }
+  hosts.forEach(function (h, i) { var s = pick(r, servers); conns.push({host: i, ip: h.ip, sport: fresh(), dip: s.ip, dport: s.port}); });
+  /* Kollisionen: gleicher Quellport bei verschiedenen PCs */
+  if (lvl === 'M') { var a = ri(r, 0, 1); conns[ri(r, a + 1, 2)].sport = conns[a].sport; }
+  if (lvl === 'S') {
+    if (r() < 0.5) { conns[1].sport = conns[0].sport; conns[pick(r, [2, 3])].sport = conns[0].sport; }
+    else { conns[2].sport = conns[0].sport; conns[3].sport = conns[1].sport; }
+  }
+  if (lvl === 'L' && r() < 0.35) conns[1].sport = conns[0].sport;
+  var rows = translate(pub, conns);
+  /* Antwortpaket von außen */
+  var rp, unknown = lvl === 'S' ? r() < 0.3 : lvl === 'M' ? r() < 0.15 : false;
+  if (unknown) { do { rp = r() < 0.5 ? ri(r, 1024, 1030) : ri(r, 49152, 65535); } while (lookup(rows, rp) >= 0); }
+  else { var cand = rows.filter(function (x) { return !x.kept; }); rp = (cand.length && r() < 0.6 ? pick(r, cand) : pick(r, rows)).port; }
+  var hit = lookup(rows, rp);
+  /* Begriffsfrage */
+  var tk = pick(r, ['IL', 'IG', 'OG']), th = pick(r, hosts), ts = pick(r, servers);
+  var term = {kind: tk, addr: tk === 'IL' ? th.ip : tk === 'IG' ? pub : ts.ip, accept: tk === 'OG' ? ['OG', 'OL'] : [tk]};
+  return {net: net + '0/24', pub: pub, hosts: hosts, servers: servers, conns: conns, rows: rows,
+    reply: {port: rp, row: hit, host: hit < 0 ? -1 : conns[hit].host, to: hit < 0 ? null : rows[hit].il}, term: term};
+}
+function makeTask(seed, lvl) {
+  if (!LVCODE[lvl] || !(seed >= 1)) return null;
+  var r = mulberry32((seed * 7919 + LVCODE[lvl] * 1000003 + 2711) >>> 0);
+  var s = build(r, lvl);
+  s.level = lvl; s.code = lvl + '-' + seed;
+  return s;
+}
+
+G.PAT = {LVNAME: LVNAME, FIRST_FREE: FIRST_FREE, translate: translate, lookup: lookup, makeTask: makeTask, mulberry32: mulberry32};
+})(typeof window !== 'undefined' ? window : globalThis);
+
 </script>
 <script>
 (function(){
@@ -277,7 +440,7 @@ var S=[
  {type:'move',from:XS,to:XR,d0:NS,d1:NR,src:XB,dst:XT,rows:2,evil:1,t:'Ein Fremder klopft von außen an',
   txt:'Irgendwer im Internet schickt ungefragt ein Paket an <b class="c-IG">203.0.113.5:4444</b>. Niemand aus dem privaten Netz hat diese Verbindung aufgebaut.'},
  {type:'drop',src:XB,dst:XT,rows:2,evil:1,t:'Kein Eintrag – kein Einlass',
-  txt:'R1 sucht Port 4444 in der NAT-Tabelle: <b>kein Eintrag</b>. Er weiß nicht, an welchen PC das Paket gehen sollte, und <b>verwirft</b> es. Deshalb sind Geräte hinter PAT von außen nicht direkt erreichbar. (Ein Ersatz für eine Firewall ist das trotzdem nicht.)'}
+  txt:'R1 sucht Port 4444 in der NAT-Tabelle: <b>kein Eintrag</b>. Er weiß nicht, an welchen PC das Paket gehen sollte, und <b>verwirft</b> es. Deshalb sind Geräte hinter PAT von außen nicht direkt erreichbar. (Ein Ersatz für eine Firewall ist das trotzdem nicht. Soll ein Server von außen erreichbar sein, braucht es <a href="../static-nat/">Static NAT</a>.)'}
 ];
 function chip(x,y,f,op,sc){var w=f.v.length*7.25+14;return'<g opacity="'+op+'" transform="translate('+x+' '+y+') scale('+(sc||1)+')"><rect x="'+(-w/2)+'" y="-11" width="'+w+'" height="22" rx="11" fill="'+COL[f.k]+'" stroke="#fff" stroke-width="1.5"/>'+tx(0,4.5,f.v,{fs:12,fw:700,mono:1,c:'#fff'})+'</g>';}
 /* Paket: x Mitte, Felder src/dst; fx: {field, old, p} für Tausch; hi: Feldname hervorheben */
@@ -462,7 +625,7 @@ function solHTML(s){
 document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
  if(t.dataset.act==='check')check(card);
  if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
-var list=/*LIST*/;
+var list=["L-1", "L-2", "L-3", "M-1", "M-2", "M-3", "M-4", "S-1", "S-2", "S-3"];
 var host=$('tasks'),cp=0;
 list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
  d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});

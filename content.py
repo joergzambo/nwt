@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="ip-services/nat/">NAT und PAT</a> – Animation mit NAT-Tabelle (Port merken, IP tauschen), die vier Adressbegriffe, CGNAT und der Anspruch auf eine öffentliche IP in Österreich. '
+    'news': ['<strong>Neu:</strong> <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
+             'Außerdem <a href="ip-services/pat/">PAT</a> – Animation mit NAT-Tabelle (Port merken, IP tauschen), die vier Adressbegriffe, CGNAT und der Anspruch auf eine öffentliche IP in Österreich. '
              'Außerdem <a href="routing/show-ip-route/">Die Routing-Tabelle lesen</a> – show ip route Zeile für Zeile, administrative Distanzen und welche Route bei mehreren Protokollen gewinnt. '
              'Außerdem <a href="netzwerksicherheit/arp-spoofing/">ARP-Spoofing</a> – Man-in-the-Middle mit Ettercap, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection. '
              'Außerdem <a href="netzwerksicherheit/rogue-dhcp/">Rogue-DHCP-Server</a> – falsches Gateway unterschieben als Man-in-the-Middle, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi). '
@@ -80,8 +81,10 @@ AREAS = [
      ]},
     {'slug': 'ip-services', 'title': 'IP-Services', 'text': 'Dienste, die ein Netz erst benutzbar machen.',
      'topics': [
-         {'slug': 'nat', 'title': 'NAT und PAT', 'tool': 'nat',
+         {'slug': 'pat', 'title': 'PAT (NAT Overload)', 'tool': 'pat',
           'text': 'Port merken, IP tauschen – PAT als Animation. Inside/Outside, Local/Global zum Anklicken, Cisco-Konfiguration, CGNAT und seine Probleme – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'static-nat', 'title': 'Static NAT und Portweiterleitung', 'tool': 'static-nat',
+          'text': 'Server aus dem Internet erreichbar machen: 1:1-NAT und Portweiterleitung als Animation, Heimrouter vs. Firewall mit DMZ, Proxy ARP – mit Übungen und Zufallsgenerator.'},
          {'slug': 'dhcp', 'title': 'DHCP und ip helper-address', 'tool': 'dhcp',
           'text': 'DORA als Animation, DHCP-Relay mit giaddr – und wo der Helper hin muss. Mit Übungen und Zufallsgenerator.'},
      ]},
