@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
+    'news': ['<strong>Neu:</strong> <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
+             'Außerdem <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
              'Außerdem <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Übungen und Zufallsgenerator. '
              'Außerdem <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
              'Außerdem <a href="ip-services/pat/">PAT</a> – Animation mit NAT-Tabelle (Port merken, IP tauschen), die vier Adressbegriffe, CGNAT und der Anspruch auf eine öffentliche IP in Österreich. '
@@ -40,6 +41,8 @@ SITE = {
 AREAS = [
     {'slug': 'grundlagen', 'title': 'Grundlagen', 'text': 'Schichtenmodelle, Adressierung und wie Daten im LAN unterwegs sind.',
      'topics': [
+         {'slug': 'zahlensysteme', 'title': 'Zahlensysteme: Binär, Oktal, Hexadezimal', 'tool': 'zahlensysteme',
+          'text': 'Bezahlen mit Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Zahlensystem aus Smileys – und was Base64 und ASCII damit zu tun haben. Mit Übungen und Zufallsgenerator.'},
          {'slug': 'ip-grundlagen', 'title': 'IP-Adresse, Subnetzmaske und Gateway', 'tool': 'ip-grundlagen',
           'text': 'Ganz einfach erklärt: IP-Adresse als Hausadresse, Dotted Decimal, Subnetzmaske, CIDR, wozu das Gateway da ist – und ein Blick auf IPv6. Mit Quiz und Schnelltraining.'},
          {'slug': 'netzadresse', 'title': 'Netzadresse berechnen', 'tool': 'netzadresse',
