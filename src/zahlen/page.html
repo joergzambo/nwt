@@ -101,6 +101,24 @@
 .ksum{font-size:17px;margin:8px 0 0;min-height:3em}
 @media(max-width:560px){.note .bv{font-size:11.5px;letter-spacing:-.3px}.note .bp{font-size:10px}.prow{gap:4px!important}.kbits{gap:4px;font-size:20px}.eur .prow.coins{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:6px!important}.kzone.eur{--wh:270px;height:550px}.eur .pc{--dy:272px}.note{height:58px}}
 @media (prefers-reduced-motion: reduce){.pc{transition:none}}
+/* Binärrechner */
+.brc .tog select{font:600 14px var(--ui);padding:3px 4px}
+.streak{margin-left:auto;font:600 15px var(--ui)}
+.btarget{font:400 26px var(--head);margin:6px 0 10px}.btarget b{font:700 34px var(--mono);color:#c62828}
+.tiles{display:flex;flex-wrap:wrap;gap:6px}
+.tile{width:60px;border:2px solid #90a4ae;border-radius:8px;background:#fff;cursor:pointer;padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;transition:transform .15s,background .2s}
+.tile .tv{font:700 17px var(--mono);color:var(--ink)}.tile .tp{font:600 11.5px var(--ui);color:var(--mute)}
+.tile .tb{font:700 26px var(--mono);color:#b0bec5;border-top:1px solid #e0e0e0;width:100%;text-align:center;margin-top:4px}
+.tile.on{background:#1565c0;border-color:#1565c0}.tile.on .tv,.tile.on .tp{color:#fff}.tile.on .tb{color:#fff;border-color:rgba(255,255,255,.4)}
+.tile.hint{animation:pulse 1s ease-in-out 3}
+.tile:disabled{cursor:default}
+@keyframes pulse{50%{transform:scale(1.12);box-shadow:0 0 0 4px #ffeb3b}}
+.bbar{height:12px;background:#eceff1;border-radius:6px;margin:12px 0 4px;overflow:hidden}
+.bbar div{height:100%;width:0;background:#1565c0;transition:width .3s,background .3s}
+.bbar div.over{background:#c62828}.bbar div.done{background:#2e7d32}
+.b2d{margin-top:8px;font:600 17px var(--ui)}.b2d .one{width:12ch;font-size:18px}
+@media(max-width:560px){.tile{width:calc((100% - 18px)/4)}}
+@media (prefers-reduced-motion: reduce){.tile.hint{animation:none;outline:3px solid #fbc02d}}
 /* Rechner */
 .conv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 @media(max-width:760px){.conv{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -160,7 +178,7 @@
 <main class="vmain">
 <h1>Zahlensysteme: Binär, Oktal, Hexadezimal</h1>
 <p class="sub">Computer rechnen nur mit <b>0 und 1</b>. Netzwerker begegnen außerdem ständig <b>Hexadezimalzahlen</b> (MAC-Adressen, IPv6) und manchmal <b>Oktalzahlen</b> (Linux-Rechte). Hier lernst du alle drei – mit Geldscheinen, einem Rechner zum Ausprobieren und einem eigenen Zahlensystem aus Smileys.</p>
-<nav class="jumps" aria-label="Abschnitte"><a href="#idee">Die Idee</a><a href="#kassa">💶 Bezahlen</a><a href="#rechner">🧮 Rechner</a><a href="#eigen">😀 Eigenes System</a><a href="#gibts">Gibt's schon!</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+<nav class="jumps" aria-label="Abschnitte"><a href="#idee">Die Idee</a><a href="#kassa">💶 Bezahlen</a><a href="#binaer">➕ Binärrechner</a><a href="#rechner">🔄 Umrechner</a><a href="#eigen">😀 Eigenes System</a><a href="#gibts">Gibt's schon!</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
 
 <h2 class="part" id="idee">Die Idee: Jede Stelle hat einen Wert</h2>
 <p class="sub">Im Alltag rechnen wir im <b>Dezimalsystem</b> (Basis 10). Bei <b>347</b> steht jede Ziffer für ein Vielfaches ihres <b>Stellenwerts</b>: 3 Hunderter, 4 Zehner, 7 Einer. Andere Zahlensysteme funktionieren genauso – nur die Stellenwerte sind andere.</p>
@@ -201,7 +219,27 @@
  <tr><td><b>Hex-Land</b></td><td class="mono">1, 16, 256, 4096</td><td>0- bis 15-mal (A–F)</td><td class="mono">10·16 + 13·1 → <b>AD</b><sub>16</sub></td></tr>
 </table></div></div>
 
-<h2 class="part" id="rechner">🧮 Der Umrechner</h2>
+<h2 class="part" id="binaer">➕ Binärrechner: die Zahl aus Zweierpotenzen bauen</h2>
+<p class="sub">Eine Zahl ist vorgegeben. Klick die Zweierpotenzen <b>1, 2, 4, 8, 16, 32 …</b> an, bis ihre <b>Summe</b> genau die Zahl ergibt. Jede Zweierpotenz darfst du nur <b>einmal</b> nehmen. Was du angeklickt hast, bekommt eine <b>1</b>, der Rest eine <b>0</b> – fertig ist die Binärzahl.</p>
+<div class="card brc">
+ <div class="kbar"><label class="tog">Aufgabe <select id="bmode"><option value="d2b">Dezimal → Binär (Summe bilden)</option><option value="b2d">Binär → Dezimal (Summe ausrechnen)</option></select></label>
+  <label class="tog">Stellen <select id="bbits"><option>4</option><option>6</option><option selected>8</option><option>10</option><option>12</option><option>16</option></select></label>
+  <span class="streak" id="bstreak" title="Richtig in Folge"></span></div>
+ <div class="btarget" id="btarget"></div>
+ <div class="tiles" id="tiles"></div>
+ <div class="bbar"><div id="bfill"></div></div>
+ <p class="ksum" id="bsumline" aria-live="polite"></p>
+ <div class="b2d" id="b2dbox" hidden><label>Summe = <input id="b2din" class="one" inputmode="numeric" autocomplete="off" aria-label="Dezimalzahl"></label></div>
+ <div class="acts"><button class="btn" type="button" id="bnew">Neue Zahl</button><button class="btn ghost" type="button" id="bhint">💡 Tipp</button><button class="btn ghost" type="button" id="bsol">Lösung zeigen</button><button class="btn ghost" type="button" id="bclr">Alles abwählen</button>
+  <label class="tog">eigene Zahl <input id="bown" class="one" size="10" inputmode="numeric" autocomplete="off" placeholder="z. B. 200"></label></div>
+</div>
+<div class="card check"><h3 class="h3">So gehst du vor</h3><ol style="margin:0;padding-left:20px">
+ <li>Beginne <b>links</b> bei der größten Zweierpotenz.</li>
+ <li>Passt sie noch in den offenen Rest? <b>Ja → anklicken (1)</b> und abziehen. <b>Nein → weglassen (0)</b>.</li>
+ <li>Weiter mit der nächstkleineren, bis der Rest 0 ist.</li></ol>
+ <p class="hint">Beispiel 182: 128 passt (Rest 54) · 64 nein · 32 passt (Rest 22) · 16 passt (Rest 6) · 8 nein · 4 passt (Rest 2) · 2 passt (Rest 0) · 1 nein → <b class="mono">10110110</b>.</p></div>
+
+<h2 class="part" id="rechner">🔄 Der Umrechner</h2>
 <p class="sub">Tipp in irgendein Feld – die anderen rechnen mit. Darunter siehst du den <b>Rechenweg</b>, so wie du ihn selbst aufschreiben würdest.</p>
 <div class="card">
  <div class="conv">
@@ -340,6 +378,57 @@ $('khelp').onclick=function(){
  step();
 };
 kbuild();due=13785;krender();
+/* ===== Binärrechner ===== */
+var bT=182,bOn={},bMode='d2b',bStreak=0,bDone=false;
+function bN(){return +$('bbits').value;}
+function bPow(){var P=[];for(var k=bN()-1;k>=0;k--)P.push(Math.pow(2,k));return P;}
+function bSum(){return bPow().reduce(function(a,v){return a+(bOn[v]?v:0);},0);}
+function bRand(){var max=Math.pow(2,bN())-1,n;do{n=1+Math.floor(Math.random()*max);}while(n===bT&&max>1);return n;}
+function bBin(n){var s=Z.toStr(n,2);while(s.length<bN())s='0'+s;return s;}
+function bTiles(){
+ $('tiles').innerHTML=bPow().map(function(v){var k=Math.round(Math.log2(v));return'<button type="button" class="tile'+(bOn[v]?' on':'')+'" data-v="'+v+'" aria-pressed="'+!!bOn[v]+'"'+(bMode==='b2d'?' disabled':'')+'><span class="tv">'+fmt(v)+'</span><span class="tp">2'+sup(k)+'</span><span class="tb">'+(bOn[v]?1:0)+'</span></button>';}).join('');
+}
+function bRender(){
+ bTiles();var s=bSum(),parts=bPow().filter(function(v){return bOn[v];});
+ $('bstreak').textContent=bStreak?'🔥 '+bStreak+' richtig in Folge':'';
+ if(bMode==='d2b'){
+  $('btarget').innerHTML='Bilde die Zahl <b>'+fmt(bT)+'</b>';
+  var f=$('bfill');f.style.width=Math.min(100,s/bT*100)+'%';f.className=s>bT?'over':s===bT?'done':'';
+  var line=parts.length?parts.map(fmt).join(' + ')+' = <b>'+fmt(s)+'</b>':'Klick die erste Zweierpotenz an – am besten die größte, die passt.';
+  if(s===bT){$('bsumline').innerHTML=line+'<br><span class="ok">✓ Richtig! '+fmt(bT)+' = <b class="mono">'+bBin(bT)+'</b><sub>2</sub></span>';if(!bDone){bDone=true;bStreak++;$('bstreak').textContent='🔥 '+bStreak+' richtig in Folge';}}
+  else if(s>bT)$('bsumline').innerHTML=line+'<br><span class="no">Zu viel – um '+fmt(s-bT)+'. Wähl etwas ab.</span>';
+  else $('bsumline').innerHTML=line+(parts.length?'<br><span class="mute">Noch offen: <b>'+fmt(bT-s)+'</b></span>':'');
+ }else{
+  $('btarget').innerHTML='Welche Dezimalzahl ist <b>'+bBin(bT)+'</b><sub>2</sub>?';
+  $('bfill').style.width='0';$('bfill').className='';
+  $('bsumline').innerHTML='<span class="mute">Zähl die Werte aller Felder mit einer <b>1</b> zusammen.</span>';
+ }
+ $('b2dbox').hidden=bMode!=='b2d';$('bhint').disabled=bMode==='b2d'||bSum()===bT;
+}
+function bNew(n){bT=n||bRand();bDone=false;bOn={};if(bMode==='b2d')bPow().forEach(function(v){if(bT&v)bOn[v]=true;});$('b2din').value='';$('b2din').classList.remove('right','wrong');bRender();}
+$('tiles').addEventListener('click',function(e){var t=e.target.closest('.tile');if(!t||bMode!=='d2b')return;var v=+t.dataset.v;bOn[v]=!bOn[v];bRender();});
+$('bnew').onclick=function(){if(bMode==='d2b'&&!bDone&&bSum()!==bT)bStreak=0;bNew();};
+$('bclr').onclick=function(){if(bMode==='d2b'){bOn={};bRender();}};
+$('bhint').onclick=function(){
+ /* zuerst falsch gewählte abwählen, sonst die nächste passende Potenz zeigen */
+ var P=bPow(),wrong=P.filter(function(v){return bOn[v]&&!(bT&v);});
+ if(wrong.length){$('bsumline').innerHTML+='<br><span class="no">💡 '+fmt(wrong[0])+' gehört nicht dazu – abwählen.</span>';var w=document.querySelector('.tile[data-v="'+wrong[0]+'"]');w.classList.add('hint');return;}
+ var rest=bT-bSum(),next=P.filter(function(v){return !bOn[v]&&v<=rest;})[0];
+ if(next){var el=document.querySelector('.tile[data-v="'+next+'"]');el.classList.add('hint');$('bsumline').innerHTML+='<br><span class="mute">💡 Offen sind '+fmt(rest)+'. Die größte Zweierpotenz, die noch passt, ist <b>'+fmt(next)+'</b>.</span>';}
+ bStreak=0;
+};
+$('bsol').onclick=function(){if(bMode==='b2d'){$('b2din').value=bT;$('b2din').classList.add('right');$('bsumline').innerHTML=bPow().filter(function(v){return bOn[v];}).map(fmt).join(' + ')+' = <b>'+fmt(bT)+'</b>';bStreak=0;bRender2();return;}bOn={};bPow().forEach(function(v){if(bT&v)bOn[v]=true;});bDone=true;bStreak=0;bRender();};
+function bRender2(){$('bstreak').textContent='';}
+$('b2din').addEventListener('input',function(){var v=parseInt(this.value,10),parts=bPow().filter(function(x){return bOn[x];});this.classList.remove('right','wrong');if(isNaN(v))return;
+ if(v===bT){this.classList.add('right');$('bsumline').innerHTML=parts.map(fmt).join(' + ')+' = <b>'+fmt(bT)+'</b><br><span class="ok">✓ Richtig!</span>';if(!bDone){bDone=true;bStreak++;$('bstreak').textContent='🔥 '+bStreak+' richtig in Folge';}}
+ else if(String(v).length>=String(bT).length){this.classList.add('wrong');}});
+$('bmode').onchange=function(){bMode=this.value;bStreak=0;bNew();};
+$('bbits').onchange=function(){bStreak=0;bNew();};
+$('bown').addEventListener('keydown',function(e){if(e.key!=='Enter')return;var v=parseInt(this.value,10),max=Math.pow(2,bN())-1;if(isNaN(v)||v<0)return;if(v>max){var need=Z.toStr(v,2).length,opts=[4,6,8,10,12,16].filter(function(x){return x>=need;});if(!opts.length)return;$('bbits').value=String(opts[0]);}bStreak=0;bNew(v);});
+$('bown').addEventListener('change',function(){var e=new KeyboardEvent('keydown',{key:'Enter'});this.dispatchEvent(e);});
+bNew(182);
+window.__bin={set:function(v){bOn={};bPow().forEach(function(p){if(v&p)bOn[p]=true;});bRender();},T:function(){return bT;},sumline:function(){return $('bsumline').textContent;}};
+
 /* ===== Umrechner ===== */
 var cur={n:173,src:2},tab='st';
 function setAll(n,src){cur={n:n,src:src};[2,8,10,16].forEach(function(b){if(b!==src)$('i'+b).value=Z.toStr(n,b);$('i'+b).classList.remove('bad');});cexp();}
