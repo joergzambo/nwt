@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
+    'news': ['<strong>Neu:</strong> <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
+             'Außerdem <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
              'Außerdem <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
              'Außerdem <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
              'Außerdem <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Übungen und Zufallsgenerator. '
@@ -65,6 +66,8 @@ AREAS = [
           'text': 'Root Bridge, Root Port, Designated Port – mit Animation, 50 Übungen und Zufallsgenerator.'},
          {'slug': 'vlan', 'title': 'VLANs und Trunking', 'tool': 'vlan',
           'text': 'Access- und Trunk-Ports, 802.1Q-Tags und native VLAN – zum Ausprobieren, mit 30 Übungen und Zufallsgenerator.'},
+         {'slug': 'etherchannel', 'title': 'EtherChannel: LACP und PAgP', 'tool': 'etherchannel',
+          'text': 'Mehrere Kabel zu einem Port-Channel bündeln: Animation, welche Modi zusammenpassen, Voraussetzungen, show etherchannel summary – mit Übungen und Zufallsgenerator.'},
          {'slug': 'cdp', 'title': 'CDP – Nachbarn erkennen', 'tool': 'cdp',
           'text': 'CDP-Ausgaben lesen, Modelle und IPs ablesen und den Netzplan selbst verkabeln – mit Zufallsgenerator.'},
          {'slug': 'layer-3-switching', 'title': 'Layer-3-Switching', 'tool': 'layer-3-switching',

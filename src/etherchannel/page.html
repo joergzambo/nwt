@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EtherChannel</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font:600 13px var(--ui)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.c-IL{color:#1565c0}.c-IG{color:#e65100}.c-OL{color:#6a1b9a}.c-OG{color:#2e7d32}
+/* Begriffs-Matrix */
+.mx{width:100%;border-collapse:separate;border-spacing:6px;margin-top:10px;table-layout:fixed}
+.mx th{font:600 14px var(--ui);padding:6px;text-align:center;color:var(--mute);vertical-align:bottom}
+.mx th b{display:block;color:var(--ink);font-size:16px}
+.mx th.rowh{text-align:right;width:25%;vertical-align:middle}
+.mx button{width:100%;border:2px solid;border-radius:6px;background:#fff;padding:10px 8px;cursor:pointer;text-align:center;line-height:1.35}
+.mx button b{display:block;font:700 16px var(--ui)}
+.mx button span{font:13.5px var(--mono);color:var(--ink)}
+.mx button.on{color:#fff!important}.mx button.on span{color:#fff}
+@media(max-width:600px){.mx{border-spacing:3px}.mx th{font-size:11.5px;padding:2px}.mx th b{font-size:13px}.mx th.rowh{width:21%}.mx button{padding:8px 2px}.mx button b{font-size:13px}.mx button span{font-size:10.5px;letter-spacing:-.3px}}
+.mxinfo{background:var(--soft);border-left:5px solid var(--ink);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:15.5px;min-height:4.6em}
+.memo{background:#eef6e6;border:1px solid #c5e1a5;border-radius:4px;padding:10px 14px;font-size:15.5px;margin-top:10px}
+.memo b.w1{background:#1c2b33;color:#fff;padding:1px 7px;border-radius:3px}
+.memo b.w2{background:#61a229;color:#fff;padding:1px 7px;border-radius:3px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.ntab{border-collapse:collapse;font:13.5px var(--mono);margin-top:6px;min-width:560px}
+.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left;white-space:nowrap}
+.ntab th{background:var(--soft);font:600 13px var(--ui)}
+.ntab input{width:21ch}
+.ntab tr.hit td{background:#fff8e1}
+.rule{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.rules{margin-bottom:22px}.rules.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:860px){.rules.three{grid-template-columns:minmax(0,1fr)}}
+.h3{font:400 19px var(--head);margin:0 0 6px}
+.mono{font-family:var(--mono)}.mute{color:var(--mute)}
+.atabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+.atabs button{padding:8px 14px;border:1.5px solid var(--ink);border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
+.atabs button.on{background:var(--ink);color:#fff}
+.tog{font:600 14px var(--ui);display:inline-flex;gap:6px;align-items:center;margin-left:8px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}.explain p{margin:0}
+.stack .card h3{margin-bottom:6px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.cfgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px}
+.kbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.lbl{font:600 14px var(--ui);min-width:110px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-right:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 12px;font:600 14px var(--ui);cursor:pointer}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--ink);color:#fff}
+.modes{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;font:600 15px var(--ui)}
+.modes label{display:flex;flex-direction:column;gap:4px}.modes select{font:600 15px var(--mono);padding:6px 8px;border:1.5px solid #90a4ae;border-radius:4px}
+.modes .link{font-size:26px;padding-bottom:4px}
+.mresult{margin:12px 0;padding:10px 14px;border-radius:6px;font-size:16px}.mresult span{font-size:15px}
+.mresult.ok{background:#e3f4e6;border:1.5px solid #2e7d32}.mresult.ok b{color:#2e7d32}
+.mresult.no{background:#fdecea;border:1.5px solid #c62828}.mresult.no b{color:#c62828}
+.mx{border-collapse:collapse;font:600 14px var(--mono);margin-top:4px}
+.mx th,.mx td{border:1px solid #cfd8dc;padding:6px 12px;text-align:center}
+.mx th{background:var(--soft)}.mx th.corner{font:600 12px var(--ui);color:var(--mute)}
+.mx td{cursor:pointer;font-size:17px}.mx td.y{color:#2e7d32;background:#f1f8e9}.mx td.n{color:#c62828;background:#fff}
+.mx td.sel{outline:3px solid #f9a825;outline-offset:-3px}
+.cfgs .ph{font:600 14px var(--ui);margin:0}
+.cfgs pre{font-size:12.5px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>EtherChannel mit LACP und PAgP</h1>
+<p class="sub">Zwischen zwei Switches liegen oft mehrere Kabel – für mehr Bandbreite und als Reserve. Ohne weiteres Zutun blockiert <b>Spanning Tree</b> aber alle bis auf eines. <b>EtherChannel</b> bündelt die Kabel zu <b>einer logischen Leitung</b>, dem <b>Port-Channel</b>. Ausgehandelt wird das Bündel mit <b>LACP</b> (offener Standard) oder <b>PAgP</b> (Cisco).</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#anim">Animation</a><a href="#darkfiber">Praxis: Dark Fiber</a><a href="#modi">Welche Modi passen?</a><a href="#regeln">Voraussetzungen</a><a href="#vergleich">LACP vs. PAgP</a><a href="#cisco">Cisco-Konfiguration</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="anim">Schritt für Schritt</h2>
+<div class="card">
+ <div class="atabs" role="group" aria-label="Protokoll"><button type="button" data-p="LACP" class="on">LACP</button><button type="button" data-p="PAgP">PAgP</button></div>
+ <div id="asvg"></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="darkfiber">Praxisbeispiel: zwei gemietete Dark-Fiber-Leitungen</h2>
+<p class="sub">Eine Firma oder Schule hat in einer großen Stadt zwei Standorte. Dazwischen mietet sie <b>zwei Dark-Fiber-Leitungen</b> – unbeschaltete Glasfasern, für die sie jeden Monat Miete zahlt. Damit ein Bagger nicht gleich alles lahmlegt, laufen die beiden Fasern über <b>verschiedene Trassen</b> durch die Stadt.</p>
+<div class="card">
+ <div class="kbar"><span class="lbl">Verbunden mit</span><span class="seg" id="dfm"><button type="button" data-m="stp" class="on">Spanning Tree (zwei Einzelports)</button><button type="button" data-m="po">Port-Channel (LACP)</button></span></div>
+ <div class="kbar"><span class="lbl">Ereignis</span><span class="seg" id="dfe"><button type="button" data-e="ok" class="on">Normalbetrieb</button><button type="button" data-e="cut">🚜 Bagger trennt Trasse Nord</button></span></div>
+ <div id="dfsvg"></div>
+ <div class="explain" aria-live="polite"><p id="dftxt"></p></div>
+</div>
+<div class="rules">
+ <div class="card"><h3 class="h3">Warum Spanning Tree hier schade ist</h3><ul style="margin:0;padding-left:20px">
+  <li>Für STP sind zwei Leitungen zwischen denselben Switches eine <b>Schleife</b> – eine der beiden wird <b>blockiert</b>.</li>
+  <li>Man zahlt also jeden Monat für eine Glasfaser, über die im Normalbetrieb <b>kein einziges Datenpaket</b> läuft.</li>
+  <li>Fällt die aktive Leitung aus, muss STP erst umschalten: beim klassischen STP bis zu <b>30–50 Sekunden</b>, bei RSTP immerhin wenige Sekunden. In dieser Zeit stehen Telefonie, Videokonferenzen und Server-Verbindungen.</li></ul></div>
+ <div class="card check"><h3 class="h3">Warum ein Port-Channel die sichere Alternative ist</h3><ul style="margin:0;padding-left:20px">
+  <li><b>Beide</b> gemieteten Leitungen arbeiten – doppelte Bandbreite für das gleiche Geld.</li>
+  <li>Für STP ist der Port-Channel <b>ein</b> Link: keine Schleife, nichts wird blockiert.</li>
+  <li>Reißt eine Faser, laufen die Verbindungen sofort über die andere weiter. Der Port-Channel bleibt up, STP muss nicht neu rechnen.</li>
+  <li>Mit <b>LACP</b> prüfen die Switches laufend, ob am anderen Ende wirklich der richtige Partner hängt. Ein vertauschtes Patchkabel oder eine falsch beschaltete Faser wird erkannt und <b>nicht</b> gebündelt – darum LACP statt „on“.</li></ul>
+  <p class="hint">Eine einzelne Verbindung bekommt weiterhin höchstens die Bandbreite <b>einer</b> Faser. Und die Ausfallsicherheit ist nur echt, wenn die Fasern wirklich über getrennte Trassen laufen – das sollte man beim Anbieter schriftlich bestätigen lassen.</p></div>
+</div>
+
+<h2 class="part" id="modi">Welche Modi passen zusammen?</h2>
+<p class="sub">Den Modus stellt man pro Switch mit <code>channel-group 1 mode …</code> ein. Wähle die Modi für beide Seiten – oder klick in die Tabelle.</p>
+<div class="card">
+ <div class="modes"><label>SW1 <select id="mm1"></select></label><span class="link">⟷</span><label>SW2 <select id="mm2"></select></label></div>
+ <div id="mres" aria-live="polite"></div>
+ <div class="scroll"><table class="mx" id="mtab"></table></div>
+ <p class="hint"><b>Merksatz:</b> Mindestens <b>eine</b> Seite muss <b>anfangen</b> (LACP: <b>active</b>, PAgP: <b>desirable</b>). Zwei Wartende (passive/passive, auto/auto) finden nie zusammen. <b>on</b> verhandelt gar nicht und funktioniert nur mit <b>on</b> auf der Gegenseite.</p></div>
+
+<h2 class="part" id="regeln">Voraussetzungen</h2>
+<div class="rules">
+ <div class="card"><h3 class="h3">Alle Ports im Bündel müssen gleich sein</h3><ul style="margin:0;padding-left:20px">
+  <li>gleiche <b>Geschwindigkeit</b> und <b>Duplex</b></li>
+  <li>gleicher <b>Switchport-Modus</b> (alle access oder alle trunk)</li>
+  <li>bei access: gleiches <b>Access-VLAN</b>; bei trunk: gleiche <b>erlaubte VLANs</b> und gleiches <b>Native VLAN</b></li></ul>
+  <p class="hint">Passt ein Port nicht, wird er bei LACP/PAgP <b>suspendiert</b> (Flag <code>s</code>) – der Rest des Bündels läuft weiter.</p></div>
+ <div class="card check"><h3 class="h3">Gut zu wissen</h3><ul style="margin:0;padding-left:20px">
+  <li>Bis zu <b>8 aktive</b> Ports pro Bündel. LACP kann bis zu 8 weitere als Reserve (hot-standby) halten.</li>
+  <li>Für Spanning Tree ist der Port-Channel <b>ein</b> Link – nichts wird blockiert.</li>
+  <li>Konfiguration (Trunk, VLANs) macht man am <b>Port-Channel-Interface</b> – sie wird auf alle Mitglieder übertragen.</li>
+  <li>Verteilt wird <b>pro Verbindung</b> (Hash über MAC- oder IP-Adressen), nicht pro Paket. Eine einzelne Übertragung bekommt daher höchstens die Bandbreite <b>eines</b> Kabels.</li></ul></div>
+</div>
+
+<h2 class="part" id="vergleich">LACP, PAgP und on im Vergleich</h2>
+<div class="card"><div class="scroll"><table class="cmp">
+ <tr><th></th><th>LACP</th><th>PAgP</th><th>on</th></tr>
+ <tr><td><b>Herkunft</b></td><td>offener Standard (IEEE 802.3ad, heute 802.1AX)</td><td>Cisco-eigen</td><td>kein Protokoll</td></tr>
+ <tr><td><b>Modi</b></td><td><b>active</b> (fängt an) · <b>passive</b> (wartet)</td><td><b>desirable</b> (fängt an) · <b>auto</b> (wartet)</td><td><b>on</b> (immer gebündelt)</td></tr>
+ <tr><td><b>Mit anderen Herstellern</b></td><td>ja (Server, NAS, Firewalls)</td><td>nein</td><td>ja, aber ohne Kontrolle</td></tr>
+ <tr><td><b>Fehlerschutz</b></td><td>erkennt falsch gesteckte Kabel und Konfigurationsfehler</td><td>ja</td><td>nein – Fehler können Schleifen verursachen</td></tr></table></div>
+ <p class="hint">In der Praxis: <b>LACP active</b> auf beiden Seiten ist die übliche Wahl. „on“ meidet man, weil nichts überprüft wird.</p></div>
+
+<h2 class="part" id="cisco">Cisco-Konfiguration</h2>
+<div class="stack">
+ <div class="card"><h3 class="h3">Einrichten (auf beiden Switches)</h3><pre class="cli">SW1(config)# interface range Gi1/0/1 - 2
+SW1(config-if-range)#  channel-group 1 mode active      ! LACP, fängt an
+SW1(config-if-range)#  exit
+SW1(config)# interface port-channel 1
+SW1(config-if)#  switchport mode trunk                  ! gilt für alle Mitglieder
+!
+SW2(config)# interface range Gi1/0/1 - 2
+SW2(config-if-range)#  channel-group 1 mode passive     ! oder ebenfalls active
+SW2(config)# interface port-channel 1
+SW2(config-if)#  switchport mode trunk</pre>
+  <p class="hint">PAgP genauso mit <code>mode desirable</code> bzw. <code>mode auto</code>. Die Gruppennummer ist nur lokal – sie muss auf beiden Switches nicht gleich sein, gleich ist aber übersichtlicher.</p></div>
+ <div class="card"><h3 class="h3">Kontrollieren</h3><pre class="cli">SW1# show etherchannel summary
+Flags:  D - down        P - bundled in port-channel
+        I - stand-alone s - suspended
+        S - Layer2      U - in use
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+---------------------------
+1      Po1(SU)         LACP      Gi1/0/1(P)  Gi1/0/2(P)
+
+SW1# show etherchannel port-channel
+SW1# show interfaces port-channel 1      ! BW 2000000 Kbit/sec
+SW1# show spanning-tree                  ! nur noch Po1, nicht die Einzelports</pre>
+  <p class="hint"><b>Po1(SU)</b> = Layer 2, in Verwendung. <b>(P)</b> = Port gebündelt. Steht dort <b>(s)</b>, passt die Konfiguration des Ports nicht. <b>(I)</b> = Port arbeitet allein, weil keine Aushandlung zustande kam.</p></div>
+ <div class="card"><h3 class="h3">Lastverteilung einstellen</h3><pre class="cli">SW1(config)# port-channel load-balance src-dst-ip
+SW1# show etherchannel load-balance</pre>
+  <p class="hint">Der Switch rechnet aus den gewählten Adressen einen Wert (Hash) und wählt damit das Kabel. Gleiche Verbindung → immer dasselbe Kabel, dadurch kommen die Pakete in der richtigen Reihenfolge an.</p></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies die Konfiguration beider Switches. Alle Kabel sind 1-Gbit/s-Leitungen und verbinden den gleichnamigen Port auf beiden Seiten (Gi1/0/1 ↔ Gi1/0/1 …).</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Modi eines Protokolls)</option><option value="M" selected>Mittel (alle Modi gemischt)</option><option value="S">Schwer (Ports mit Fehlkonfiguration)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+</main>
+<script>
+/*ECJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},E=window.EC,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var MONO='ui-monospace,Menlo,Consolas,monospace',SANS='Open Sans,Arial,sans-serif',INK='#1c2b33',MU='#546e7a',BL='#1565c0',GR='#2e7d32',OR='#e65100',RD='#c62828',PU='#6a1b9a';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||INK)+'"'+(o.op!=null?' opacity="'+o.op+'"':'')+' font-family="'+(o.mono?MONO:SANS)+'">'+esc(t)+'</text>';}
+function at(x,y,g){return'<g transform="translate('+x+' '+y+')">'+g+'</g>';}
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function srv(col){return'<rect x="-15" y="-22" width="30" height="44" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><path d="M-9 -13h18M-9 -5h18M-9 3h18" stroke="'+col+'" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="13" r="2.4" fill="'+col+'"/>';}
+function swb(){return'<g transform="scale(1.5)"><path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></g>';}
+
+/* ===== Animation ===== */
+var W=900,H=340,S1=[250,170],S2=[650,170],L1=128,L2=212,P={a:[70,95],b:[70,250],x:[830,95],y:[830,250]};
+var proto='LACP';
+function names(){return proto==='LACP'?{pdu:'LACPDU',a:'active',p:'passive'}:{pdu:'PAgP',a:'desirable',p:'auto'};}
+function steps(){var n=names();return[
+ {t:'Ohne EtherChannel: STP blockiert',txt:'Zwei Kabel verbinden SW1 und SW2. Für Spanning Tree ist das eine <b>Schleife</b> – also wird ein Port <b>blockiert</b>. Es läuft nur über ein Kabel: <b>1 Gbit/s</b>, das zweite Kabel liegt brach und dient nur als Reserve.',st:{blk:1},pk:[{path:[P.a,S1,[S1[0]+40,L1],[S2[0]-40,L1],S2,P.x],col:BL,lab:'Daten'}]},
+ {t:'Bündeln zum Port-Channel',txt:'Mit EtherChannel werden beide Kabel zu <b>einer logischen Leitung</b> zusammengefasst: dem <b>Port-Channel 1 (Po1)</b>. Spanning Tree sieht nur noch <b>einen</b> Link – es gibt keine Schleife und nichts wird blockiert. Zusammen: <b>2 Gbit/s</b>.',st:{po:1},pk:[]},
+ {t:'Aushandeln mit '+proto,txt:'Damit nicht versehentlich falsch gesteckte Kabel gebündelt werden, sprechen sich die Switches ab. SW1 ist auf <b>'+n.a+'</b> und schickt '+n.pdu+'-Pakete. SW2 auf <b>'+n.p+'</b> wartet – und antwortet, sobald er etwas hört. Passt alles (Geschwindigkeit, VLANs …), werden die Ports gebündelt.',st:{po:1,neg:1},pk:[{path:[[S1[0]+40,L1],[S2[0]-40,L1]],col:PU,lab:n.pdu+' ('+n.a+')'},{path:[[S1[0]+40,L2],[S2[0]-40,L2]],col:PU,lab:''},{path:[[S2[0]-40,L1],[S1[0]+40,L1]],col:PU,lab:'',t0:.5},{path:[[S2[0]-40,L2],[S1[0]+40,L2]],col:PU,lab:n.pdu+' ('+n.p+')',t0:.5}]},
+ {t:'Lastverteilung pro Verbindung',txt:'Jetzt laufen Daten über <b>beide</b> Kabel. Der Switch bildet aus den Adressen (z. B. Quell- und Ziel-IP) einen <b>Hash</b> und wählt damit das Kabel: PC A → Server X über Kabel 1, PC B → Server Y über Kabel 2. Eine Verbindung bleibt immer auf ihrem Kabel.',st:{po:1,ok:1},pk:[{path:[P.a,S1,[S1[0]+40,L1],[S2[0]-40,L1],S2,P.x],col:BL,lab:'A → X'},{path:[P.b,S1,[S1[0]+40,L2],[S2[0]-40,L2],S2,P.y],col:OR,lab:'B → Y',t0:.1}]},
+ {t:'Ein Kabel fällt aus',txt:'Kabel 2 wird gezogen. Der Port-Channel bleibt <b>up</b> – die Verbindung B → Y wandert einfach auf Kabel 1. Spanning Tree muss <b>nicht</b> neu rechnen, die Umschaltung geht praktisch sofort. Die Bandbreite sinkt auf 1 Gbit/s.',st:{po:1,ok:1,cut:1},pk:[{path:[P.a,S1,[S1[0]+40,L1],[S2[0]-40,L1],S2,P.x],col:BL,lab:'A → X'},{path:[P.b,S1,[S1[0]+40,L1],[S2[0]-40,L1],S2,P.y],col:OR,lab:'B → Y',t0:.1}]}];}
+function along(path,f){var L=[],tot=0;for(var i=0;i<path.length-1;i++){var l=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]);L.push(l);tot+=l;}var d=f*tot,k=0;while(k<L.length-1&&d>L[k]){d-=L[k];k++;}var t=L[k]?d/L[k]:0;return[path[k][0]+(path[k+1][0]-path[k][0])*t,path[k][1]+(path[k+1][1]-path[k][1])*t];}
+function draw(i,p){
+ var st=S[i],s=st.st,n=names(),h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="EtherChannel: '+esc(st.t)+'">';
+ function cable(y,dead,blk){var x1=S1[0]+40,x2=S2[0]-40;return'<path d="M'+(S1[0]+20)+' '+(S1[1]+(y<S1[1]?-6:6))+'L'+x1+' '+y+'H'+x2+'L'+(S2[0]-20)+' '+(S2[1]+(y<S1[1]?-6:6))+'" stroke="'+(dead?'#cfd8dc':INK)+'" stroke-width="3" fill="none"'+(dead?' stroke-dasharray="6 5"':'')+'/>';}
+ if(s.po)h+='<rect x="'+(S1[0]+86)+'" y="'+(L1-26)+'" width="'+(S2[0]-S1[0]-172)+'" height="'+(L2-L1+52)+'" rx="40" fill="#e8f5e9" stroke="'+GR+'" stroke-width="2.2" stroke-dasharray="8 5"/>'+tx(W/2,L1-34,'Port-Channel 1 (Po1)',{fs:14,fw:700,c:GR});
+ h+=cable(L1,false)+cable(L2,s.cut);
+ h+=tx(S1[0]+64,L1-8,'Gi1/0/1',{fs:11,mono:1,c:MU})+tx(S1[0]+64,L2+18,'Gi1/0/2',{fs:11,mono:1,c:MU})+tx(S2[0]-64,L1-8,'Gi1/0/1',{fs:11,mono:1,c:MU})+tx(S2[0]-64,L2+18,'Gi1/0/2',{fs:11,mono:1,c:MU});
+ if(s.blk){h+='<circle cx="'+(S2[0]-52)+'" cy="'+L2+'" r="11" fill="'+OR+'"/><path d="M'+(S2[0]-58)+' '+(L2-6)+'l12 12m0 -12l-12 12" stroke="#fff" stroke-width="3"/>'+tx(S2[0]-52,L2+38,'blockiert (STP)',{fs:12,fw:700,c:OR});}
+ if(s.cut){var cx=W/2;h+='<path d="M'+(cx-12)+' '+(L2-12)+'l24 24m0 -24l-24 24" stroke="'+RD+'" stroke-width="5" stroke-linecap="round"/>';}
+ var bw=s.blk?'1 Gbit/s nutzbar':s.cut?'Po1: 1 Gbit/s (1 von 2 Kabeln)':s.po?'Po1: 2 Gbit/s':'';
+ if(bw)h+='<rect x="'+(W/2-110)+'" y="'+(H-40)+'" width="220" height="28" rx="14" fill="'+(s.blk||s.cut?'#fff3e0':'#e8f5e9')+'" stroke="'+(s.blk||s.cut?OR:GR)+'"/>'+tx(W/2,H-21,bw,{fs:13.5,fw:700,c:s.blk||s.cut?OR:GR});
+ h+='<line x1="'+P.a[0]+'" y1="'+P.a[1]+'" x2="'+S1[0]+'" y2="'+S1[1]+'" stroke="'+INK+'" stroke-width="2"/><line x1="'+P.b[0]+'" y1="'+P.b[1]+'" x2="'+S1[0]+'" y2="'+S1[1]+'" stroke="'+INK+'" stroke-width="2"/><line x1="'+P.x[0]+'" y1="'+P.x[1]+'" x2="'+S2[0]+'" y2="'+S2[1]+'" stroke="'+INK+'" stroke-width="2"/><line x1="'+P.y[0]+'" y1="'+P.y[1]+'" x2="'+S2[0]+'" y2="'+S2[1]+'" stroke="'+INK+'" stroke-width="2"/>';
+ h+=at(S1[0],S1[1],swb())+tx(S1[0],S1[1]+42,'SW1',{fs:14,fw:700})+at(S2[0],S2[1],swb())+tx(S2[0],S2[1]+42,'SW2',{fs:14,fw:700});
+ if(s.neg)h+=tx(S1[0],S1[1]+80,'mode '+n.a,{fs:12.5,fw:700,mono:1,c:PU})+tx(S2[0],S2[1]+80,'mode '+n.p,{fs:12.5,fw:700,mono:1,c:PU});
+ h+=at(P.a[0],P.a[1],pc(BL))+tx(P.a[0],P.a[1]+31,'PC A',{fs:12,fw:600})+at(P.b[0],P.b[1],pc(OR))+tx(P.b[0],P.b[1]+31,'PC B',{fs:12,fw:600});
+ h+=at(P.x[0],P.x[1],srv(BL))+tx(P.x[0],P.x[1]+38,'Server X',{fs:12,fw:600})+at(P.y[0],P.y[1],srv(OR))+tx(P.y[0],P.y[1]+38,'Server Y',{fs:12,fw:600});
+ st.pk.forEach(function(k){var t0=k.t0||0,f=Math.max(0,Math.min(1,(p-t0)/(1-t0)));if(p<t0||f>=1)return;var q=along(k.path,f);
+  h+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="8" fill="'+k.col+'" stroke="#fff" stroke-width="2"/>';
+  if(k.lab&&f>.04&&f<.96){var w=k.lab.length*6.8+14;h+='<rect x="'+(q[0]-w/2)+'" y="'+(q[1]-31)+'" width="'+w+'" height="20" rx="10" fill="'+k.col+'"/>'+tx(q[0],q[1]-16.5,k.lab,{fs:11,fw:700,c:'#fff'});}});
+ return h+'</svg>';
+}
+var S=steps(),si=0,playing=false,raf=0,safe=0,timer=0,PAUSE=[0,2600,1900,1300,800,450],DUR=[0,4200,3300,2500,1800,1200];
+function label(){var st=S[si];$('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+S.length;$('prev').disabled=si===0;$('next').disabled=si===S.length-1;}
+function cancel(){cancelAnimationFrame(raf);clearTimeout(safe);clearTimeout(timer);}
+function finish(){cancel();$('asvg').innerHTML=draw(si,1);if(playing){if(si<S.length-1)timer=setTimeout(function(){if(playing)go(si+1,true);},PAUSE[+$('spd').value]);else stop();}}
+function go(i,anim){cancel();si=i;label();if(!anim||reduce||!S[si].pk.length){finish();return;}
+ var dur=DUR[+$('spd').value],t0=null,mine=si,pp=proto;
+ function fr(ts){if(mine!==si||pp!==proto)return;if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur);$('asvg').innerHTML=draw(si,p);if(p<1)raf=requestAnimationFrame(fr);else finish();}
+ $('asvg').innerHTML=draw(si,0);raf=requestAnimationFrame(fr);safe=setTimeout(function(){if(mine===si&&pp===proto)finish();},dur+700);}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+$('prev').onclick=function(){stop();if(si>0)go(si-1,false);};
+$('next').onclick=function(){stop();if(si<S.length-1)go(si+1,true);};
+$('rst').onclick=function(){stop();go(0,true);};
+$('play').onclick=function(){if(playing){stop();finish();return;}playing=true;$('play').textContent='❚❚ Pause';go(si>=S.length-1?0:si+1,true);};
+[].forEach.call(document.querySelectorAll('.atabs [data-p]'),function(b){b.onclick=function(){proto=b.dataset.p;[].forEach.call(document.querySelectorAll('.atabs [data-p]'),function(x){x.classList.toggle('on',x===b);});S=steps();stop();go(si,si===2);};});
+go(0,false);
+window.__ec={draw:draw,len:function(){return S.length;}};
+
+/* ===== Dark Fiber ===== */
+var dfM='stp',dfE='ok';
+function dfDraw(){
+ var W=900,H=330,cut=dfE==='cut',po=dfM==='po',h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Zwei Standorte mit zwei Dark-Fiber-Leitungen über getrennte Trassen">';
+ /* Stadt */
+ h+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#f5f7f8"/>';
+ [[300,190,40,40],[350,178,30,52],[390,196,45,34],[445,172,35,58],[490,188,40,42],[540,182,30,48],[580,196,40,34]].forEach(function(b){h+='<rect x="'+b[0]+'" y="'+b[1]+'" width="'+b[2]+'" height="'+b[3]+'" fill="#dfe5e8" stroke="#cfd8dc"/>';});
+ h+=tx(450,248,'Innenstadt',{fs:12,fw:600,c:'#90a4ae'});
+ function site(x,lab){return'<rect x="'+(x-62)+'" y="105" width="124" height="120" rx="6" fill="#fff" stroke="#78909c" stroke-width="2"/><path d="M'+(x-70)+' 108L'+x+' 70L'+(x+70)+' 108" fill="#eceff1" stroke="#78909c" stroke-width="2"/>'+tx(x,60,lab,{fs:12.5,fw:700})+at(x,170,swb())+tx(x,210,lab==='Standort A'?'SW1':'SW2',{fs:13,fw:700});}
+ var A=[120,170],B=[780,170];
+ /* Trassen */
+ var north='M182 160 C 300 40, 600 40, 718 160',south='M182 180 C 300 300, 600 300, 718 180';
+ var nCol=cut?'#cfd8dc':po?GR:BL,sCol=po?GR:cut?BL:'#b0bec5',sDash=!po&&!cut;
+ h+='<path d="'+north+'" fill="none" stroke="'+nCol+'" stroke-width="'+(cut?3:6)+'"'+(cut?' stroke-dasharray="7 6"':'')+'/>';
+ h+='<path d="'+south+'" fill="none" stroke="'+sCol+'" stroke-width="'+(sDash?3:6)+'"'+(sDash?' stroke-dasharray="7 6"':'')+'/>';
+ h+=tx(450,60,'Dark Fiber 1 · Trasse Nord · 10 Gbit/s',{fs:12.5,fw:700,c:cut?'#90a4ae':po?GR:BL});
+ h+=tx(450,296,'Dark Fiber 2 · Trasse Süd · 10 Gbit/s',{fs:12.5,fw:700,c:sDash?'#78909c':po||cut?GR:BL});
+ if(cut)h+=tx(450,98,'🚜',{fs:30})+'<path d="M436 70l28 28m0 -28l-28 28" stroke="'+RD+'" stroke-width="5" stroke-linecap="round"/>';
+ if(!po&&!cut)h+='<circle cx="700" cy="196" r="11" fill="'+OR+'"/><path d="M694 190l12 12m0 -12l-12 12" stroke="#fff" stroke-width="3"/>'+tx(560,316,'blockiert von STP – bezahlt, aber ungenutzt 💸',{fs:12.5,fw:700,c:OR});
+ if(po)h+='<ellipse cx="190" cy="170" rx="16" ry="34" fill="none" stroke="'+GR+'" stroke-width="2.5" stroke-dasharray="5 3"/><ellipse cx="710" cy="170" rx="16" ry="34" fill="none" stroke="'+GR+'" stroke-width="2.5" stroke-dasharray="5 3"/>';
+ h+=site(A[0],'Standort A')+site(B[0],'Standort B');
+ var bw=po?(cut?'Po1: 10 Gbit/s – läuft sofort weiter':'Po1: 2 × 10 = 20 Gbit/s'):(cut?'STP schaltet um … Stillstand bis zu 30–50 s (RSTP: Sekunden)':'nutzbar: 10 Gbit/s');
+ var good=po&&!cut,warn=!po&&cut||po&&cut;
+ h+='<g><rect x="'+(W/2-228)+'" y="'+(138)+'" width="456" height="28" rx="14" fill="'+(good?'#e8f5e9':warn?'#fff3e0':'#e3f2fd')+'" stroke="'+(good?GR:warn?OR:BL)+'" stroke-width="1.6"/>'+tx(W/2,157,bw,{fs:13,fw:700,c:good?GR:warn?OR:BL})+'</g>';
+ return h+'</svg>';
+}
+function dfText(){
+ if(dfM==='stp')return dfE==='ok'?'Beide Fasern sind gemietet und bezahlt – aber Spanning Tree erkennt eine Schleife und <b>blockiert</b> den Port der Trasse Süd. Im Normalbetrieb läuft alles über eine einzige Faser: <b>10 Gbit/s</b>, obwohl 20 möglich wären.':'Ein Bagger trennt die Trasse Nord. Jetzt muss Spanning Tree den blockierten Port freigeben. Beim klassischen STP dauert das bis zu <b>30–50 Sekunden</b>, bei RSTP wenige Sekunden – so lange stehen Verbindungen zwischen den Standorten.';
+ return dfE==='ok'?'Beide Fasern sind zu <b>Port-Channel 1</b> gebündelt (LACP). Spanning Tree sieht nur einen Link, nichts wird blockiert. Die Verbindungen werden auf beide Fasern verteilt: zusammen <b>20 Gbit/s</b> – man nutzt, wofür man zahlt.':'Ein Bagger trennt die Trasse Nord. Der Port-Channel verliert ein Mitglied, bleibt aber <b>up</b>. Alle Verbindungen laufen sofort über die Trasse Süd weiter, Spanning Tree muss nichts neu berechnen. Nur die Bandbreite sinkt vorübergehend auf 10 Gbit/s.';
+}
+function dfRender(){$('dfsvg').innerHTML=dfDraw();$('dftxt').innerHTML=dfText();
+ [].forEach.call(document.querySelectorAll('#dfm button'),function(b){b.classList.toggle('on',b.dataset.m===dfM);});
+ [].forEach.call(document.querySelectorAll('#dfe button'),function(b){b.classList.toggle('on',b.dataset.e===dfE);});}
+[].forEach.call(document.querySelectorAll('#dfm button'),function(b){b.onclick=function(){dfM=b.dataset.m;dfRender();};});
+[].forEach.call(document.querySelectorAll('#dfe button'),function(b){b.onclick=function(){dfE=b.dataset.e;dfRender();};});
+dfRender();
+window.__df={set:function(m,e){dfM=m;dfE=e;dfRender();}};
+
+/* ===== Modus-Rechner ===== */
+var MD=E.MODES,PCOL={LACP:BL,PAgP:PU,on:'#455a64'};
+$('mm1').innerHTML=$('mm2').innerHTML=MD.map(function(m){return'<option value="'+m+'">'+m+' ('+E.PROTO[m]+')</option>';}).join('');
+$('mm1').value='active';$('mm2').value='passive';
+function mrender(){
+ var a=$('mm1').value,b=$('mm2').value,r=E.pair(a,b);
+ $('mres').innerHTML='<div class="mresult '+(r.ok?'ok':'no')+'"><b>'+(r.ok?'✓ EtherChannel kommt zustande':'✕ Kein EtherChannel')+'</b>'+(r.ok?' – '+(r.proto==='on'?'ohne Protokoll':'per '+r.proto):'')+'<br><span>'+r.why+'</span></div>';
+ var h='<tr><th class="corner">SW1 ↓ / SW2 →</th>'+MD.map(function(m){return'<th style="color:'+PCOL[E.PROTO[m]]+'">'+m+'</th>';}).join('')+'</tr>';
+ MD.forEach(function(x){h+='<tr><th style="color:'+PCOL[E.PROTO[x]]+'">'+x+'</th>'+MD.map(function(y){var q=E.pair(x,y);return'<td class="'+(q.ok?'y':'n')+(x===a&&y===b?' sel':'')+'" data-a="'+x+'" data-b="'+y+'" title="'+esc(q.why)+'">'+(q.ok?'✓':'✕')+'</td>';}).join('')+'</tr>';});
+ $('mtab').innerHTML=h;
+}
+$('mm1').onchange=$('mm2').onchange=mrender;
+$('mtab').addEventListener('click',function(e){var t=e.target.closest('td[data-a]');if(!t)return;$('mm1').value=t.dataset.a;$('mm2').value=t.dataset.b;mrender();});
+mrender();
+/* ===== Quiz ===== */
+var Q=[
+ ['Warum nutzt man ohne EtherChannel nur eines von zwei Kabeln zwischen zwei Switches?',['Weil das zweite Kabel zu langsam ist','Weil Spanning Tree die Schleife erkennt und einen Port blockiert','Weil Switches nur einen Uplink haben dürfen','Weil VLANs das verhindern'],1,'Zwei parallele Kabel sind für STP eine Schleife. EtherChannel macht daraus einen logischen Link.'],
+ ['Welches Protokoll ist ein offener Standard?',['PAgP','LACP','CDP','HSRP'],1,'LACP ist IEEE 802.3ad (heute 802.1AX). PAgP ist Cisco-eigen.'],
+ ['SW1: mode passive, SW2: mode passive. Was passiert?',['Ein LACP-Channel entsteht','Kein Channel – beide warten','Ein PAgP-Channel entsteht','Der Channel ist fest eingeschaltet'],1,'Mindestens eine Seite muss active sein.'],
+ ['SW1: mode desirable, SW2: mode auto. Was passiert?',['Kein Channel','PAgP-Channel entsteht','LACP-Channel entsteht','Fehlermeldung'],1,'desirable fängt an, auto antwortet.'],
+ ['SW1: mode on, SW2: mode active. Was passiert?',['LACP-Channel','PAgP-Channel','Kein Channel – on verhandelt nicht','Channel ohne Protokoll'],2,'on spricht kein Protokoll. Es funktioniert nur mit on auf der Gegenseite.'],
+ ['Was bedeutet in show etherchannel summary das Flag (s) bei einem Port?',['Port ist gebündelt','Port ist suspendiert, z. B. weil seine Konfiguration nicht passt','Port ist ein Server-Port','Port ist schnell'],1,'(P) = gebündelt, (s) = suspendiert, (I) = stand-alone, (D) = down.'],
+ ['Ein Port-Channel aus 4 × 1 Gbit/s. Wie schnell kann EINE einzelne Dateiübertragung höchstens laufen?',['4 Gbit/s','2 Gbit/s','1 Gbit/s','400 Mbit/s'],2,'Verteilt wird pro Verbindung, nicht pro Paket. Eine Verbindung bleibt auf einem Kabel.'],
+ ['Wo stellt man am besten switchport mode trunk ein?',['Auf jedem Einzelport anders','Am Port-Channel-Interface','Nur auf SW1','Gar nicht – EtherChannel kann keine Trunks'],1,'Die Einstellungen am Port-Channel werden auf alle Mitglieder übernommen.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return E.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function topo(t){
+ var W=720,gap=34,Hh=60+t.n*gap,h='<svg viewBox="0 0 '+W+' '+Hh+'" role="img" aria-label="Zwei Switches mit '+t.n+' Kabeln">',y0=40;
+ for(var i=0;i<t.n;i++){var y=y0+i*gap;h+='<line x1="210" y1="'+y+'" x2="510" y2="'+y+'" stroke="'+INK+'" stroke-width="2.5"/>'+tx(200,y+4,E.ifName(t,i),{a:'end',fs:12,mono:1})+tx(520,y+4,E.ifName(t,i),{a:'start',fs:12,mono:1})+tx(360,y-5,'1 Gbit/s',{fs:10.5,c:MU});}
+ var my=y0+(t.n-1)*gap/2;h+=at(90,my,swb())+tx(90,my+42,'SW1',{fs:13,fw:700})+at(630,my,swb())+tx(630,my+42,'SW2',{fs:13,fw:700});
+ return h+'</svg>';
+}
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+E.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+topo(s);
+ h+='<div class="cfgs"><div><p class="ph">SW1</p><pre class="cli">'+esc(E.config(s,'s1'))+'</pre></div><div><p class="ph">SW2</p><pre class="cli">'+esc(E.config(s,'s2'))+'</pre></div></div>';
+ h+='<p class="qh">1. Kommt ein EtherChannel zustande?</p><div class="opts"><label><input type="radio" name="'+id+'-f" value="1"> Ja</label><label><input type="radio" name="'+id+'-f" value="0"> Nein</label></div>';
+ h+='<p class="qh">2. Wie viele Ports werden gebündelt (Flag P)?</p><select class="one nb"><option value="">– wählen –</option>'+[0,1,2,3,4].filter(function(x){return x<=s.n;}).map(function(x){return'<option>'+x+'</option>';}).join('')+'</select>';
+ h+='<p class="qh">3. Welche Bandbreite hat der Port-Channel?</p><select class="one bw"><option value="">– wählen –</option><option value="0">kein Port-Channel</option>'+[1,2,3,4].filter(function(x){return x<=s.n;}).map(function(x){return'<option value="'+(x*1000)+'">'+x+' Gbit/s</option>';}).join('')+'</select>';
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),r=s.res,ok=0;
+ card.querySelectorAll('input[name$="-f"]').forEach(function(rb){var l=rb.parentNode;l.classList.remove('right','wrong');if(rb.checked){var g=(rb.value==='1')===r.formed;l.classList.add(g?'right':'wrong');if(g)ok++;}});
+ var nb=card.querySelector('.nb'),g2=nb.value!==''&&+nb.value===r.bundled.length;mark(nb,nb.value===''?null:g2);if(g2)ok++;
+ var bw=card.querySelector('.bw'),g3=bw.value!==''&&+bw.value===r.bw;mark(bw,bw.value===''?null:g3);if(g3)ok++;
+ var fb=card.querySelector('.fb'),all=ok===3;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von 3 richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function why(s,i){var a=s.ports[i].s1,b=s.ports[i].s2,ref=s.ports[0],w=[];
+ function d(p,side,name){if(p.speed!==1000)w.push(name+': speed 100 statt 1000');if(p.mode!==ref[side].mode)w.push(name+': '+p.mode+' statt '+ref[side].mode);else if(p.mode==='access'&&p.vlan!==ref[side].vlan)w.push(name+': VLAN '+p.vlan+' statt '+ref[side].vlan);}
+ d(a,'s1','SW1');d(b,'s2','SW2');return w.join(', ');}
+function summary(s){var r=s.res,pro=r.proto==='on'?'-':r.proto,pp='Po'+s.grp+'(SU)';
+ return'Group  Port-channel  Protocol    Ports\n------+-------------+-----------+---------------------------\n'+(String(s.grp)+'      ').slice(0,7)+(pp+'               ').slice(0,16)+(pro+'          ').slice(0,10)+s.ports.map(function(p,i){return E.ifName(s,i)+'('+(r.bundled.indexOf(i)>=0?'P':'s')+')';}).join('  ');}
+function solHTML(s){
+ var r=s.res,h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. '+(r.formed?'Ja':'Nein')+'</b> – SW1 <code>'+s.m1+'</code> ('+E.PROTO[s.m1]+'), SW2 <code>'+s.m2+'</code> ('+E.PROTO[s.m2]+'). <span class="hint">'+r.why+'</span></li>';
+ if(r.formed){h+='<li><b>2. '+r.bundled.length+' von '+s.n+' Ports</b>'+(r.susp.length?'<br><span class="hint">'+r.susp.map(function(i){return E.ifName(s,i)+' wird suspendiert: '+why(s,i)+'.';}).join(' ')+'</span>':'<br><span class="hint">Alle Ports sind gleich konfiguriert.</span>')+'</li>';
+  h+='<li><b>3. '+(r.bw/1000)+' Gbit/s</b> <span class="hint">('+r.bundled.length+' × 1 Gbit/s)</span><pre class="cli">SW1# show etherchannel summary\n'+esc(summary(s))+'</pre></li>';}
+ else h+='<li><b>2. 0 Ports</b> · <b>3. kein Port-Channel</b><br><span class="hint">Ohne Aushandlung arbeiten die Ports einzeln – Spanning Tree blockiert dann wieder alle bis auf einen.</span></li>';
+ return h+'</ul>';
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=E.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=E.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
