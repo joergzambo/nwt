@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Netzadresse berechnen</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.scroll{overflow-x:auto}
+.stack h3{font:400 19px var(--head);margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.tempo{display:inline-flex;gap:6px;align-items:center;font:600 14px var(--ui)}
+.tempo input{accent-color:#61a229}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:6.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font:600 13px var(--ui)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.c-IL{color:#1565c0}.c-IG{color:#e65100}.c-OL{color:#6a1b9a}.c-OG{color:#2e7d32}
+/* Begriffs-Matrix */
+.mx{width:100%;border-collapse:separate;border-spacing:6px;margin-top:10px;table-layout:fixed}
+.mx th{font:600 14px var(--ui);padding:6px;text-align:center;color:var(--mute);vertical-align:bottom}
+.mx th b{display:block;color:var(--ink);font-size:16px}
+.mx th.rowh{text-align:right;width:25%;vertical-align:middle}
+.mx button{width:100%;border:2px solid;border-radius:6px;background:#fff;padding:10px 8px;cursor:pointer;text-align:center;line-height:1.35}
+.mx button b{display:block;font:700 16px var(--ui)}
+.mx button span{font:13.5px var(--mono);color:var(--ink)}
+.mx button.on{color:#fff!important}.mx button.on span{color:#fff}
+@media(max-width:600px){.mx{border-spacing:3px}.mx th{font-size:11.5px;padding:2px}.mx th b{font-size:13px}.mx th.rowh{width:21%}.mx button{padding:8px 2px}.mx button b{font-size:13px}.mx button span{font-size:10.5px;letter-spacing:-.3px}}
+.mxinfo{background:var(--soft);border-left:5px solid var(--ink);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:15.5px;min-height:4.6em}
+.memo{background:#eef6e6;border:1px solid #c5e1a5;border-radius:4px;padding:10px 14px;font-size:15.5px;margin-top:10px}
+.memo b.w1{background:#1c2b33;color:#fff;padding:1px 7px;border-radius:3px}
+.memo b.w2{background:#61a229;color:#fff;padding:1px 7px;border-radius:3px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.ntab{border-collapse:collapse;font:13.5px var(--mono);margin-top:6px;min-width:560px}
+.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 9px;text-align:left;white-space:nowrap}
+.ntab th{background:var(--soft);font:600 13px var(--ui)}
+.ntab input{width:21ch}
+.ntab tr.hit td{background:#fff8e1}
+.rule{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.mt td,.mt th{text-align:center;font-family:var(--mono);font-size:13.5px}.mt th{font-family:var(--ui)}
+.inrow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;margin:4px 0 10px}
+.inrow label{display:flex;flex-direction:column;font:600 13.5px var(--ui);gap:3px}
+.inrow .one{width:17ch}
+.pres{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:600 13.5px var(--ui)}
+.btn.sm{padding:4px 10px;font-size:13.5px}
+.formula{background:var(--soft);border-radius:4px;padding:8px 12px;font-size:15.5px}
+.und{width:auto}.und td,.und th{text-align:center}
+.pk{font-family:var(--mono);font-size:14px}
+.rules{margin-bottom:22px}
+.mute{color:var(--mute);font-weight:400}
+.cn{color:#1565c0}.ch{color:#e65100}
+@keyframes drop{from{opacity:0;transform:translateY(-34px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.4)}70%{transform:scale(1.25)}100%{opacity:1;transform:none}}
+svg .drop{animation:drop .55s ease-out both;transform-box:fill-box;transform-origin:center}
+svg .pop{animation:pop .5s ease-out both;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion: reduce){svg .drop,svg .pop{animation:none}}
+#esvg svg{min-width:640px}
+/* Rechenweg-Tabelle */
+.rw{border-collapse:collapse;font:14px var(--mono);margin-top:6px}
+.rw th,.rw td{border:1px solid #cfd8dc;padding:5px 10px;text-align:center;white-space:nowrap}
+.rw th{background:var(--soft);font:600 13px var(--ui);text-align:left}
+.rw tr:first-child th{text-align:center}
+.rw tr.res td{font-weight:700;color:#2e7d32;background:#f1f8e9}
+.rw td.key{background:#fffde7}
+.rw tr.res td.key{background:#fff8c4}
+.rw td.diff{background:#fdecea!important;color:#c62828!important}
+.bits i{font-style:normal;display:inline-block;width:1.05ch;text-align:center}
+.bits i.n{color:inherit}.bits i.h{opacity:.55}
+.rw .dec{margin-left:8px;font-weight:700}
+.rwl{margin:8px 0 0;padding-left:20px;font-size:14.5px}.rwl li{margin:2px 0}
+.rwr{margin:6px 0 0;font-size:15.5px}
+.verdict{font:600 16px var(--ui);margin:10px 0 0;padding:8px 12px;border-radius:4px}
+.verdict.ok{background:#e3f4e6;color:#2e7d32}.verdict.no{background:#fdecea;color:#c62828}
+.tgrid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:18px;align-items:start;margin-top:8px}
+@media(max-width:760px){.tgrid{grid-template-columns:minmax(0,1fr)}}
+svg.dlg{max-width:400px;border:0;background:none}
+/* Arbeitsblatt */
+.paper{background:#fff;border:1px solid #cfd8dc;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:28px 34px;margin:18px 0;font-size:14.5px}
+.paper .ph{display:flex;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:6px;font-size:16px}
+.namel{display:flex;flex-wrap:wrap;gap:8px 26px;margin:14px 0 6px;font-size:14px}
+.wt{border-top:1px solid #cfd8dc;margin-top:12px;padding-top:6px;break-inside:avoid}
+.wt h4{font:600 16px var(--ui);margin:0 0 4px}
+.wt p{margin:6px 0}
+.wgrid{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}
+.wgrid svg.dlg{max-width:250px}
+.lines{min-height:140px;background:repeating-linear-gradient(#fff 0 27px,#b0bec5 27px 28px);border-radius:2px}
+.lines.sm{min-height:28px}
+.wt>.lines{min-height:84px}
+.solp .rw{font-size:12.5px}.solp .rwl{font-size:13px}
+@media print{
+ body.printing>*:not(main){display:none!important}
+ body.printing main>*:not(#sheet){display:none!important}
+ body.printing main{padding:0!important;margin:0!important;max-width:none!important}
+ body.printing #sheet{display:block!important}
+ body.printing .paper{box-shadow:none;border:0;margin:0;padding:0 4mm;break-after:page}
+ body.printing .paper:last-child{break-after:auto}
+ @page{size:A4;margin:14mm 12mm}
+}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Netzadresse berechnen</h1>
+<p class="sub">Jedes Gerät im Netz hat eine <b>IP-Adresse</b> und eine <b>Subnetzmaske</b>. Aus beiden zusammen ergibt sich, in welchem <b>Netz</b> das Gerät steht. Dazu verknüpft man IP und Maske Bit für Bit mit <b>UND</b>. Das Ergebnis ist die <b>Netzadresse</b>.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#aufbau">Aufbau</a><a href="#rechnen">Rechenweg</a><a href="#trick">Blockgröße</a><a href="#gleich">Gleiches Netz?</a><a href="#gateway">Gateway</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a><a href="#blatt">📄 Arbeitsblatt</a></nav>
+
+<h2 class="part" id="aufbau">Aufbau von IP-Adresse und Subnetzmaske</h2>
+<div class="rules">
+ <div class="card"><h3>IP-Adresse (IPv4)</h3><ul style="margin:0;padding-left:20px">
+  <li><b>32 Bit</b> lang, aufgeteilt in <b>4 Oktette</b> zu je <b>8 Bit</b>.</li>
+  <li>Jedes Oktett wird <b>dezimal</b> geschrieben (0 – 255), getrennt durch Punkte: <code>199.250.222.190</code></li>
+  <li>Zwei Teile: der <b>Netzanteil</b> (vorne) sagt, in welchem Netz das Gerät steht. Der <b>Hostanteil</b> (hinten) unterscheidet die Geräte in diesem Netz.</li>
+  <li>Wo die Grenze liegt, steht <b>nicht</b> in der IP-Adresse – das sagt erst die Subnetzmaske.</li></ul></div>
+ <div class="card check"><h3>Subnetzmaske</h3><ul style="margin:0;padding-left:20px">
+  <li>Ebenfalls <b>32 Bit</b>, 4 Oktette, dezimal geschrieben: <code>255.255.255.128</code></li>
+  <li>Links stehen nur <b>Einsen</b> – sie markieren den <b>Netzanteil</b>. Rechts stehen nur <b>Nullen</b> – der <b>Hostanteil</b>.</li>
+  <li>Einsen und Nullen sind <b>nie gemischt</b>. Darum gibt es pro Oktett nur 9 mögliche Werte (Tabelle unten).</li>
+  <li><b>Präfix-Schreibweise:</b> Anzahl der Einsen hinter einem Schrägstrich, z. B. <code>/25</code> = 255.255.255.128.</li></ul></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Die neun möglichen Werte eines Masken-Oktetts</h3><div class="scroll"><table class="cmp mt">
+ <tr><th>dezimal</th><td>0</td><td>128</td><td>192</td><td>224</td><td>240</td><td>248</td><td>252</td><td>254</td><td>255</td></tr>
+ <tr><th>binär</th><td>00000000</td><td>10000000</td><td>11000000</td><td>11100000</td><td>11110000</td><td>11111000</td><td>11111100</td><td>11111110</td><td>11111111</td></tr>
+ <tr><th>Einsen</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+ <tr><th>Blockgröße</th><td>256</td><td>128</td><td>64</td><td>32</td><td>16</td><td>8</td><td>4</td><td>2</td><td>1</td></tr>
+</table></div>
+<p class="hint">Stellenwerte eines Oktetts von links nach rechts: <b>128 · 64 · 32 · 16 · 8 · 4 · 2 · 1</b>. Zusammen ergeben alle acht 255.</p></div>
+
+<h2 class="part" id="rechnen">Der Rechenweg: IP UND Maske</h2>
+<p class="sub">Schreib IP-Adresse und Maske binär untereinander und verknüpfe jede Spalte mit <b>UND</b>: Nur wenn <b>beide</b> Bits 1 sind, ist das Ergebnis 1. Gib eigene Werte ein oder nimm ein Beispiel – und lass dir vorrechnen.</p>
+<div class="card">
+ <div class="inrow"><label>IP-Adresse <input id="eip" class="one" value="199.250.222.190" autocomplete="off" spellcheck="false"></label><label>Subnetzmaske <input id="emask" class="one" value="255.255.255.128" autocomplete="off" spellcheck="false"></label>
+  <span class="pres">Beispiele: <button type="button" class="btn ghost sm" data-ex="199.250.222.190|255.255.255.128">/25</button><button type="button" class="btn ghost sm" data-ex="200.201.202.37|255.255.255.252">/30</button><button type="button" class="btn ghost sm" data-ex="10.250.212.231|255.240.0.0">/12</button><button type="button" class="btn ghost sm" data-ex="172.16.45.200|255.255.0.0">/16</button></span></div>
+ <p class="err" id="emsg"></p>
+ <div class="scroll"><div id="esvg"></div></div>
+ <div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="play" type="button">▶ Abspielen</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button>
+  <label class="tempo">🐢 <input type="range" id="spd" min="1" max="5" value="3" aria-label="Tempo"> 🐇</label><span class="stepno" id="no"></span></div>
+ <div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+<div class="rules">
+ <div class="card"><h3>UND in einer Tabelle</h3><table class="cmp und"><tr><th>IP-Bit</th><th>Masken-Bit</th><th>Ergebnis</th></tr><tr><td>0</td><td>0</td><td>0</td></tr><tr><td>1</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td></tr><tr><td>1</td><td>1</td><td><b>1</b></td></tr></table>
+  <p class="hint">Merksatz: Wo die Maske eine <b>1</b> hat, wird das IP-Bit <b>übernommen</b>. Wo sie eine <b>0</b> hat, wird es <b>0</b>.</p></div>
+ <div class="card check"><h3>So schreibst du den Rechenweg auf</h3><ol style="margin:0;padding-left:20px">
+  <li>Oktette mit Maske <b>255</b> abschreiben.</li>
+  <li>Oktette mit Maske <b>0</b> werden <b>0</b>.</li>
+  <li>Das <b>eine</b> Oktett dazwischen binär untereinander schreiben: IP, Maske, Ergebnis.</li>
+  <li>Ergebnis zurück ins Dezimalsystem rechnen und die Netzadresse zusammensetzen.</li></ol>
+  <p class="hint">Nur wenn die Maske ausschließlich aus 255 und 0 besteht (/8, /16, /24), entfällt Schritt 3.</p></div>
+</div>
+
+<h2 class="part" id="trick">Kontrolle im Kopf: die Blockgröße</h2>
+<div class="card"><p style="margin:0 0 8px">Das Ergebnis lässt sich ohne Binärzahlen kontrollieren. Im „interessanten“ Oktett (Maske weder 255 noch 0) rechnest du:</p>
+ <p class="formula"><b>Blockgröße = 256 − Masken-Oktett</b> &nbsp;→&nbsp; Netz-Oktett = das <b>größte Vielfache</b> der Blockgröße, das ≤ dem IP-Oktett ist</p>
+ <div class="scroll"><table class="cmp"><tr><th>IP-Oktett</th><th>Masken-Oktett</th><th>Blockgröße</th><th>Vielfache</th><th>Netz-Oktett</th></tr>
+  <tr><td>190</td><td>128</td><td>256 − 128 = 128</td><td>0, <b>128</b>, 256</td><td><b>128</b></td></tr>
+  <tr><td>37</td><td>252</td><td>256 − 252 = 4</td><td>…, 32, <b>36</b>, 40</td><td><b>36</b></td></tr>
+  <tr><td>250</td><td>240</td><td>256 − 240 = 16</td><td>…, 224, <b>240</b>, 256</td><td><b>240</b></td></tr>
+  <tr><td>45</td><td>224</td><td>256 − 224 = 32</td><td>0, <b>32</b>, 64</td><td><b>32</b></td></tr></table></div>
+ <p class="hint">Alle Oktette <b>rechts</b> vom interessanten Oktett sind in der Netzadresse 0, alle links davon werden abgeschrieben. Für den Rechenweg auf dem Arbeitsblatt bleibt die binäre Rechnung der Nachweis – die Blockgröße ist die schnelle Kontrolle.</p></div>
+
+<h2 class="part" id="gleich">Sind zwei Geräte im gleichen Netz?</h2>
+<p class="sub">Zwei Geräte sind im gleichen Netz, wenn bei <b>beiden</b> mit derselben Maske dieselbe <b>Netzadresse</b> herauskommt. Dann können sie direkt miteinander sprechen – ohne Router.</p>
+<div class="card">
+ <div class="inrow"><label>Gerät A <input id="ga" class="one" value="10.240.231.212" autocomplete="off" spellcheck="false"></label><label>Gerät B <input id="gb" class="one" value="10.250.212.231" autocomplete="off" spellcheck="false"></label><label>Maske <input id="gm" class="one" value="255.240.0.0" autocomplete="off" spellcheck="false"></label></div>
+ <div id="gout" aria-live="polite"></div>
+</div>
+
+<h2 class="part" id="gateway">Passt das Standardgateway?</h2>
+<div class="rules">
+ <div class="card"><h3>Die Regel</h3><p style="margin:0 0 6px">Das <b>Standardgateway</b> (der Router) muss im <b>selben Netz</b> liegen wie das Gerät. Sonst kann das Gerät den Router gar nicht erreichen – und kommt nicht aus seinem Netz hinaus.</p>
+  <p style="margin:0">Prüfen: Gateway UND Maske rechnen. Kommt dieselbe Netzadresse heraus – und ist das Gateway weder die Netz- noch die Broadcast-Adresse –, passt es.</p></div>
+ <div class="card check"><h3>Beispiel</h3><p class="pk" style="margin:0 0 6px">IP 200.201.202.37 · Maske 255.255.255.252 · Gateway 200.201.202.250</p>
+  <ul style="margin:0;padding-left:20px"><li>Netz des Geräts: 37 UND 252 = <b>36</b> → 200.201.202.36 /30</li><li>Nutzbar sind nur .37 und .38 (Broadcast .39)</li><li>Gateway: 250 UND 252 = <b>248</b> → anderes Netz ✕</li></ul>
+  <p class="hint">Windows warnt beim Speichern so einer Einstellung, dass das Gateway nicht im selben Netzwerksegment liegt.</p></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Wie am Arbeitsblatt: Netzadresse aus den IP-Einstellungen berechnen, das Gateway prüfen und zwei Geräte vergleichen. Die Lösung zeigt den vollständigen Rechenweg.</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (/8, /16, /24)</option><option value="M" selected>Mittel (letztes Oktett, /25 – /30)</option><option value="S">Schwer (2. oder 3. Oktett)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<h2 class="part" id="blatt">📄 Arbeitsblatt zum Ausdrucken</h2>
+<p class="sub">Erstellt ein Blatt im Stil der Schularbeit – mit Platz für den Rechenweg und auf Wunsch mit Lösungsblatt und zwei Gruppen. Die Blattnummer erzeugt jederzeit wieder genau dasselbe Blatt.</p>
+<div class="card">
+ <div class="genbar" style="margin:0"><label for="wlvl">Stufe</label><select id="wlvl"><option value="L">Leicht</option><option value="M" selected>Mittel</option><option value="S">Schwer</option><option value="X">Gemischt (M + S)</option></select>
+ <label for="wn">Aufgaben</label><select id="wn"><option>2</option><option selected>3</option><option>4</option><option>6</option></select>
+ <label><input type="checkbox" id="wab"> Gruppe A und B</label><label><input type="checkbox" id="wsol" checked> Lösungsblatt</label>
+ <label for="wcode">Blatt-Nr.</label><input id="wcode" size="8" placeholder="zufällig" autocomplete="off">
+ <button class="btn" id="wgo" type="button">Arbeitsblatt erstellen</button><button class="btn ghost" id="wprint" type="button" disabled>🖨 Drucken</button></div>
+ <p class="hint" id="wmsg"></p>
+</div>
+<div id="sheet"></div>
+</main>
+<script>
+/*NAJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},NAx=window.NA,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var MONO='ui-monospace,Menlo,Consolas,monospace',SANS='Open Sans,Arial,sans-serif';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'"'+(o.op!=null?' opacity="'+o.op+'"':'')+(o.cls?' class="'+o.cls+'"':'')+' font-family="'+(o.mono?MONO:SANS)+'">'+esc(t)+'</text>';}
+function norm(v){return String(v).replace(/\s+/g,'').replace(/,/g,'.').replace(/\/\d+$/,'');}
+
+/* ===== Rechenweg als Tabelle (für Lösungen und Arbeitsblatt) ===== */
+function bitsHTML(o,m,mode){ /* mode: 'ip','mask','res' */
+ var b=NAx.bin8(o),mb=NAx.bin8(m),h='';
+ for(var j=0;j<8;j++)h+='<i class="'+(mb[j]==='1'?'n':'h')+'">'+b[j]+'</i>';return h;}
+function rechenweg(ip,mask,label){
+ var a=NAx.octs(ip),m=NAx.octs(mask),k=NAx.keyOctet(mask),r=a.map(function(o,i){return o&m[i];}),p=NAx.prefixOf(mask);
+ var h='<div class="scroll"><table class="rw"><tr><th></th>'+[0,1,2,3].map(function(i){return'<th>'+(i+1)+'. Oktett</th>';}).join('')+'</tr>';
+ function row(name,v,cls){return'<tr class="'+(cls||'')+'"><th>'+name+'</th>'+v.map(function(o,i){return'<td'+(i===k?' class="key"':'')+'>'+(i===k?'<span class="bits">'+bitsHTML(o,m[i])+'</span><span class="dec">= '+o+'</span>':o)+'</td>';}).join('')+'</tr>';}
+ h+=row(label||'IP-Adresse',a)+row('Maske',m)+row('UND',r,'res')+'</table></div>';
+ var exp=[];
+ m.forEach(function(x,i){if(x===255)exp.push((i+1)+'. Oktett: Maske 255 → '+a[i]+' abschreiben');else if(x===0)exp.push((i+1)+'. Oktett: Maske 0 → 0');});
+ if(k>=0){var bs=256-m[k];exp.push((i2(k))+'. Oktett binär: '+NAx.bin8(a[k])+' UND '+NAx.bin8(m[k])+' = '+NAx.bin8(r[k])+' = <b>'+r[k]+'</b> <span class="mute">(Kontrolle: Blockgröße 256 − '+m[k]+' = '+bs+', größtes Vielfaches ≤ '+a[k]+' ist '+r[k]+')</span>');}
+ h+='<ul class="rwl">'+exp.map(function(e){return'<li>'+e+'</li>';}).join('')+'</ul><p class="rwr">Netzadresse: <b>'+r.join('.')+'</b> /'+p+'</p>';
+ return h;
+}
+function i2(k){return k+1;}
+
+/* ===== Erklär-Animation ===== */
+var BW=21,GAP=12,X0=168,W=900,H=226,RY={ip:58,mask:98,res:150},CH=28;
+function bx(i){return X0+i*BW+Math.floor(i/8)*GAP;}
+var E=null,si=0,playing=false,timer=0,prevReveal=0;
+function bitsOf(ip){return NAx.octs(ip).map(NAx.bin8).join('');}
+function buildSteps(ip,mask){
+ var a=NAx.octs(ip),m=NAx.octs(mask),res=a.map(function(o,i){return o&m[i];}),S=[],p=NAx.prefixOf(mask);
+ S.push({rev:0,hl:[],t:'IP-Adresse und Maske binär untereinander',txt:'Jedes Oktett wird als 8-stellige Binärzahl geschrieben. Die Maske hat '+p+' Einsen: Diese Bits sind der <b class="cn">Netzanteil</b> (blau), die restlichen '+(32-p)+' der <b class="ch">Hostanteil</b> (orange). Jetzt wird Spalte für Spalte mit <b>UND</b> verknüpft.'});
+ for(var i=0;i<4;i++){
+  var cols=[];for(var j=0;j<8;j++)cols.push(i*8+j);
+  if(m[i]===255)S.push({rev:(i+1)*8,hl:cols,oct:i,t:(i+1)+'. Oktett: Maske 255',txt:'In der Maske stehen hier <b>nur Einsen</b>. Alles UND 1 bleibt, wie es ist – das Oktett wird einfach <b>abgeschrieben</b>: '+a[i]+'.'});
+  else if(m[i]===0){var rest=[];for(var q=i;q<4;q++)for(j=0;j<8;j++)rest.push(q*8+j);
+   S.push({rev:32,hl:rest,oct:3,t:(i===3?'4. Oktett':(i+1)+'. bis 4. Oktett')+': Maske 0',txt:'In der Maske stehen hier <b>nur Nullen</b>. Alles UND 0 ergibt 0 – '+(i===3?'das Oktett wird':'diese Oktette werden')+' in der Netzadresse <b>0</b>. (Das ist der Hostanteil.)'});break;}
+  else{
+   var ib=NAx.bin8(a[i]),mb=NAx.bin8(m[i]);
+   for(j=0;j<8;j++){var x=ib[j],y=mb[j],z=(x==='1'&&y==='1')?'1':'0';
+    S.push({rev:i*8+j+1,hl:[i*8+j],t:(i+1)+'. Oktett, Bit '+(j+1)+' (Stellenwert '+Math.pow(2,7-j)+')',
+     txt:'IP <b>'+x+'</b> UND Maske <b>'+y+'</b> = <b>'+z+'</b>'+(y==='1'?(x==='1'?' – beide sind 1, also 1.':' – das IP-Bit ist 0, also 0.'):' – in der Maske steht 0, also 0.')+(j===0?' Das ist das „interessante“ Oktett: Die Maske ist hier weder 255 noch 0, darum wird es Bit für Bit gerechnet.':'')});}
+   var parts=[];for(j=0;j<8;j++)if(NAx.bin8(res[i])[j]==='1')parts.push(Math.pow(2,7-j));
+   S.push({rev:(i+1)*8,hl:cols,oct:i,dec:i,t:(i+1)+'. Oktett zurück ins Dezimalsystem',txt:NAx.bin8(res[i])+' = '+(parts.length?parts.join(' + '):'0')+' = <b>'+res[i]+'</b>. Kontrolle mit der Blockgröße: 256 − '+m[i]+' = '+(256-m[i])+', das größte Vielfache ≤ '+a[i]+' ist '+res[i]+'.'});
+  }
+ }
+ S.push({rev:32,hl:[],fin:1,t:'Die Netzadresse',txt:'Alle vier Oktette zusammensetzen: <b>'+res.join('.')+' /'+p+'</b>. Jedes Gerät, bei dem mit dieser Maske dasselbe herauskommt, steht im selben Netz.'});
+ return S;
+}
+function draw(){
+ var st=E.S[si],ib=bitsOf(E.ip),mb=bitsOf(E.mask),rb=bitsOf(E.res),p=E.p,h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Netzadresse binär: '+esc(st.t)+'">';
+ /* Hintergrund Netz/Host */
+ for(var i=0;i<32;i++)h+='<rect x="'+bx(i)+'" y="'+(RY.ip-20)+'" width="'+BW+'" height="'+(RY.res-RY.ip+CH)+'" fill="'+(i<p?'#e3f2fd':'#fff3e0')+'"/>';
+ st.hl.forEach(function(i){h+='<rect x="'+bx(i)+'" y="'+(RY.ip-20)+'" width="'+BW+'" height="'+(RY.res-RY.ip+CH)+'" fill="#fff59d"/>';});
+ /* Klammern */
+ function br(x1,x2,lab,col){var y=22,s='<path d="M'+(x1+2)+' '+(y+8)+'V'+y+'H'+(x2-2)+'V'+(y+8)+'" stroke="'+col+'" stroke-width="2" fill="none"/>',w=lab.length*6.6,mid=(x1+x2)/2,a='middle',xx=mid;
+  if(w>x2-x1){if(x2>W-120){a='end';xx=x2;}else{a='start';xx=x1;}}
+  return s+tx(xx,y-5,lab,{a:a,fs:12,fw:700,c:col});}
+ if(p>0)h+=br(bx(0),bx(p-1)+BW,'Netzanteil · '+p+' Bit','#1565c0');
+ if(p<32)h+=br(bx(p),bx(31)+BW,'Hostanteil · '+(32-p)+' Bit','#e65100');
+ /* Zeilen */
+ function lab(y,t,v,c){return tx(12,y+2,t,{a:'start',fs:13.5,fw:700,c:c||'#1c2b33'})+tx(12,y+17,v,{a:'start',fs:11.5,mono:1,c:'#546e7a'});}
+ h+=lab(RY.ip,'IP-Adresse',E.ip)+lab(RY.mask,'Subnetzmaske',E.mask);
+ var fin=st.rev>=32&&(st.fin||si===E.S.length-1);
+ h+=lab(RY.res,'Netzadresse',st.rev>=32?E.res:'?',  '#2e7d32');
+ for(i=0;i<32;i++){var cx=bx(i)+BW/2;
+  h+=tx(cx,RY.ip+5,ib[i],{fs:15,fw:600,mono:1});
+  h+=tx(cx,RY.mask+5,mb[i],{fs:15,fw:mb[i]==='1'?700:400,mono:1,c:mb[i]==='1'?'#1565c0':'#90a4ae'});
+  if(i<st.rev)h+=tx(cx,RY.res+5,rb[i],{fs:16,fw:700,mono:1,c:rb[i]==='1'?'#2e7d32':'#78909c',cls:i>=prevReveal&&i<st.rev?'drop':''});
+  else h+='<rect x="'+(bx(i)+4)+'" y="'+(RY.res-10)+'" width="'+(BW-8)+'" height="20" rx="3" fill="none" stroke="#cfd8dc" stroke-dasharray="3 2"/>';
+ }
+ h+='<line x1="'+(bx(0)-6)+'" y1="'+(RY.res-22)+'" x2="'+(bx(31)+BW+6)+'" y2="'+(RY.res-22)+'" stroke="#1c2b33" stroke-width="2"/>'+tx(bx(0)-10,RY.res-26,'UND',{a:'end',fs:12,fw:700,c:'#3d6e14'});
+ /* Dezimal unter den Oktetten */
+ for(i=0;i<4;i++){var mx=bx(i*8)+4*BW,done=st.rev>=(i+1)*8;
+  if(done)h+=tx(mx,RY.res+38,String(E.resO[i]),{fs:17,fw:700,c:'#2e7d32',cls:st.oct===i||st.dec===i?'pop':''});
+  if(i<3)h+=tx(bx(i*8+7)+BW+GAP/2,RY.res+38,'.',{fs:17,fw:700,c:done&&st.rev>=(i+2)*8?'#2e7d32':'#cfd8dc'});}
+ if(fin)h+='<rect x="'+(bx(0)-4)+'" y="'+(RY.res+20)+'" width="'+(bx(31)+BW-bx(0)+8)+'" height="28" rx="6" fill="none" stroke="#2e7d32" stroke-width="2.2"/>';
+ return h+'</svg>';
+}
+function render(){var st=E.S[si];$('esvg').innerHTML=draw();prevReveal=st.rev;$('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(si+1)+' von '+E.S.length;$('prev').disabled=si===0;$('next').disabled=si===E.S.length-1;}
+function setE(ip,mask){
+ var msg='';ip=norm(ip);mask=norm(mask);
+ if(/^\/?\d{1,2}$/.test(mask)&&+mask.replace('/','')<=32)mask=NAx.maskOf(+mask.replace('/',''));
+ if(!NAx.isIp(ip))msg='Bitte eine gültige IP-Adresse eingeben (vier Zahlen 0–255, getrennt durch Punkte).';
+ else if(!NAx.isIp(mask)||NAx.prefixOf(mask)===null)msg='Das ist keine gültige Subnetzmaske: Links müssen lauter Einsen stehen, rechts lauter Nullen (siehe Tabelle oben).';
+ $('emsg').textContent=msg;if(msg)return;
+ var res=NAx.and(ip,mask);E={ip:ip,mask:mask,p:NAx.prefixOf(mask),res:res,resO:NAx.octs(res)};E.S=buildSteps(ip,mask);stop();si=0;prevReveal=0;render();
+}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='▶ Abspielen';}
+function sched(){clearTimeout(timer);timer=setTimeout(function(){if(!playing)return;if(si<E.S.length-1){si++;render();sched();}else stop();},E.S[si].hl.length===1?[0,2600,1700,1100,700,420][+$('spd').value]:[0,4200,3200,2400,1700,1100][+$('spd').value]);}
+$('prev').onclick=function(){stop();if(si>0){si--;prevReveal=E.S[si].rev;render();}};
+$('next').onclick=function(){stop();if(si<E.S.length-1){si++;render();}};
+$('rst').onclick=function(){stop();si=0;prevReveal=0;render();};
+$('play').onclick=function(){if(playing){stop();return;}playing=true;$('play').textContent='❚❚ Pause';if(si>=E.S.length-1){si=0;prevReveal=0;}else si++;render();sched();};
+['eip','emask'].forEach(function(id){$(id).addEventListener('change',function(){setE($('eip').value,$('emask').value);});$(id).addEventListener('keydown',function(e){if(e.key==='Enter')setE($('eip').value,$('emask').value);});});
+[].forEach.call(document.querySelectorAll('[data-ex]'),function(b){b.onclick=function(){var v=b.dataset.ex.split('|');$('eip').value=v[0];$('emask').value=v[1];setE(v[0],v[1]);};});
+setE($('eip').value,$('emask').value);
+window.__na={setE:setE,draw:draw,steps:function(){return E.S.length;},go:function(i){si=i;render();}};
+
+/* ===== Gleiches Netz? ===== */
+function cmpHTML(a,b,mask){
+ var A=NAx.octs(a),B=NAx.octs(b),M=NAx.octs(mask),k=NAx.keyOctet(mask),na=NAx.and(a,mask),nb=NAx.and(b,mask),same=na===nb,NA2=NAx.octs(na),NB=NAx.octs(nb),p=NAx.prefixOf(mask);
+ function cell(o,i,m){return'<td class="'+(i===k?'key':'')+'">'+(i===k?'<span class="bits">'+bitsHTML(o,M[i])+'</span><span class="dec">= '+o+'</span>':o)+'</td>';}
+ var h='<div class="scroll"><table class="rw"><tr><th></th>'+[0,1,2,3].map(function(i){return'<th>'+(i+1)+'. Oktett</th>';}).join('')+'</tr>';
+ h+='<tr><th>Gerät A</th>'+A.map(function(o,i){return cell(o,i);}).join('')+'</tr><tr><th>Gerät B</th>'+B.map(function(o,i){return cell(o,i);}).join('')+'</tr><tr><th>Maske</th>'+M.map(function(o,i){return cell(o,i);}).join('')+'</tr>';
+ h+='<tr class="res"><th>Netz A</th>'+NA2.map(function(o,i){return'<td class="'+(i===k?'key ':'')+(o!==NB[i]?'diff':'')+'">'+(i===k?'<span class="bits">'+bitsHTML(o,M[i])+'</span><span class="dec">= '+o+'</span>':o)+'</td>';}).join('')+'</tr>';
+ h+='<tr class="res"><th>Netz B</th>'+NB.map(function(o,i){return'<td class="'+(i===k?'key ':'')+(o!==NA2[i]?'diff':'')+'">'+(i===k?'<span class="bits">'+bitsHTML(o,M[i])+'</span><span class="dec">= '+o+'</span>':o)+'</td>';}).join('')+'</tr></table></div>';
+ h+='<p class="verdict '+(same?'ok':'no')+'">'+(same?'✓ Gleiches Netz':'✕ Verschiedene Netze')+': '+na+' /'+p+(same?' bei beiden.':' und '+nb+' /'+p+'.')+'</p>';
+ return h;
+}
+function gupd(){var a=norm($('ga').value),b=norm($('gb').value),m=norm($('gm').value);
+ if(/^\/?\d{1,2}$/.test(m)&&+m.replace('/','')<=32)m=NAx.maskOf(+m.replace('/',''));
+ if(!NAx.isIp(a)||!NAx.isIp(b)){$('gout').innerHTML='<p class="err">Bitte zwei gültige IP-Adressen eingeben.</p>';return;}
+ if(!NAx.isIp(m)||NAx.prefixOf(m)===null){$('gout').innerHTML='<p class="err">Das ist keine gültige Subnetzmaske.</p>';return;}
+ $('gout').innerHTML=cmpHTML(a,b,m);}
+['ga','gb','gm'].forEach(function(id){$(id).addEventListener('input',gupd);});gupd();
+
+/* ===== IPv4-Dialog (nachgezeichnet) ===== */
+function dialog(ip,mask,gw){
+ var W=400,H=262,h='<svg class="dlg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="IPv4-Einstellungen: IP '+ip+', Maske '+mask+', Gateway '+gw+'">';
+ h+='<rect x="0.5" y="0.5" width="'+(W-1)+'" height="'+(H-1)+'" fill="#f0f0f0" stroke="#7a7a7a"/><rect x="1" y="1" width="'+(W-2)+'" height="30" fill="#fff"/>';
+ h+=tx(12,20,'Eigenschaften von Internetprotokoll, Version 4 (TCP/IPv4)',{a:'start',fs:12})+tx(W-16,21,'✕',{fs:13,c:'#333'});
+ h+='<rect x="10" y="40" width="64" height="22" fill="#fff" stroke="#adadad"/>'+tx(42,55,'Allgemein',{fs:11.5});
+ h+='<rect x="10" y="61" width="'+(W-20)+'" height="'+(H-71)+'" fill="#fff" stroke="#adadad"/>';
+ function radio(y,t,on){return'<circle cx="28" cy="'+y+'" r="6" fill="#fff" stroke="#333"/>'+(on?'<circle cx="28" cy="'+y+'" r="3.2" fill="#1c1c1c"/>':'')+tx(40,y+4,t,{a:'start',fs:11.5});}
+ h+=radio(84,'IP-Adresse automatisch beziehen',0);
+ h+='<rect x="18" y="104" width="'+(W-36)+'" height="140" fill="none" stroke="#dcdcdc"/><rect x="22" y="97" width="180" height="14" fill="#fff"/>'+radio(104,'Folgende IP-Adresse verwenden:',1);
+ function field(y,t,v){var s=tx(30,y+5,t+':',{a:'start',fs:11.5}),x0=214,w=164,o=v.split('.');
+  s+='<rect x="'+x0+'" y="'+(y-11)+'" width="'+w+'" height="22" fill="#fff" stroke="#7a7a7a"/>';
+  for(var i=0;i<4;i++){s+=tx(x0+30+i*39,y+5,o[i],{a:'end',fs:12.5,mono:0});if(i<3)s+=tx(x0+37+i*39,y+5,'.',{fs:12.5});}
+  return s;}
+ h+=field(140,'IP-Adresse',ip)+field(178,'Subnetzmaske',mask)+field(216,'Standardgateway',gw);
+ return h+'</svg>';
+}
+/* ===== Quiz ===== */
+var Q=[
+ ['Wie viele Bit hat eine IPv4-Adresse?',['8','16','32','128'],2,'4 Oktette zu je 8 Bit = 32 Bit. (128 Bit hat IPv6.)'],
+ ['Was zeigen die Einsen in der Subnetzmaske?',['Den Hostanteil','Den Netzanteil','Die Broadcast-Adresse','Das Gateway'],1,'Links stehen die Einsen – sie markieren den Netzanteil. Die Nullen rechts markieren den Hostanteil.'],
+ ['1 UND 0 ergibt …',['1','0','10','2'],1,'Bei UND ist das Ergebnis nur dann 1, wenn beide Bits 1 sind.'],
+ ['Ein Masken-Oktett ist 255. Was passiert mit diesem IP-Oktett?',['Es wird 0','Es wird 255','Es wird abgeschrieben','Es wird halbiert'],2,'255 sind lauter Einsen. x UND 1 = x – das Oktett bleibt, wie es ist.'],
+ ['Welche Maske gehört zu /26?',['255.255.255.192','255.255.255.224','255.255.255.128','255.255.255.240'],0,'26 Einsen: 24 in den ersten drei Oktetten, 2 im letzten → 11000000 = 192.'],
+ ['Welche Subnetzmaske ist UNGÜLTIG?',['255.255.255.248','255.255.240.0','255.255.255.250','255.0.0.0'],2,'250 = 11111010 – Einsen und Nullen sind gemischt. Gültig sind pro Oktett nur 0, 128, 192, 224, 240, 248, 252, 254, 255.'],
+ ['Netzadresse von 192.168.5.77 mit 255.255.255.224?',['192.168.5.0','192.168.5.64','192.168.5.72','192.168.5.96'],1,'Blockgröße 256 − 224 = 32. Vielfache: 0, 32, 64, 96 – das größte ≤ 77 ist 64.'],
+ ['Wann sind zwei Geräte im gleichen Netz?',['Wenn die ersten drei Oktette gleich sind','Wenn bei beiden mit derselben Maske dieselbe Netzadresse herauskommt','Wenn sie dasselbe Gateway haben','Wenn ihre IP-Adressen gerade sind'],1,'Die ersten drei Oktette reichen nur bei /24. Allgemein entscheidet die Netzadresse.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen ===== */
+var cache={};
+function mk(code){var m=code.split('-');return NAx.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function yn(name){return'<div class="opts"><label><input type="radio" name="'+name+'" value="1"> Ja</label><label><input type="radio" name="'+name+'" value="0"> Nein</label></div>';}
+function taskHTML(s,id,label){
+ var d=s.d,q=s.q,h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+NAx.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>';
+ h+='<div class="tgrid"><div>'+dialog(d.ip,d.mask,d.gw)+'</div><div>';
+ h+='<p class="qh" style="margin-top:0">a) Berechne die Netzadresse dieses PCs.</p><input class="one net" data-f="d" autocomplete="off" spellcheck="false" placeholder="z. B. 192.168.1.0" aria-label="Netzadresse des PCs">';
+ h+='<p class="qh">b) Liegt das Standardgateway im selben Netz?</p>'+yn(id+'-gw')+'</div></div>';
+ h+='<p class="qh">c) Sind beide Geräte im gleichen Netz?</p><p class="pk" style="margin:0 0 8px"><b>'+q.a+'</b> und <b>'+q.b+'</b> mit der Subnetzmaske <b>'+q.mask+'</b></p>';
+ h+='<div class="inrow"><label>Netz von '+q.a+' <input class="one net" data-f="na" autocomplete="off" spellcheck="false"></label><label>Netz von '+q.b+' <input class="one net" data-f="nb" autocomplete="off" spellcheck="false"></label></div>'+yn(id+'-same');
+ h+='<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+ return h;
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function markRadios(card,suffix,want){var ok=false;card.querySelectorAll('input[name$="'+suffix+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked){var g=(rb.value==='1')===want;rb.parentNode.classList.add(g?'right':'wrong');ok=g;}});return ok;}
+function check(card){
+ var s=taskOf(card),want={d:s.d.net,na:s.q.na,nb:s.q.nb},ok=0,tot=5;
+ card.querySelectorAll('.net').forEach(function(inp){var v=norm(inp.value),g=v===want[inp.dataset.f];mark(inp,v===''?null:g);if(g)ok++;});
+ if(markRadios(card,'-gw',s.d.gwOk))ok++;if(markRadios(card,'-same',s.q.same))ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function gwText(d){
+ return d.gwOk?'Gateway '+d.gw+' UND '+d.mask+' = '+d.gwNet+' – dasselbe Netz, und es ist weder Netz- noch Broadcast-Adresse (Broadcast: '+d.bc+'). <b>Passt.</b>'
+  :'Gateway '+d.gw+' UND '+d.mask+' = <b>'+d.gwNet+'</b> – ein anderes Netz als '+d.net+'. Der PC kann seinen Router nicht erreichen. <b>Passt nicht.</b>';
+}
+function solHTML(s){
+ var d=s.d,q=s.q;
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><p class="qh">a) Netzadresse des PCs</p>'+rechenweg(d.ip,d.mask)+
+  '<p class="qh">b) Standardgateway</p><p style="margin:0">'+gwText(d)+'</p>'+
+  '<p class="qh">c) '+q.a+' und '+q.b+' mit '+q.mask+'</p>'+cmpHTML(q.a,q.b,q.mask);
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+
+/* ===== Arbeitsblatt ===== */
+function sheetTasks(lvl,seed,n){var out=[];for(var i=0;i<n;i++){var l=lvl==='X'?(i%2?'S':'M'):lvl;out.push(NAx.makeTask(seed+i,l));}return out;}
+function sheetHTML(group,tasks,head){
+ var h='<section class="paper"><header class="ph"><div><b>IP-Adressierung – Netzadresse</b>'+(group?' · Gruppe '+group:'')+'</div><div class="mute">Blatt '+head+'</div></header><div class="namel"><span>Name: ____________________________</span><span>Klasse: ________</span><span>Datum: ____________</span></div>';
+ tasks.forEach(function(s,k){var d=s.d,q=s.q;
+  h+='<div class="wt"><h4>Aufgabe '+(k+1)+' <span class="mute">('+s.code+')</span></h4><p><b>a) Errechne die Netzadresse der folgenden IP! (Rechenweg angeben!)</b></p>'+
+   '<div class="wgrid"><div>'+dialog(d.ip,d.mask,d.gw)+'</div><div class="lines"></div></div>'+
+   '<p><b>b) Liegt das Standardgateway im selben Netz? Begründe!</b></p><div class="lines sm"></div>'+
+   '<p><b>c) Sind beide Geräte im gleichen Netz?</b><br>'+q.a+' und '+q.b+' mit der Subnetzmaske '+q.mask+'</p><div class="lines"></div></div>';});
+ return h+'</section>';
+}
+function solSheet(group,tasks,head){
+ var h='<section class="paper solp"><header class="ph"><div><b>Lösungen</b>'+(group?' · Gruppe '+group:'')+'</div><div class="mute">Blatt '+head+'</div></header>';
+ tasks.forEach(function(s,k){var d=s.d,q=s.q;
+  h+='<div class="wt"><h4>Aufgabe '+(k+1)+' <span class="mute">('+s.code+')</span></h4><p><b>a)</b> '+d.ip+' / '+d.mask+'</p>'+rechenweg(d.ip,d.mask)+
+   '<p><b>b)</b> '+gwText(d)+'</p><p><b>c)</b> '+q.a+' → '+q.na+' · '+q.b+' → '+q.nb+' · <b>'+(q.same?'gleiches Netz':'verschiedene Netze')+'</b></p></div>';});
+ return h+'</section>';
+}
+var sheetReady=false;
+function makeSheet(){
+ var lvl=$('wlvl').value,n=+$('wn').value,code=$('wcode').value.trim(),seed,m=/^\s*([LMSX])\s*-?\s*(\d{1,6})\s*$/i.exec(code);
+ if(code&&!m){$('wmsg').textContent='Blatt-Nummer bitte wie M-123 eingeben.';return;}
+ if(m){lvl=m[1].toUpperCase();seed=+m[2];$('wlvl').value=lvl;}else seed=1+Math.floor(Math.random()*90000);
+ var head=lvl+'-'+seed,A=sheetTasks(lvl,seed,n),html=sheetHTML($('wab').checked?'A':'',A,head),sol=$('wsol').checked?solSheet($('wab').checked?'A':'',A,head):'';
+ if($('wab').checked){var B=sheetTasks(lvl,seed+5000,n);html+=sheetHTML('B',B,head);if($('wsol').checked)sol+=solSheet('B',B,head);}
+ $('sheet').innerHTML=html+sol;$('wcode').value=head;$('wprint').disabled=false;sheetReady=true;
+ $('wmsg').innerHTML='Blatt <b>'+head+'</b> erstellt – mit dieser Nummer bekommst du es jederzeit wieder. Vorschau unten, Drucken druckt nur das Blatt'+($('wsol').checked?' (Lösungen auf eigener Seite)':'')+'.';
+}
+$('wgo').onclick=makeSheet;
+$('wprint').onclick=function(){if(!sheetReady)return;document.body.classList.add('printing');window.print();setTimeout(function(){document.body.classList.remove('printing');},500);};
+window.addEventListener('afterprint',function(){document.body.classList.remove('printing');});
+window.__sheet=makeSheet;
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=NAx.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=NAx.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

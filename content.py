@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
+    'news': ['<strong>Neu:</strong> <a href="grundlagen/netzadresse/">Netzadresse berechnen</a> – IP UND Maske als Animation, gleiches Netz?, Gateway-Check, mit Arbeitsblatt-Generator zum Ausdrucken. '
+             'Außerdem <a href="ip-services/static-nat/">Static NAT und Portweiterleitung</a> – Server von außen erreichbar machen, Heimrouter vs. Firewall, Proxy ARP. '
              'Außerdem <a href="ip-services/pat/">PAT</a> – Animation mit NAT-Tabelle (Port merken, IP tauschen), die vier Adressbegriffe, CGNAT und der Anspruch auf eine öffentliche IP in Österreich. '
              'Außerdem <a href="routing/show-ip-route/">Die Routing-Tabelle lesen</a> – show ip route Zeile für Zeile, administrative Distanzen und welche Route bei mehreren Protokollen gewinnt. '
              'Außerdem <a href="netzwerksicherheit/arp-spoofing/">ARP-Spoofing</a> – Man-in-the-Middle mit Ettercap, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection. '
@@ -40,6 +41,8 @@ AREAS = [
      'topics': [
          {'slug': 'osi-modell', 'title': 'Das OSI- und TCP/IP-Modell', 'tool': 'osi-modell',
           'text': 'Schichten, PDUs, Geräte und Protokolle per Drag-and-Drop zuordnen – plus Lückentext-Generator, Eselsbrücken und Kapselung.'},
+         {'slug': 'netzadresse', 'title': 'Netzadresse berechnen', 'tool': 'netzadresse',
+          'text': 'IP-Adresse UND Subnetzmaske, Bit für Bit als Animation. Gleiches Netz?, passt das Gateway? – mit Übungen, Zufallsgenerator und Arbeitsblatt zum Ausdrucken.'},
          {'slug': 'subnetting', 'title': 'Subnetting und VLSM', 'tool': 'subnetting',
           'text': 'Subnetzmaske, Netz- und Broadcastadresse, gleich große Subnetze und VLSM – mit eigenem Beispiel Schritt für Schritt erklärt.'},
          {'slug': 'supernetting', 'title': 'Supernetting', 'tool': 'supernetting',
