@@ -40,12 +40,12 @@ SITE = {
 AREAS = [
     {'slug': 'grundlagen', 'title': 'Grundlagen', 'text': 'Schichtenmodelle, Adressierung und wie Daten im LAN unterwegs sind.',
      'topics': [
-         {'slug': 'osi-modell', 'title': 'Das OSI- und TCP/IP-Modell', 'tool': 'osi-modell',
-          'text': 'Schichten, PDUs, Geräte und Protokolle per Drag-and-Drop zuordnen – plus Lückentext-Generator, Eselsbrücken und Kapselung.'},
          {'slug': 'ip-grundlagen', 'title': 'IP-Adresse, Subnetzmaske und Gateway', 'tool': 'ip-grundlagen',
           'text': 'Ganz einfach erklärt: IP-Adresse als Hausadresse, Dotted Decimal, Subnetzmaske, CIDR, wozu das Gateway da ist – und ein Blick auf IPv6. Mit Quiz und Schnelltraining.'},
          {'slug': 'netzadresse', 'title': 'Netzadresse berechnen', 'tool': 'netzadresse',
           'text': 'IP-Adresse UND Subnetzmaske, Bit für Bit als Animation. Gleiches Netz?, passt das Gateway? – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'osi-modell', 'title': 'Das OSI- und TCP/IP-Modell', 'tool': 'osi-modell',
+          'text': 'Schichten, PDUs, Geräte und Protokolle per Drag-and-Drop zuordnen – plus Lückentext-Generator, Eselsbrücken und Kapselung.'},
          {'slug': 'subnetting', 'title': 'Subnetting und VLSM', 'tool': 'subnetting',
           'text': 'Subnetzmaske, Netz- und Broadcastadresse, gleich große Subnetze und VLSM – mit eigenem Beispiel Schritt für Schritt erklärt.'},
          {'slug': 'supernetting', 'title': 'Supernetting', 'tool': 'supernetting',
