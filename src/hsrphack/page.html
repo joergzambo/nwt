@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HSRP-Hijacking mit Yersinia</title>
+<style>
+/*BASECSS*/
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}
+.explain p{margin:0}
+.pcap{border:1px solid #c5c9cc;border-radius:4px;overflow:hidden;margin-top:8px;font-family:var(--mono);font-size:12.5px}
+.pcap .hd{display:grid;grid-template-columns:40px 60px 120px 92px 44px 1fr;background:#e4e7e9;font-weight:700;padding:4px 8px;gap:8px}
+.pcap .rows{max-height:360px;overflow:auto}
+.pcap .rw{display:grid;grid-template-columns:40px 60px 120px 92px 44px 1fr;padding:3px 8px;gap:8px;border-top:1px solid #eef1f2;white-space:nowrap}
+.pcap .rw.att{background:#fdecea}
+.pcap .rw.coup{background:#fde3e3;font-weight:700}
+.pcap .rw:nth-child(even){background-image:linear-gradient(rgba(0,0,0,.015),rgba(0,0,0,.015))}
+.filt{font-family:var(--mono);font-size:13px;background:#eafaf0;border:1px solid #abdcbd;border-radius:4px;padding:5px 9px;margin:8px 0 0;display:inline-block}
+.lab{counter-reset:step}
+.lab .st{border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:4px;padding:12px 16px 12px 52px;margin:10px 0;position:relative}
+.lab .st::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font:700 15px var(--ui);display:flex;align-items:center;justify-content:center}
+.lab .st h4{font:600 16px var(--ui);margin:0 0 4px}
+.lab .st p{margin:0 0 6px}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px}
+.key{display:inline-block;font:600 12px var(--ui);background:#eceff1;border:1px solid #cfd8dc;border-radius:4px;padding:1px 7px;margin:0 1px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.disc{background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.one.got{width:5em}
+.task .ph{font:600 13.5px var(--ui);margin:10px 0 2px}
+.navrow{display:flex;justify-content:space-between;margin-top:10px}
+.pager{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0}
+.pinfo{font:600 15px var(--ui)}.pinfo span{color:var(--mute);margin-left:8px;font-weight:400}
+.toc{display:flex;flex-wrap:wrap;gap:4px;width:100%}
+.toc button{width:30px;height:30px;border:1.5px solid var(--ink);background:#fff;border-radius:4px;cursor:pointer;font:600 13px var(--ui)}
+.toc button.on{background:var(--ink);color:#fff}.toc button.ok{border-color:var(--ok);color:var(--ok)}.toc button.on.ok{background:var(--ok);color:#fff}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.genbar select,.genbar input{padding:6px 8px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14px var(--ui)}
+.err{color:var(--bad);font-size:14px}
+.badge{display:inline-block;font:700 11px var(--ui);color:#fff;border-radius:10px;padding:2px 8px;vertical-align:1px}
+.b-act{background:#2e7d32}.b-sby{background:#1565c0}.b-att{background:#c62828}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>HSRP-Hijacking: das virtuelle Gateway übernehmen</h1>
+<p class="sub">HSRP macht aus zwei Routern ein ausfallsicheres Gateway mit einer <b>virtuellen IP</b>. Wer die Rolle des <b>Active Routers</b> trägt, bekommt den gesamten Verkehr der Clients. Ein Angreifer kündigt mit <b>Yersinia</b> einfach die Priorität <b>255</b> an, wird selbst Active Router – und sitzt als <b>Man-in-the-Middle</b> im Datenstrom. Möglich macht das die schwache (oder fehlende) Authentifizierung von HSRP. Diese Einheit setzt die <a href="../../ip-services/hsrp-vrrp/">HSRP-Grundlagen</a> voraus.</p>
+<div class="disc">⚠️ <b>Nur im eigenen Labornetz.</b> Diese Anleitung dient dem Unterricht und dem Verständnis der Abwehr. Angriffe auf fremde Netze sind strafbar (in Österreich u. a. § 118a, § 126a, § 126b StGB).</div>
+<nav class="jumps" aria-label="Abschnitte"><a href="#warum">Warum es funktioniert</a><a href="#anim">Der Angriff</a><a href="#wireshark">Im Wireshark</a><a href="#lab">Yersinia-Lab</a><a href="#schutz">Schutz</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="warum">Warum funktioniert der Angriff?</h2>
+<div class="rules">
+ <div class="card"><h3>HSRP wählt nach Priorität</h3><p style="margin:0 0 6px">Alle Router einer HSRP-Gruppe schicken alle paar Sekunden <b>Hello-Pakete</b> an die Multicast-Adresse <code>224.0.0.2</code> (UDP 1985). Wer die <b>höchste Priorität</b> ankündigt, wird <b>Active Router</b> und beantwortet die virtuelle IP und MAC. Bei Gleichstand gewinnt die höchste IP.</p>
+  <ul style="margin:0;padding-left:20px"><li>Standard-Priorität: <b>100</b>, Maximum <b>255</b>.</li>
+  <li>Der Angreifer kündigt <b>255</b> an → er gewinnt immer.</li>
+  <li>Mit einem <b>Coup</b>-Paket übernimmt er sofort, ohne auf das nächste Hello zu warten.</li></ul></div>
+ <div class="card"><h3>Die eigentliche Lücke: keine echte Authentifizierung</h3><p style="margin:0 0 6px">HSRP-Hellos werden standardmäßig <b>gar nicht</b> oder nur mit einem <b>Klartext-Passwort</b> geschützt – und das lautet ab Werk schlicht <code>cisco</code>.</p>
+  <ul style="margin:0;padding-left:20px"><li>Das Klartext-Passwort steht offen in jedem Hello – Yersinia liest es mit und schickt es einfach mit.</li>
+  <li>Niemand prüft, <b>wer</b> die Hellos sendet. Jeder im VLAN darf mitreden.</li>
+  <li>Nur <b>MD5-Authentifizierung</b> macht gefälschte Pakete wertlos.</li></ul></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Was der Angreifer danach gewinnt</h3>
+<p style="margin:0">Als Active Router bekommt der Angreifer den Verkehr aller Clients, die das Gateway (die virtuelle IP) benutzen. Aktiviert er auf seinem Kali-PC <b>IP-Forwarding</b>, merken die Opfer nichts: Ihre Pakete laufen über ihn weiter ins Internet – er kann sie aber mitlesen und verändern (<b>Man-in-the-Middle</b>). Schaltet er das Forwarding ab, ist es ein <b>Denial of Service</b>: Das Gateway ist tot.</p></div>
+
+<h2 class="part" id="anim">Der Angriff Schritt für Schritt</h2>
+<div class="card">
+ <div id="animsvg"></div>
+ <div class="explain" id="animtxt"><h3></h3><p></p></div>
+ <div class="stepbar">
+  <button class="btn ghost" id="aprev" type="button">‹ Zurück</button>
+  <button class="btn" id="anext" type="button">Weiter ›</button>
+  <span class="stepno" id="astep"></span>
+ </div>
+</div>
+
+<h2 class="part" id="wireshark">So sieht es im Wireshark aus</h2>
+<p class="sub">Über einen SPAN-Port läuft der Verkehr auf den Mitschnitt-PC. Zuerst die normalen Hellos von Active und Standby, dann das <b>Coup</b>-Paket des Angreifers mit Priorität 255 – ab da sendet er selbst als Active Router.</p>
+<div class="card">
+ <span class="filt">hsrp &nbsp;<span style="color:#78909c">(oder <b>udp.port==1985</b>)</span></span>
+ <div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source (IP)</span><span>Dest.</span><span>Prot.</span><span>Info</span></div><div class="rows" id="pcap"></div></div>
+ <p class="hint" id="pcaphint" style="margin-top:8px"></p>
+ <div class="acts"><button class="btn" id="morepkts" type="button">Weiter mitschneiden</button><button class="btn ghost" id="resetpkts" type="button">Zurücksetzen</button></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Woran man den Angriff erkennt</h3><ul style="margin:0;padding-left:20px;font-size:15px">
+ <li>Ein <b>Coup</b>- oder Hello-Paket mit <b>Priorität 255</b> von einer bisher unbekannten IP.</li>
+ <li>Der bisherige Active Router fällt auf <b>Speak/Listen</b> zurück – ein <b>HSRP-State-Wechsel</b>.</li>
+ <li>Im Log des echten Routers: <code>%HSRP-5-STATECHANGE … Active -> Speak</code>.</li>
+ <li>Die virtuelle MAC <code>0000.0c07.ac<i>xx</i></code> wird plötzlich von einem neuen Switchport gelernt.</li></ul></div>
+
+<h2 class="part" id="lab">Yersinia-Lab</h2>
+<div class="card"><h3 style="font:400 20px var(--head);margin:0 0 4px">Aufbau</h3>
+ <p style="margin:0 0 6px">Zwei Cisco-Router (R1, R2) bilden eine HSRP-Gruppe mit der virtuellen IP als Gateway. Angreifer-PC (Kali mit Yersinia) und Opfer-PC hängen im selben VLAN am Switch. Der Mitschnitt-PC hängt am <b>SPAN-Zielport</b>.</p>
+ <div id="labsvg"></div>
+</div>
+
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">1 · Die verwundbare HSRP-Konfiguration (so steht es oft im Netz)</h3>
+<pre class="cli">R1(config)# interface Gi0/0
+R1(config-if)# ip address 10.0.10.1 255.255.255.0
+R1(config-if)# standby 1 ip 10.0.10.254        ! virtuelle IP = Gateway der Clients
+R1(config-if)# standby 1 priority 110
+R1(config-if)# standby 1 preempt
+R1(config-if)# standby 1 authentication cisco  ! Klartext – nutzlos gegen Yersinia</pre>
+<p class="hint">R2 hat dieselbe Gruppe mit Priorität 100. R1 ist damit Active, R2 Standby. Das Klartext-Passwort <code>cisco</code> ist der Auslieferungszustand vieler Anleitungen.</p>
+
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">2 · Angriff mit Yersinia (interaktiver Modus)</h3>
+<p class="sub">Der ncurses-Modus läuft direkt im Terminal und wird über einzelne Tasten gesteuert.</p>
+<div class="lab">
+ <div class="st"><h4>Yersinia interaktiv starten</h4><p>Als root starten – es öffnet sich die textbasierte Oberfläche.</p><pre class="cli">sudo yersinia -I</pre>
+  <p class="hint" style="margin:6px 0 0">Mit <span class="key">h</span> jederzeit die Tastenhilfe einblenden.</p></div>
+ <div class="st"><h4>Netzwerkkarte wählen</h4><p>Taste <span class="key">i</span> öffnet die Interface-Liste. Das Interface zum Switch (z. B. <code>eth0</code>) markieren, mit <span class="key">Enter</span> aktivieren, mit <span class="key">q</span> zurück.</p></div>
+ <div class="st"><h4>Zum Protokoll HSRP wechseln</h4><p>Taste <span class="key">g</span> öffnet die Protokollauswahl. <b>HSRP</b> wählen. Oben zeigt Yersinia nun die mitgeschnittenen HSRP-Hellos samt Gruppe, Priorität und – falls vorhanden – dem Klartext-Passwort.</p></div>
+ <div class="st"><h4>Angriff starten</h4><p>Taste <span class="key">x</span> öffnet das Angriffsfenster (<b>Launch attack</b>) für HSRP. Dort <b>„becoming ACTIVE router“</b> wählen. Yersinia fragt die gewünschte <b>Source-IP</b> ab – hier die eigene (oder die virtuelle IP) – und sendet dann laufend Hellos mit <b>Priorität 255</b>.</p>
+  <div class="warn">Ganz ohne Menü als Einzeiler:<br><code>sudo yersinia hsrp -attack 1 -interface eth0 -source 10.0.10.250</code> &nbsp;(Attack 1 = becoming Active). Mit <span class="key">Strg</span>+<span class="key">C</span> beenden.</div></div>
+ <div class="st"><h4>IP-Forwarding aktivieren (für MITM statt DoS)</h4><p>Damit die Opfer weiter ins Internet kommen und nichts merken, leitet der Angreifer-PC die Pakete weiter:</p><pre class="cli">echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward</pre>
+  <p>Jetzt den Verkehr der Opfer mitlesen (Filter z. B. <code>http</code> oder <code>dns</code>).</p></div>
+ <div class="st"><h4>Wirkung prüfen</h4><p>Am echten Router sieht man den Rollenwechsel:</p><pre class="cli">R1# show standby brief
+! R1 ist jetzt nur noch "Speak" oder "Listen" – Active ist 10.0.10.250
+R1# show logging | include HSRP
+%HSRP-5-STATECHANGE: GigabitEthernet0/0 Grp 1 state Active -> Speak</pre>
+  <p>Am Opfer-PC zeigt der ARP-Eintrag des Gateways jetzt die MAC des Angreifers hinter der virtuellen MAC.</p></div>
+ <div class="st"><h4>Angriff stoppen und aufräumen</h4><p>Taste <span class="key">L</span> zeigt die laufenden Angriffe – dort stoppen, mit <span class="key">q</span> Yersinia beenden. R1 übernimmt dann wieder (dank <code>preempt</code>). IP-Forwarding wieder abschalten.</p></div>
+</div>
+
+<h2 class="part" id="schutz">Schutz: MD5-Authentifizierung und mehr</h2>
+<div class="rules">
+ <div class="card"><h3>MD5-Authentifizierung – die wirksame Maßnahme</h3><p style="margin:0 0 6px">Mit einem MD5-Schlüssel trägt jedes Hello einen Hash. Gefälschte Pakete ohne den Schlüssel werden <b>verworfen</b> – Yersinia kommt nicht mehr durch.</p>
+  <pre class="cli" style="margin:0">R1(config)# key chain HSRP-KEYS
+R1(config-keychain)# key 1
+R1(config-keychain-key)# key-string S3hr-G3h3im!
+R1(config)# interface Gi0/0
+R1(config-if)# standby 1 authentication md5 key-chain HSRP-KEYS</pre>
+  <p class="hint">Auf <b>allen</b> Routern der Gruppe denselben Schlüssel setzen. Das Klartext-Verfahren (<code>authentication text</code> bzw. <code>authentication cisco</code>) bringt <b>nichts</b> – es steht offen im Paket.</p></div>
+ <div class="card"><h3>Den Zugang einschränken</h3><p style="margin:0 0 6px">Zusätzlich verhindern, dass ein Client-Port überhaupt HSRP sprechen darf:</p>
+  <ul style="margin:0 0 6px;padding-left:20px"><li><b>ACL am Zugangsport:</b> HSRP (UDP 1985 zu 224.0.0.2) von Access-Ports verwerfen.</li>
+  <li><b>Priorität + Preempt</b> sauber planen, damit der echte Active Router nach einem Angriff zurückkommt.</li>
+  <li><b>Dynamic ARP Inspection / DHCP Snooping</b> erschweren die begleitenden MITM-Tricks.</li></ul>
+  <pre class="cli" style="margin:0">ip access-list extended NO-HSRP
+ deny udp any host 224.0.0.2 eq 1985
+ permit ip any any
+interface Gi0/1
+ ip access-group NO-HSRP in</pre></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Welche Maßnahme greift?</h3>
+<table class="cmp"><thead><tr><th>Maßnahme</th><th>Stoppt den Yersinia-Angriff?</th></tr></thead><tbody>
+<tr><td>Keine Authentifizierung</td><td><b>Nein</b> – Priorität 255 gewinnt sofort.</td></tr>
+<tr><td>Klartext-Passwort (<code>authentication cisco</code>)</td><td><b>Nein</b> – steht offen im Hello, Yersinia schickt es mit.</td></tr>
+<tr><td>Höhere Priorität auf dem echten Router</td><td><b>Nein</b> – 255 ist das Maximum, der Angreifer zieht gleich oder höher.</td></tr>
+<tr><td><b>MD5-Authentifizierung</b></td><td><b>Ja</b> – gefälschte Hellos werden verworfen.</td></tr>
+</tbody></table></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies die HSRP-Konfiguration und den Mitschnitt: Wer ist Active? Welche Priorität braucht der Angreifer? Übernimmt Yersinia das Gateway?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (ohne Authentifizierung)</option><option value="M" selected>Mittel (auch Klartext-Passwort)</option><option value="S">Schwer (auch MD5)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/*HSJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},H=window.HS,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'" font-family="'+(o.mono?'ui-monospace,Menlo,Consolas,monospace':'Open Sans,Arial,sans-serif')+'">'+esc(t)+'</text>';}
+var ICON_S='<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';
+function rtr(col){return'<circle r="22" fill="#fff" stroke="'+(col||'#1f5872')+'" stroke-width="2.5"/><path d="M-11 -4h22M-11 4h22M-7 -4l-4 8M7 -4l4 8" stroke="'+(col||'#1f5872')+'" stroke-width="2" fill="none"/>';}
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+function cloud(){return'<path d="M-26 6a12 12 0 0 1 3-23 16 16 0 0 1 30 -3 11 11 0 0 1 2 26z" fill="#eef2f4" stroke="#90a4ae" stroke-width="2"/>';}
+
+/* ===== Lab-Topologie ===== */
+(function(){
+ var W=880,H=292,sw=[440,120];
+ var att=[140,120],vic=[300,120],mon=[640,120],r1=[360,245],r2=[520,245];
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Lab-Aufbau">';
+ [att,vic,mon,r1,r2].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ h+='<path d="M'+(att[0])+' '+(att[1]-26)+' Q'+((att[0]+mon[0])/2)+' 26 '+mon[0]+' '+(mon[1]-26)+'" fill="none" stroke="#e65100" stroke-width="2" stroke-dasharray="6 5"/>'+tx((att[0]+mon[0])/2,30,'SPAN spiegelt den Angreifer-Port',{fs:12,fw:700,c:'#e65100'});
+ h+='<g transform="translate('+sw[0]+' '+sw[1]+')">'+ICON_S+'</g>'+tx(sw[0],sw[1]+32,'Switch · VLAN 10',{fs:12,fw:700});
+ h+='<g transform="translate('+att[0]+' '+att[1]+')">'+pc('#c62828')+'</g>'+tx(att[0],att[1]+30,'Angreifer (Yersinia)',{fs:12,fw:700,c:'#c62828'});
+ h+='<g transform="translate('+vic[0]+' '+vic[1]+')">'+pc('#455a64')+'</g>'+tx(vic[0],vic[1]+30,'Opfer-PC',{fs:12,fw:700});
+ h+='<g transform="translate('+mon[0]+' '+mon[1]+')">'+pc('#e65100')+'</g>'+tx(mon[0],mon[1]+30,'Mitschnitt-PC',{fs:12,fw:700,c:'#e65100'});
+ h+='<g transform="translate('+r1[0]+' '+r1[1]+')">'+rtr('#2e7d32')+'</g>'+tx(r1[0],r1[1]+36,'R1 · Active · Prio 110',{fs:11.5,fw:700,c:'#2e7d32'});
+ h+='<g transform="translate('+r2[0]+' '+r2[1]+')">'+rtr('#1565c0')+'</g>'+tx(r2[0],r2[1]+36,'R2 · Standby · Prio 100',{fs:11.5,fw:700,c:'#1565c0'});
+ h+=tx(440,200,'virtuelle IP 10.0.10.254 = Gateway',{fs:11.5,c:'#546e7a'});
+ $('labsvg').innerHTML=h+'</svg>';
+})();
+
+/* ===== Animation ===== */
+var A=[140,110],SW=[440,110],R1=[360,215],R2=[560,215],VIC=[300,110],NET=[760,110];
+var steps=[
+ {t:'Normalbetrieb',txt:'R1 (Priorität 110) ist Active Router und beantwortet die virtuelle IP 10.0.10.254. R2 (Priorität 100) ist Standby und wartet nur. Die Clients schicken ihren Internet-Verkehr an das Gateway.',role:'normal'},
+ {t:'Angreifer hört mit',txt:'Der Angreifer schneidet die HSRP-Hellos mit. Darin stehen Gruppe, Priorität und – falls gesetzt – das Klartext-Passwort „cisco“. Jetzt kennt er alles, was er braucht.',role:'listen'},
+ {t:'Coup mit Priorität 255',txt:'Yersinia sendet ein Coup-Paket mit Priorität 255 (höchste IP). Das schlägt die 110 von R1 sofort. R1 fällt auf Speak zurück, der Angreifer wird Active Router.',role:'coup'},
+ {t:'Man-in-the-Middle',txt:'Der Angreifer beantwortet jetzt die virtuelle IP. Aller Verkehr der Clients läuft über ihn. Mit aktiviertem IP-Forwarding leitet er ihn weiter – die Opfer merken nichts, er liest aber alles mit.',role:'mitm'}
+];
+var ai=0;
+function animSvg(st){
+ var W=880,H=264;var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="HSRP-Angriff">';
+ [A,R1,R2,VIC].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+SW[0]+'" y2="'+SW[1]+'" stroke="#1c2b33" stroke-width="2"/>';});
+ h+='<line x1="'+SW[0]+'" y1="'+SW[1]+'" x2="'+NET[0]+'" y2="'+NET[1]+'" stroke="#1c2b33" stroke-width="2"/>';
+ h+='<g transform="translate('+NET[0]+' '+NET[1]+')">'+cloud()+'</g>'+tx(NET[0],NET[1]+34,'Internet',{fs:12,fw:700});
+ h+='<g transform="translate('+SW[0]+' '+SW[1]+')">'+ICON_S+'</g>';
+ var r1act=st.role==='normal'||st.role==='listen';
+ h+='<g transform="translate('+R1[0]+' '+R1[1]+')">'+rtr(r1act?'#2e7d32':'#90a4ae')+'</g>'+tx(R1[0],R1[1]+38,'R1 · Prio 110',{fs:11.5,fw:700})+'<g transform="translate('+(R1[0])+' '+(R1[1]-32)+')"><rect x="-26" y="-11" width="52" height="18" rx="9" fill="'+(r1act?'#2e7d32':'#90a4ae')+'"/>'+tx(0,3,r1act?'ACTIVE':'Speak',{fs:11,fw:700,c:'#fff'})+'</g>';
+ h+='<g transform="translate('+R2[0]+' '+R2[1]+')">'+rtr('#1565c0')+'</g>'+tx(R2[0],R2[1]+38,'R2 · Prio 100',{fs:11.5,fw:700})+'<g transform="translate('+(R2[0])+' '+(R2[1]-32)+')"><rect x="-28" y="-11" width="56" height="18" rx="9" fill="#1565c0"/>'+tx(0,3,'STANDBY',{fs:11,fw:700,c:'#fff'})+'</g>';
+ var attColor=st.role==='coup'||st.role==='mitm'?'#c62828':'#546e7a';
+ h+='<g transform="translate('+A[0]+' '+A[1]+')">'+pc(attColor)+'</g>'+tx(A[0],A[1]+30,'Angreifer',{fs:12,fw:700,c:attColor});
+ if(st.role==='coup'||st.role==='mitm'){h+='<g transform="translate('+(A[0])+' '+(A[1]-30)+')"><rect x="-30" y="-11" width="60" height="18" rx="9" fill="#c62828"/>'+tx(0,3,st.role==='mitm'?'ACTIVE':'Prio 255',{fs:11,fw:700,c:'#fff'})+'</g>';}
+ h+='<g transform="translate('+VIC[0]+' '+VIC[1]+')">'+pc('#455a64')+'</g>'+tx(VIC[0],VIC[1]+30,'Client',{fs:12,fw:700});
+ // Fluss Client -> Gateway
+ function arrow(x1,y1,x2,y2,col,lbl){var mx=(x1+x2)/2,my=(y1+y2)/2;return'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="3" marker-end="url(#ah)"/>'+(lbl?tx(mx,my-6,lbl,{fs:11,fw:700,c:col}):'');}
+ h='<svg viewBox="0 0 '+W+' '+H+'" role="img"><defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0l7 3-7 3z" fill="#c62828"/></marker><marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0l7 3-7 3z" fill="#2e7d32"/></marker></defs>'+h.slice(h.indexOf('>')+1);
+ if(st.role==='listen'){h+='<g opacity=".9"><path d="M'+R1[0]+' '+(R1[1]-6)+' Q'+((R1[0]+A[0])/2)+' 60 '+(A[0])+' '+(A[1]+18)+'" fill="none" stroke="#e65100" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah)"/></g>'+tx((R1[0]+A[0])/2,52,'Hello (prio 110, Auth cisco)',{fs:11,fw:700,c:'#e65100'});}
+ if(st.role==='coup'){h+='<path d="M'+(A[0]+22)+' '+A[1]+' L'+(R1[0]-6)+' '+(R1[1]-10)+'" stroke="#c62828" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#ah)"/>'+tx((A[0]+R1[0])/2+10,150,'Coup! prio 255',{fs:12,fw:700,c:'#c62828'});}
+ if(st.role==='mitm'){h+=arrow(VIC[0]+14,VIC[1]+4,A[0]-14,A[1]+4,'#c62828','Verkehr');h+='<path d="M'+(A[0])+' '+(A[1]-18)+' Q'+((A[0]+NET[0])/2)+' 30 '+(NET[0]-18)+' '+(NET[1]-8)+'" fill="none" stroke="#c62828" stroke-width="2.5" stroke-dasharray="7 4" marker-end="url(#ah)"/>'+tx((A[0]+NET[0])/2,26,'leitet weiter & liest mit',{fs:11,fw:700,c:'#c62828'});}
+ else if(st.role==='normal'){h+=arrow(VIC[0]+14,VIC[1]+4,R1[0]-20,R1[1]-16,'#2e7d32','Verkehr');}
+ return h+'</svg>';
+}
+function animRender(){var st=steps[ai];$('animsvg').innerHTML=animSvg(st);$('animtxt').querySelector('h3').textContent=(ai+1)+'. '+st.t;$('animtxt').querySelector('p').textContent=st.txt;$('astep').textContent='Schritt '+(ai+1)+' von '+steps.length;$('aprev').disabled=ai===0;$('anext').disabled=ai===steps.length-1;}
+$('aprev').onclick=function(){if(ai>0){ai--;animRender();}};$('anext').onclick=function(){if(ai<steps.length-1){ai++;animRender();}};animRender();
+
+/* ===== Wireshark-Mitschnitt ===== */
+var wsBase={group:1,vip:'10.0.10.254',r1:{ip:'10.0.10.1',prio:110},r2:{ip:'10.0.10.2',prio:100},att:{ip:'10.0.10.250',prio:255},auth:'plain'};
+wsBase.res=H.simulate(wsBase);
+var wr,wsRows=[];
+function rowHTML(x){return'<div class="rw'+(x.coup?' coup':x.bad?' att':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}
+function wsRender(){$('pcap').innerHTML=wsRows.map(rowHTML).join('');var coup=wsRows.filter(function(x){return x.coup;}).length;
+ $('pcaphint').innerHTML='Rot = Pakete des Angreifers. Das <b>Coup</b>-Paket mit <b>Priorität 255</b> übernimmt die aktive Rolle; danach sendet 10.0.10.250 selbst als Active Router.';
+ $('pcap').scrollTop=$('pcap').scrollHeight;}
+function wsReset(){wr=H.mulberry32(20260911);wsRows=H.capture(wr,wsBase,4);wsRender();}
+$('morepkts').onclick=function(){var add=H.capture(wr,wsBase,2),base=wsRows.length,t0=parseFloat(wsRows[wsRows.length-1].t);add.forEach(function(x,i){x.no=base+1+i;x.t=(t0+0.9*(i+1)).toFixed(3);});wsRows=wsRows.concat(add.filter(function(x){return x.bad;}));wsRender();};
+$('resetpkts').onclick=wsReset;wsReset();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was gewinnt der Angreifer, wenn er Active Router wird?',['Das WLAN-Passwort','Den gesamten Verkehr der Clients, die das Gateway benutzen','Zugriff auf die Router-Konfiguration','Mehr Bandbreite im VLAN'],1,'Der Active Router beantwortet die virtuelle IP – also das Gateway. Aller Verkehr nach außen läuft dann über den Angreifer.'],
+ ['Welche Priorität kündigt Yersinia standardmäßig an?',['0','100','110','255'],3,'255 ist das Maximum. Damit gewinnt der Angreifer jede HSRP-Wahl.'],
+ ['Warum hilft das Klartext-Passwort „cisco“ nicht?',['Es ist zu kurz','Es steht offen in jedem Hello und wird einfach mitgeschickt','Es gilt nur für VRRP','Router ignorieren es'],1,'Die Klartext-Authentifizierung überträgt das Passwort unverschlüsselt. Yersinia liest es mit und hängt es an die gefälschten Pakete.'],
+ ['Welches HSRP-Paket übernimmt sofort die aktive Rolle, ohne auf das nächste Hello zu warten?',['Resign','Coup','Advertisement','Query'],1,'Mit einem Coup-Paket beansprucht ein Router sofort die Active-Rolle.'],
+ ['Auf welche Multicast-Adresse und welchen Port gehen HSRPv1-Hellos?',['224.0.0.2, UDP 1985','224.0.0.5, UDP 520','239.1.1.1, TCP 179','224.0.0.102, UDP 1985'],0,'HSRPv1 nutzt 224.0.0.2 auf UDP 1985. (HSRPv2 nutzt 224.0.0.102.)'],
+ ['Welche Maßnahme stoppt den Angriff zuverlässig?',['Eine höhere Priorität auf dem echten Router','MD5-Authentifizierung der HSRP-Gruppe','Ein längeres Hello-Intervall','Mehr RAM im Switch'],1,'Nur MD5 macht gefälschte Hellos wertlos. 255 bleibt sonst immer das Maximum.'],
+ ['Woran erkennt man den Angriff am echten Router?',['An einem HSRP-State-Wechsel Active → Speak im Log','An einem vollen DHCP-Pool','An vielen ARP-Antworten','An einem Spanning-Tree-Reset'],0,'%HSRP-5-STATECHANGE zeigt, dass der Router die aktive Rolle verloren hat – ein deutliches Warnsignal.'],
+ ['Was unterscheidet die MITM- von der DoS-Variante des Angriffs?',['Die MITM-Variante aktiviert IP-Forwarding, damit die Opfer weiter ins Internet kommen','Die DoS-Variante braucht MD5','Es gibt keinen Unterschied','MITM funktioniert nur mit VRRP'],0,'Mit IP-Forwarding leitet der Angreifer den Verkehr weiter und liest mit. Ohne Forwarding bricht die Verbindung ab – das ist der DoS.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return H.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function authTxt(a){return a==='none'?'keine Authentifizierung':a==='plain'?'Klartext-Passwort (authentication cisco)':'MD5-Authentifizierung';}
+function cfgHTML(s){
+ return 'R1# interface Gi0/0\n  standby '+s.group+' ip '+s.vip+'\n  standby '+s.group+' priority '+s.r1.prio+(s.r1.prio>=s.r2.prio?'\n  standby '+s.group+' preempt':'')+
+  (s.auth==='plain'?'\n  standby '+s.group+' authentication cisco':s.auth==='md5'?'\n  standby '+s.group+' authentication md5 key-chain K':'')+
+  '\n  ip address '+s.r1.ip+' 255.255.255.0\n!\nR2# interface Gi0/0\n  standby '+s.group+' ip '+s.vip+'\n  standby '+s.group+' priority '+s.r2.prio+(s.r2.prio>s.r1.prio?'\n  standby '+s.group+' preempt':'')+
+  (s.auth==='plain'?'\n  standby '+s.group+' authentication cisco':s.auth==='md5'?'\n  standby '+s.group+' authentication md5 key-chain K':'')+
+  '\n  ip address '+s.r2.ip+' 255.255.255.0';
+}
+function capHTML(s){
+ var r=H.mulberry32((s.code.charCodeAt(0)*131+parseInt(s.code.split('-')[1]))>>>0);
+ var rows=H.capture(r,s,3);
+ return '<div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source</span><span>Dest.</span><span>Prot.</span><span>Info</span></div><div class="rows">'+rows.map(function(x){return'<div class="rw'+(x.coup?' coup':x.bad?' att':'')+'"><span>'+x.no+'</span><span>'+x.t+'</span><span>'+x.src+'</span><span>'+x.dst+'</span><span>'+x.proto+'</span><span>'+esc(x.info)+'</span></div>';}).join('')+'</div></div>';
+}
+function taskHTML(s,id,label){
+ var R=s.res;
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+H.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>'+
+  '<div class="slist"><li><b>Szenario:</b> HSRP-Gruppe '+s.group+', virtuelle IP <b>'+s.vip+'</b> (= Gateway). R1 Priorität <b>'+s.r1.prio+'</b> (IP '+s.r1.ip+'), R2 Priorität <b>'+s.r2.prio+'</b> (IP '+s.r2.ip+'). Schutz: <b>'+authTxt(s.auth)+'</b>. Der Angreifer (IP '+s.att.ip+', höchste im Netz) sendet mit Yersinia Priorität <b>'+s.att.prio+'</b>.</li></div>'+
+  '<p class="ph">Konfiguration</p><pre class="cli">'+esc(cfgHTML(s))+'</pre>'+
+  '<p class="ph">Mitschnitt (Auszug)</p>'+capHTML(s)+
+  '<p class="qh">1. Wer ist vor dem Angriff Active Router?</p><div class="opts"><label><input type="radio" name="'+id+'-ab" value="R1"> R1</label><label><input type="radio" name="'+id+'-ab" value="R2"> R2</label></div>'+
+  '<p class="qh">2. Welche Priorität muss der Angreifer mindestens ankündigen, um Active zu werden? <span class="hint">(seine IP ist die höchste)</span></p><input class="one got" inputmode="numeric" autocomplete="off" aria-label="Mindest-Priorität">'+
+  '<p class="qh">3. Übernimmt Yersinia mit Priorität '+s.att.prio+' die aktive Rolle?</p><div class="opts"><label><input type="radio" name="'+id+'-to" value="1"> Ja</label><label><input type="radio" name="'+id+'-to" value="0"> Nein</label></div>'+
+  '<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),R=s.res,ok=0,tot=3;
+ var ab=card.querySelector('input[name$="-ab"]:checked');card.querySelectorAll('input[name$="-ab"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(rb.value===R.activeBefore?'right':'wrong');});if(ab&&ab.value===R.activeBefore)ok++;
+ var g=card.querySelector('.got');mark(g,g.value.trim()===''?null:+g.value.trim()===R.minPrio);if(+g.value.trim()===R.minPrio)ok++;
+ var to=card.querySelector('input[name$="-to"]:checked');card.querySelectorAll('input[name$="-to"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add((rb.value==='1')===R.takeover?'right':'wrong');});if(to&&(to.value==='1')===R.takeover)ok++;
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var R=s.res;
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. Active ist '+R.activeBefore+'</b><br><span class="hint">Höhere Priorität gewinnt: R1 '+s.r1.prio+' vs. R2 '+s.r2.prio+(s.r1.prio===s.r2.prio?' – Gleichstand, höhere IP entscheidet ('+(H.ipn(s.r1.ip)>H.ipn(s.r2.ip)?'R1':'R2')+').':' → '+R.activeBefore+'.')+'</span></li>';
+ h+='<li><b>2. Mindest-Priorität: '+R.minPrio+'</b><br><span class="hint">Der Active Router hat '+R.activeBeforePrio+'. Weil die Angreifer-IP ('+s.att.ip+') die höchste ist, gewinnt er schon bei <b>gleicher</b> Priorität ('+R.minPrio+') über die IP. Yersinia nimmt zur Sicherheit 255.</span></li>';
+ h+='<li><b>3. '+(R.takeover?'Ja, der Angreifer übernimmt':'Nein, der Angriff scheitert')+'</b><br><span class="hint">'+
+  (R.takeover?'Priorität '+s.att.prio+' schlägt '+R.activeBeforePrio+', und '+(s.auth==='plain'?'das Klartext-Passwort „cisco“ schickt Yersinia einfach mit':'ohne Authentifizierung gibt es keine Hürde')+'. → MITM/DoS.':'Die Gruppe nutzt <b>MD5</b>. Die gefälschten Hellos tragen keinen gültigen Hash und werden verworfen – egal wie hoch die Priorität ist.')+'</span></li></ul>';
+ return h;
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=H.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=H.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

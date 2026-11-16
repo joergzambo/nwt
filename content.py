@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> In <a href="routing/ospf-2/#ersparnis">OSPF 2</a> zeigt ein Schieberegler bis 50 Router, wie viele Full-Nachbarschaften der DR erspart. Auf den ACL-Seiten gibt es den Trainer „Platzierung üben“. '
+    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/hsrp-hijacking/">HSRP-Hijacking mit Yersinia</a> – das virtuelle Gateway mit Priorität 255 übernehmen, im Wireshark erkennen, Schutz mit MD5-Authentifizierung. '
+             'In <a href="routing/ospf-2/#ersparnis">OSPF 2</a> zeigt ein Schieberegler bis 50 Router, wie viele Full-Nachbarschaften der DR erspart. Auf den ACL-Seiten gibt es den Trainer „Platzierung üben“. '
              'Außerdem <a href="netzwerksicherheit/standard-acl/">Standard-Access-Listen</a> und <a href="netzwerksicherheit/extended-acl/">Extended-Access-Listen</a> – Paket-Tester Zeile für Zeile, Wildcard-Rechner, Platzierung im Netzplan, Übungen. '
              'Außerdem <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
              'Außerdem <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
@@ -115,6 +116,8 @@ AREAS = [
           'text': 'Man-in-the-Middle im LAN mit Ettercap: warum ARP angreifbar ist, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection – mit Übungen und Zufallsgenerator.'},
          {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'tool': 'dhcp-starvation',
           'text': 'Den Adresspool mit Yersinia leeren: warum DHCP angreifbar ist, SPAN und Wireshark, Schutz mit Port-Security und DHCP Snooping – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'hsrp-hijacking', 'title': 'HSRP-Hijacking mit Yersinia', 'tool': 'hsrp-hijacking',
+          'text': 'Das virtuelle HSRP-Gateway mit Yersinia übernehmen – Man-in-the-Middle und Schutz mit MD5.'},
          {'slug': 'rogue-dhcp', 'title': 'Rogue-DHCP-Server', 'tool': 'rogue-dhcp',
           'text': 'Falsches Gateway unterschieben (Man-in-the-Middle): Wettlauf der Offer, im Wireshark erkennen, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi) – mit Übungen.'},
          {'slug': 'stp-angriff', 'title': 'Angriff auf die Root Bridge', 'text': 'Gefälschte BPDUs und BPDU Guard / Root Guard.'},
