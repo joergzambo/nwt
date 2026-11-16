@@ -1996,4 +1996,51 @@ fromHash();render();setPlay(false);requestAnimationFrame(frame);
  window.addEventListener('hashchange',fromHash);fromHash();
 })();
 </script>
+<style>
+.pbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 10px}
+.pbar .pres{font-weight:700}.pbar .pres.good{color:#2e7d32}.pbar .pres.bad{color:#c62828}
+.pbar .phint{font-size:14px;color:#546e7a}
+svg g.pick{cursor:pointer}svg g.pick:hover rect.pbox{stroke-width:2.4}svg g.pick:focus{outline:none}svg g.pick:focus rect.pbox{stroke:#f9a825;stroke-width:3}
+</style>
+<script>
+(function(){
+ var ST={RP:['#e3f4e6','#2e7d32','RP'],DP:['#e1ecfb','#1565c0','DP'],BLK:['#fde3e3','#c62828','✕ BLK']},ORD=['','RP','DP','BLK'],NS='http://www.w3.org/2000/svg';
+ function el(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+ function enhance(root){
+  var tsv=[].filter.call(root.querySelectorAll('svg'),function(v){return!v.closest('.sol');})[0],ssv=root.querySelector('.sol svg');
+  if(!tsv||!ssv||tsv.getAttribute('data-pick'))return;
+  var sol={};[].forEach.call(ssv.querySelectorAll('rect[width="58"][height="34"]'),function(r){var t=r.nextElementSibling&&r.nextElementSibling.nextElementSibling;if(t&&t.tagName==='text'){var v=t.textContent.replace('✕','').trim();sol[r.getAttribute('x')+','+r.getAttribute('y')]=v;}});
+  var boxes=[];
+  [].forEach.call(tsv.querySelectorAll('rect[stroke-dasharray="3 3"][width="58"]'),function(r){
+   var x=+r.getAttribute('x'),y=+r.getAttribute('y'),k=r.getAttribute('x')+','+r.getAttribute('y');if(!sol[k])return;
+   var nm=r.nextElementSibling,ln=nm&&nm.nextElementSibling;if(!nm||nm.tagName!=='text')return;
+   var g=el('g',{'class':'pick',tabindex:'0',role:'button','aria-label':'Port '+nm.textContent+': Rolle wählen'});r.parentNode.insertBefore(g,r);g.appendChild(r);g.appendChild(nm);
+   if(ln&&ln.tagName==='line')g.appendChild(ln);else ln=null;r.setAttribute('class','pbox');
+   var tx=el('text',{x:x+29,y:y+28,'text-anchor':'middle','font-size':'12','font-weight':'700'});g.appendChild(tx);
+   var mk=el('g',{});g.appendChild(mk);
+   var b={g:g,r:r,nm:nm,ln:ln,tx:tx,mk:mk,x:x,y:y,ok:sol[k],v:''};boxes.push(b);
+   function cyc(){b.v=ORD[(ORD.indexOf(b.v)+1)%4];paint(b);clear();}
+   g.addEventListener('click',cyc);g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();cyc();}});
+  });
+  if(!boxes.length)return;tsv.setAttribute('data-pick','1');
+  function paint(b){var c=ST[b.v];
+   if(c){b.r.setAttribute('fill',c[0]);b.r.setAttribute('stroke',c[1]);b.r.setAttribute('stroke-width','1.8');b.r.removeAttribute('stroke-dasharray');b.nm.setAttribute('fill',c[1]);b.tx.setAttribute('fill',c[1]);b.tx.textContent=c[2];if(b.ln)b.ln.style.display='none';}
+   else{b.r.setAttribute('fill','#fff');b.r.setAttribute('stroke','#78909c');b.r.setAttribute('stroke-width','1.2');b.r.setAttribute('stroke-dasharray','3 3');b.nm.setAttribute('fill','#78909c');b.tx.textContent='';if(b.ln)b.ln.style.display='';}}
+  var bar=document.createElement('div');bar.className='pbar noprint';
+  bar.innerHTML='<button type="button" class="solbtn">Ports prüfen</button><button type="button" class="ghost">Leeren</button><span class="pres"></span><span class="phint">Klick auf ein Port-Kästchen: RP → DP → BLK → leer</span>';
+  tsv.parentNode.insertBefore(bar,tsv.nextSibling);
+  var res=bar.querySelector('.pres');
+  function clear(){boxes.forEach(function(b){b.mk.innerHTML='';});res.textContent='';res.className='pres';}
+  bar.children[0].onclick=function(){var ok=0,open=0;boxes.forEach(function(b){b.mk.innerHTML='';if(!b.v){open++;return;}var good=b.v===b.ok;if(good)ok++;
+    b.mk.appendChild(el('circle',{cx:b.x+56,cy:b.y+2,r:9,fill:good?'#2e7d32':'#c62828',stroke:'#fff','stroke-width':'1.5'}));var t=el('text',{x:b.x+56,y:b.y+6,'text-anchor':'middle','font-size':'11','font-weight':'800',fill:'#fff'});t.textContent=good?'✓':'✗';b.mk.appendChild(t);});
+   var n=boxes.length;res.className='pres '+(ok===n?'good':'bad');
+   res.textContent=ok===n?'Perfekt – alle '+n+' Ports richtig! ✓':ok+' von '+n+' Ports richtig'+(open?' · noch '+open+' leer':'')+(n-ok-open?' · '+(n-ok-open)+' falsch (✗)':'');};
+  bar.children[1].onclick=function(){boxes.forEach(function(b){b.v='';paint(b);});clear();};
+  root.__pick=boxes;
+ }
+ [].forEach.call(document.querySelectorAll('section.ex'),function(s){if(s.id!=='generator')enhance(s);});
+ var out=document.getElementById('genout');if(out){enhance(out);new MutationObserver(function(){enhance(out);}).observe(out,{childList:true});}
+ window.__pickEnhance=enhance;
+})();
+</script>
 </body></html>
