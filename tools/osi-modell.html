@@ -161,7 +161,7 @@ var ROUNDS=[
    {id:'d1',label:'Kupferkabel (Twisted Pair)',ok:[1]},{id:'d2',label:'Glasfaserkabel',ok:[1]},{id:'d3',label:'RJ45-Stecker',ok:[1]},{id:'d4',label:'Hub',ok:[1],note:'Hub: verteilt nur Signale an alle Ports, kennt keine Adressen → Schicht 1.'},{id:'d5',label:'Repeater',ok:[1]},
    {id:'d6',label:'Switch',ok:[2],note:'Switch: leitet anhand von MAC-Adressen weiter → Schicht 2.'},{id:'d7',label:'Bridge',ok:[2]},{id:'d8',label:'Netzwerkkarte (NIC)',ok:[1,2],note:'Netzwerkkarte: erzeugt Signale (1) und hat die MAC-Adresse (2) – beides richtig.'},{id:'d9',label:'WLAN-Access-Point',ok:[1,2],note:'Access Point: Funk (1) und Brücke zwischen WLAN und LAN (2).'},
    {id:'d10',label:'Router',ok:[3],note:'Router: wählt den Weg anhand von IP-Adressen → Schicht 3.'},{id:'d11',label:'Layer-3-Switch',ok:[3,2],note:'Layer-3-Switch: switcht (2) und routet (3) – beides zählt.'},
-   {id:'d12',label:'Firewall (Paketfilter)',ok:[3,4],note:'Paketfilter-Firewall: prüft IP-Adressen (3) und Ports (4). Next-Generation-Firewalls schauen sogar bis Schicht 7.'},{id:'d13',label:'Proxy / Web-Application-Firewall',ok:[7],note:'Proxy/WAF: versteht das Anwendungsprotokoll (z. B. HTTP) → Schicht 7.'}]},
+   {id:'d12',label:'Firewall (Paketfilter)',ok:[3,4],note:'Paketfilter-Firewall: prüft IP-Adressen (3) und Ports (4) – beides zählt.'},{id:'d14',label:'Next-Generation-Firewall',ok:[4,5,6,7],note:'Next-Generation-Firewall: merkt sich Verbindungen (stateful, 4), schaut in verschlüsselte Sitzungen (TLS-Inspection, 5/6) und erkennt Anwendungen wie YouTube oder Teams (7) → alles von 4 bis 7 zählt.'},{id:'d13',label:'Proxy / Web-Application-Firewall',ok:[7],note:'Proxy/WAF: versteht das Anwendungsprotokoll (z. B. HTTP) → Schicht 7.'}]},
  {key:'fun',title:'Funktionen & Protokolle',task:'Runde 4 (Zusatz): Ordne Funktionen und Protokolle den Schichten zu.',hint:'Funktionen hierher',
   items:[
    {id:'f1',label:'Bits als elektrische/optische Signale',ok:[1]},{id:'f2',label:'MAC-Adressen',ok:[2]},{id:'f3',label:'Fehlererkennung mit FCS/CRC',ok:[2]},{id:'f4',label:'VLAN-Tag (802.1Q)',ok:[2]},
@@ -292,7 +292,7 @@ var L={
  7:{n:'Application',pdu:'Daten',dev:['Proxy','Web-Application-Firewall'],fun:['HTTP','DNS','SMTP','FTP','Schnittstelle zur Anwendung']},
  6:{n:'Presentation',pdu:'Daten',dev:[],fun:['Verschlüsselung','Zeichensatz umwandeln','Komprimierung','Datenformate (JPEG, MP3)']},
  5:{n:'Session',pdu:'Daten',dev:[],fun:['Sitzungen auf- und abbauen','Dialogsteuerung','Wiederaufnahme nach Abbruch']},
- 4:{n:'Transport',pdu:'Segment',dev:[],fun:['TCP','UDP','Portnummern','Flusskontrolle','Segmentierung']},
+ 4:{n:'Transport',pdu:'Segment',dev:['Stateful Firewall'],fun:['TCP','UDP','Portnummern','Flusskontrolle','Segmentierung']},
  3:{n:'Network',pdu:'Paket',dev:['Router'],fun:['IP-Adressen','Routing','ICMP (ping)']},
  2:{n:'Data Link',pdu:'Frame',dev:['Switch','Bridge'],fun:['MAC-Adressen','Fehlererkennung (FCS)','VLAN-Tag 802.1Q']},
  1:{n:'Physical',pdu:'Bits',dev:['Hub','Repeater','Kupferkabel','Glasfaser','RJ45-Stecker'],fun:['Elektrische/optische Signale','Leitungscodierung']}
