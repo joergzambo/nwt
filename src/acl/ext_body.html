@@ -1,7 +1,7 @@
 <main class="vmain">
 <h1>Extended-Access-Listen</h1>
 <p class="sub">Eine <a href="../standard-acl/">Standard-ACL</a> kennt nur die Quelle. Eine <b>Extended-ACL</b> prüft viel genauer: <b>Protokoll</b>, <b>Quelle</b>, <b>Ziel</b> und bei TCP/UDP den <b>Port</b> – also welcher Dienst gemeint ist. Damit lässt sich zum Beispiel sagen: „Das Schülernetz darf auf den Webserver, aber nicht per Telnet.“</p>
-<nav class="jumps" aria-label="Abschnitte"><a href="#aufbau">Aufbau einer Zeile</a><a href="#ports">Ports und Protokolle</a><a href="#tester">Paket-Tester</a><a href="#cisco">Konfiguration</a><a href="#dmz">Beispiel DMZ</a><a href="#platz">Platzierung</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+<nav class="jumps" aria-label="Abschnitte"><a href="#aufbau">Aufbau einer Zeile</a><a href="#ports">Ports und Protokolle</a><a href="#tester">Paket-Tester</a><a href="#cisco">Konfiguration</a><a href="#dmz">Beispiel DMZ</a><a href="#platz">Platzierung</a><a href="#ueben">🎯 Platzierung üben</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
 
 <h2 class="part" id="aufbau">Aufbau einer Zeile</h2>
 <div class="card"><div class="syn" id="syn"></div>
@@ -75,6 +75,21 @@ R1(config-if)#  ip access-group 120 in</pre>
 <div class="card">
  <div class="inrow"><label>Quelle <select id="ps" class="one"></select></label><label>Ziel <select id="pd" class="one"></select></label><button type="button" class="btn" id="pgo">ACL platzieren</button></div>
  <div id="psvg"></div><div class="explain" aria-live="polite"><p id="ptxt"></p></div></div>
+
+<h2 class="part" id="ueben">🎯 Platzierung üben</h2>
+<p class="sub">Lies die Aufgabe, klick im Netzplan auf das richtige <b>Interface</b> (die Kreise) und wähle die <b>Richtung</b>. Liegen Quelle und Ziel im selben LAN, wähle „keine Router-ACL möglich“.</p>
+<div class="card trainer">
+ <div class="kbar"><span class="lbl">Aufgaben</span><span class="seg" id="trmode"><button type="button" data-m="rand" class="on">🎲 zufällig</button><button type="button" data-m="ws">📄 Arbeitsblatt (24 Fragen)</button></span>
+  <span class="lbl" style="min-width:0;margin-left:8px">ACL-Art</span><span class="seg" id="trkind"><button type="button" data-k="std">Standard</button><button type="button" data-k="ext">Extended</button><button type="button" data-k="mix">gemischt</button></span>
+  <span class="score" id="trscore"></span></div>
+ <div class="trq" id="trq"></div>
+ <div id="trsvg"></div>
+ <div class="kbar" style="margin-top:8px"><span class="lbl">Richtung</span><span class="seg" id="trdir"><button type="button" data-d="in">in</button><button type="button" data-d="out">out</button></span>
+  <button type="button" class="btn ghost" id="trnone">keine Router-ACL möglich (gleiches LAN)</button>
+  <span class="trpick" id="trpick"></span></div>
+ <div class="acts"><button type="button" class="btn" id="trcheck">Prüfen</button><button type="button" class="btn ghost" id="trnext">Nächste Aufgabe ›</button></div>
+ <div class="explain" id="trfb" aria-live="polite" hidden></div>
+</div>
 
 <h2 class="part" id="quiz">Teste dich</h2>
 <div class="card quiz" id="qz"></div>

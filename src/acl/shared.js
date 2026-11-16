@@ -37,6 +37,10 @@ function topoSvg(o){
  Object.keys(TP.HP).forEach(function(p){var q=TP.HP[p],c=p===o.src?BL:p===o.dst?GR:'#607d8b';h+=at(q[0],q[1],pc(c,.8))+tx(q[0],q[1]+26,p,{fs:12,fw:p===o.src||p===o.dst?700:600,c:p===o.src?BL:p===o.dst?GR:INK});});
  if(o.src)h+=tx(TP.HP[o.src][0],TP.HP[o.src][1]-20,'Quelle',{fs:11,fw:700,c:BL});
  if(o.dst)h+=tx(TP.HP[o.dst][0],TP.HP[o.dst][1]-20,'Ziel',{fs:11,fw:700,c:GR});
+ if(o.hot||o.pick){A.TOPO.links.forEach(function(k){[[k[0],k[1]],[k[2],k[3]]].forEach(function(q){hs(q[0],q[1],14);});});A.TOPO.lans.forEach(function(L){hs(L.r,L.ifc,16);});}
+
+ function hs(rn,ifc,d){var sel0=o.pick&&o.pick.r===rn&&o.pick.i===ifc;if(!o.hot&&!sel0)return;var p=ifPos(rn,ifc),x=p.x-p.dy*d,y=p.y+p.dx*d,sel=o.pick&&o.pick.r===rn&&o.pick.i===ifc,col=sel?(o.pickOk===false?RD:o.pickOk?GR:'#f9a825'):'#90a4ae';
+  h+='<g class="hot'+(sel?' sel':'')+'" data-r="'+rn+'" data-i="'+ifc+'" role="button" tabindex="0" aria-label="Router '+rn+' Interface '+ifc+'"><circle cx="'+x+'" cy="'+(y-4)+'" r="17" fill="'+(sel?col:'#fff')+'" fill-opacity="'+(sel?.35:.01)+'" stroke="'+col+'" stroke-width="'+(sel?3:1.5)+'" stroke-dasharray="'+(sel?'':'3 3')+'"/></g>';}
  if(o.acl&&!o.acl.none){var q=ifPos(o.acl.router,o.acl.ifc),bx=q.x+q.dx*30+q.dy*22,by=q.y+q.dy*30-q.dx*22;h+='<g><rect x="'+(bx-34)+'" y="'+(by-13)+'" width="68" height="24" rx="12" fill="'+RD+'" stroke="#fff" stroke-width="2"/>'+tx(bx,by+4,'ACL '+o.acl.dir,{fs:11.5,fw:700,c:'#fff'})+'</g>';}
  return h+'</svg>';
 }

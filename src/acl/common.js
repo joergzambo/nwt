@@ -7,6 +7,54 @@
  $('pgo').onclick=go;$('ps').onchange=go;$('pd').onchange=go;go();
 })();
 
+
+/* ===== Platzierung üben ===== */
+(function(){
+ /* Fragen aus dem Arbeitsblatt „Access List Placement“ (Ziele mit mehreren Computern liegen im selben LAN) */
+ var WS={std:[['permit','Ricky',['Jeff']],['deny','Melvin',['Jenny']],['deny','Sarah',['Carrol']],['permit','Ricky',['Jeff']],['deny','Amanda',['Jeff','Jim']],['permit','Jackie',['Linda']],['permit','George',['Carrol','Amanda']],['deny','Jackie',['Jenny']],['permit','George',['Linda','Sarah']],['deny','Jeff',['George']],['deny','Ricky',['Sarah']],['deny','Linda',['Jackie']]],
+  ext:[['deny','Jeff',['George']],['permit','Jackie',['Linda']],['deny','Ricky',['Carrol']],['deny','Jackie',['Sarah']],['permit','Carrol',['Jeff']],['deny','Melvin',['Jeff','Jim']],['permit','George',['Jeff']],['permit','Jim',['Carrol','Amanda']],['deny','Linda',['Kathy']],['deny','Sarah',['Jenny']],['permit','George',['Linda','Sarah']],['deny','Linda',['Jenny']]]};
+ var mode='rand',kind=STD?'std':'ext',cur=null,pick=null,dir=null,none=false,done=false,ok=0,tot=0,streak=0,wsi=0,WSL=[];
+ WS.std.forEach(function(q,i){WSL.push({k:'std',n:i+1,act:q[0],src:q[1],dst:q[2]});});WS.ext.forEach(function(q,i){WSL.push({k:'ext',n:i+1,act:q[0],src:q[1],dst:q[2]});});
+ function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+ function nextQ(){
+  if(mode==='ws'){var L=WSL.filter(function(q){return kind==='mix'||q.k===kind;});cur=L[wsi%L.length];wsi++;}
+  else{var k=kind==='mix'?rnd(['std','ext']):kind,a=rnd(A.PEOPLE),b;do{b=rnd(A.PEOPLE);}while(b===a||(cur&&cur.src===a&&cur.dst[0]===b));cur={k:k,act:rnd(['permit','deny']),src:a,dst:[b]};}
+  pick=null;dir=null;none=false;done=false;render();$('trfb').hidden=true;
+ }
+ function names(d){return d.length>1?d.slice(0,-1).join('s, ')+'s und '+d[d.length-1]+'s Computer':d[0]+'s Computer';}
+ function render(fbAns){
+  var std=cur.k==='std';
+  $('trq').innerHTML=(mode==='ws'?'<span class="tag">Arbeitsblatt '+(std?'Standard':'Extended')+' Nr. '+cur.n+'</span> ':'')+'Wo platzierst du eine <b class="'+(std?'kstd':'kext')+'">'+(std?'Standard':'Extended')+'-ACL</b>, die den Verkehr von <b>'+cur.src+'s Computer</b> zu <b>'+names(cur.dst)+'</b> '+(cur.act==='permit'?'<b>erlaubt</b>':'<b>sperrt</b>')+'?';
+  var o={hot:!done,pick:pick?{r:pick.r,i:pick.i}:null};
+  if(done){o.src=cur.src;o.dst=cur.dst[0];o.path=hostPath(cur.src,cur.dst[0]);o.acl=fbAns;o.pickOk=fbAns&&!fbAns.none&&pick&&pick.r===fbAns.router&&pick.i===fbAns.ifc;}
+  $('trsvg').innerHTML=topoSvg(o);
+  [].forEach.call(document.querySelectorAll('#trdir button'),function(b){b.classList.toggle('on',b.dataset.d===dir);b.disabled=done||none;});
+  $('trnone').classList.toggle('on',none);$('trnone').disabled=done;$('trcheck').disabled=done;
+  $('trpick').innerHTML=none?'Deine Antwort: <b>keine Router-ACL</b>':pick?'Deine Wahl: <b>Router '+pick.r+', '+pick.i+(dir?', '+dir:'')+'</b>':'Noch kein Interface gewählt.';
+  $('trscore').innerHTML=tot?'<b>'+ok+'</b> von '+tot+' richtig'+(streak>1?' · 🔥 '+streak+' in Folge':''):'';
+  [].forEach.call(document.querySelectorAll('#trmode button'),function(b){b.classList.toggle('on',b.dataset.m===mode);});
+  [].forEach.call(document.querySelectorAll('#trkind button'),function(b){b.classList.toggle('on',b.dataset.k===kind);});
+ }
+ $('trsvg').addEventListener('click',function(e){if(done)return;var g=e.target.closest('.hot');if(!g)return;pick={r:g.dataset.r,i:g.dataset.i};none=false;render();});
+ $('trsvg').addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var g=e.target.closest&&e.target.closest('.hot');if(g){e.preventDefault();g.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+ [].forEach.call(document.querySelectorAll('#trdir button'),function(b){b.onclick=function(){dir=b.dataset.d;none=false;render();};});
+ $('trnone').onclick=function(){none=!none;if(none){pick=null;dir=null;}render();};
+ $('trcheck').onclick=function(){
+  if(!none&&(!pick||!dir)){$('trfb').hidden=false;$('trfb').innerHTML='<p>Bitte zuerst ein Interface anklicken und die Richtung wählen – oder „keine Router-ACL möglich“.</p>';return;}
+  var std=cur.k==='std',ans=A.placement(cur.src,cur.dst[0],std),good=ans.none?none:(!none&&pick.r===ans.router&&pick.i===ans.ifc&&dir===ans.dir);
+  done=true;tot++;if(good){ok++;streak++;}else streak=0;render(ans);
+  var why='';if(!good&&!ans.none&&!none){if(pick.r!==ans.router||pick.i!==ans.ifc)why=std?'Eine Standard-ACL gehört <b>nahe ans Ziel</b>, nicht an '+(pick.r===A.lanOf(cur.src).r?'den Router der Quelle':'einen Router unterwegs')+'.':'Eine Extended-ACL gehört <b>nahe an die Quelle</b> – dort, wo die Pakete ins Netz eintreten.';else why='Das Interface stimmt, aber die Richtung nicht: '+(std?'Die Pakete <b>verlassen</b> hier den Router Richtung Ziel → <b>out</b>.':'Die Pakete <b>kommen</b> hier von der Quelle in den Router → <b>in</b>.');}
+  if(!good&&none&&!ans.none)why='Quelle und Ziel liegen in <b>verschiedenen</b> Netzen – dazwischen liegt mindestens ein Router.';
+  
+  $('trfb').hidden=false;$('trfb').innerHTML='<p class="verdict '+(good?'ok':'no')+'">'+(good?'✓ Richtig!':'✕ Leider falsch.')+' Lösung: <b>'+(ans.none?'keine Router-ACL möglich':'Router '+ans.router+', '+ans.ifc+', '+ans.dir)+'</b></p>'+(why?'<p>'+why+'</p>':'')+'<p>'+placeText(ans,cur.src,cur.dst[0],std)+'</p>';
+ };
+ $('trnext').onclick=nextQ;
+ [].forEach.call(document.querySelectorAll('#trmode button'),function(b){b.onclick=function(){mode=b.dataset.m;wsi=0;nextQ();};});
+ [].forEach.call(document.querySelectorAll('#trkind button'),function(b){b.onclick=function(){kind=b.dataset.k;wsi=0;nextQ();};});
+ nextQ();
+ window.__tr={cur:function(){return cur;},state:function(){return{ok:ok,tot:tot};}};
+})();
+
 /* ===== Wildcard-Rechner (nur Standard-Seite) ===== */
 if($('wout')){
  $('wp').innerHTML='<option value="">–</option>'+[8,16,20,21,22,23,24,25,26,27,28,29,30,32].map(function(p){return'<option value="'+p+'">/'+p+'</option>';}).join('');
