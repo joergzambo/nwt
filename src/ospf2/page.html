@@ -54,13 +54,25 @@ td.same{background:#fde3e3}
 .quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
 .quiz .q .ex.open{display:block}
 .opts.col{flex-direction:column;align-items:flex-start}
+.drs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media(max-width:760px){.drs{grid-template-columns:minmax(0,1fr)}}
+.drs .pane{background:#fff;border:1.5px solid #cfd8dc;border-radius:6px;padding:8px 10px}
+.drs .pane h4{margin:0;font:600 16px var(--body)}
+.drs .big{font:700 34px/1.1 var(--body)}.drs .big small{font:500 14px var(--body);color:var(--mute)}
+.nbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:4px 0 10px}
+.nbar input[type=range]{flex:1;min-width:200px;accent-color:#61a229;height:28px}
+.nbar .nval{font:700 22px var(--body);min-width:9em}
+.save{margin:10px 0 0;background:#e8f5e9;border:1.5px solid #66bb6a;border-radius:6px;padding:10px 14px;font-size:16.5px}
+.sbar{height:14px;background:#ffcdd2;border-radius:7px;overflow:hidden;margin-top:6px}.sbar i{display:block;height:100%;background:#43a047;transition:width .3s}
+.lsu{font:600 14px var(--body);color:var(--mute);margin-top:4px;min-height:1.4em}
+.ntab{border-collapse:collapse;font-size:15px;margin-top:8px}.ntab th,.ntab td{border:1px solid #cfd8dc;padding:5px 12px;text-align:right}.ntab th{background:var(--soft);font:600 14px var(--body)}
 </style>
 </head>
 <body>
 <main class="vmain">
 <h1>OSPF 2: Backbone Area, DR/BDR und wie Router den Netzplan austauschen</h1>
 <p class="sub">In <a href="../ospf-1/">OSPF 1</a> hatte jeder Router schon den ganzen Netzplan und hat mit Dijkstra gerechnet. Hier geht es darum, <b>wie</b> der Netzplan zu jedem Router kommt, wer auf einem Ethernet das Sagen hat (<b>DR und BDR</b>), wie die <b>Kosten</b> entstehen – und was die <b>Backbone Area 0</b> ist.</p>
-<nav class="jumps" aria-label="Abschnitte"><a href="#austausch">Netzplan austauschen</a><a href="#dr">DR und BDR</a><a href="#ref">Referenzbandbreite</a><a href="#area">Backbone Area 0</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+<nav class="jumps" aria-label="Abschnitte"><a href="#austausch">Netzplan austauschen</a><a href="#dr">DR und BDR</a><a href="#ersparnis">DR-Ersparnis</a><a href="#ref">Referenzbandbreite</a><a href="#area">Backbone Area 0</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
 
 <h2 class="part" id="austausch">Wie Router den Netzplan austauschen</h2>
 <div class="rules">
@@ -93,7 +105,7 @@ td.same{background:#fde3e3}
 
 <h2 class="part" id="dr">Designated Router (DR) und Backup (BDR)</h2>
 <div class="rules">
- <div class="card"><h3>Warum ein DR?</h3><p style="margin:0 0 6px">Hängen viele Router an einem Switch (Ethernet), müsste jeder mit jedem sein Heft abgleichen: bei 10 Routern 45 Nachbarschaften. Darum wird ein <b>Chef</b> gewählt.</p>
+ <div class="card"><h3>Warum ein DR?</h3><p style="margin:0 0 6px">Hängen viele Router an einem Switch (Ethernet), müsste jeder mit jedem sein Heft abgleichen: bei 10 Routern 45 Full-Nachbarschaften (mit DR nur 17). Darum wird ein <b>Chef</b> gewählt.</p>
   <ul style="margin:0;padding-left:20px"><li>Alle schicken Neuigkeiten nur an <b>DR und BDR</b> (224.0.0.6). Der DR verteilt sie an alle (224.0.0.5).</li>
   <li><b>Full</b> wird man nur mit DR und BDR. Zwei „normale“ Router (DROTHER) bleiben untereinander bei <b>2-Way</b>.</li>
   <li>Fällt der DR aus, übernimmt der BDR sofort.</li>
@@ -112,6 +124,22 @@ Neighbor ID   Pri  State          Dead Time  Address       Interface
 3.3.3.3        50  FULL/BDR       00:00:33   10.0.0.3      Gi0/0
 2.2.2.2         1  2WAY/DROTHER   00:00:38   10.0.0.2      Gi0/0</pre>
   <p class="hint">State zeigt die Nachbarschaft und die Rolle des <b>Nachbarn</b>. R1 ist hier selbst DROTHER – darum mit R2 nur 2-Way.</p></div>
+</div>
+<p class="qh" id="ersparnis">Wie viel spart der DR? – zieh am Regler</p>
+<div class="card">
+ <div class="nbar"><span class="nval" id="nval"></span><input type="range" id="nrange" min="2" max="50" value="5" aria-label="Anzahl Router am Switch">
+  <label style="font:600 14px var(--body)"><input type="checkbox" id="n2way"> 2-Way-Nachbarn zeigen</label></div>
+ <div class="drs">
+  <div class="pane"><h4>Ohne DR: jeder mit jedem</h4><div id="dsvg0"></div><div class="big" id="dcnt0"></div><div class="lsu" id="dlsu0"></div></div>
+  <div class="pane"><h4>Mit DR und BDR</h4><div id="dsvg1"></div><div class="big" id="dcnt1"></div><div style="font-size:13.5px;margin-top:2px"><b style="color:#2e7d32">━</b> Full mit DR &nbsp; <b style="color:#1565c0">━</b> Full mit BDR &nbsp; <b style="color:#90a4ae">╌</b> nur 2-Way</div><div class="lsu" id="dlsu1"></div></div>
+ </div>
+ <div class="save" id="dsave"></div>
+ <div class="acts"><button class="btn" type="button" id="dplay">▶ Neuigkeit verteilen</button><span class="hint" style="margin:0">R★ merkt eine Änderung (z. B. ein Link fällt aus) und muss sie allen mitteilen.</span></div>
+ <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:6px">
+  <table class="ntab"><tr><th>Router am Switch</th><th>ohne DR<br>n·(n−1)/2</th><th>mit DR/BDR<br>2n−3</th><th>gespart</th></tr><tbody id="dtab"></tbody></table>
+  <div style="flex:1;min-width:260px;font-size:15px"><p style="margin:0 0 6px"><b>Warum 2n−3?</b> Jeder der n−2 „normalen“ Router (DROTHER) wird nur mit DR und BDR <b>Full</b> → 2·(n−2). Dazu kommt DR↔BDR → +1.</p>
+  <p class="hint" style="margin:0"><b>Achtung:</b> Hellos (auf Ethernet alle <b>10 s</b> an 224.0.0.5) schickt trotzdem jeder, und jeder kennt jeden als Nachbarn (2-Way). Der DR spart die <b>Full-Nachbarschaften</b> – also den Abgleich der Datenbank und das Weiterschicken jeder Neuigkeit.</p></div>
+ </div>
 </div>
 <p class="qh">Wahl-Simulator</p>
 <div class="card">
@@ -394,6 +422,59 @@ $('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*9999
 function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
 $('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
 gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+<script>
+(function(){
+ var $=function(i){return document.getElementById(i);};
+ var ICON='<ellipse cx="0" cy="8" rx="26" ry="9" fill="#1f5872"/><rect x="-26" y="-8" width="52" height="16" fill="#2f7392"/><ellipse cx="0" cy="-8" rx="26" ry="9" fill="#5a9dbb" stroke="#1f5872"/><path d="M-13 -8h8M5 -8h8M-1 -14v5M-1 -6v5" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
+ var SW='<rect x="-24" y="-9" width="48" height="18" rx="2" fill="#2f7392" stroke="#1f5872"/><path d="M-14 -3h10m-2-3 3 3-3 3M14 3H4m2-3-3 3 3 3" stroke="#fff" stroke-width="1.6" fill="none"/>';
+ var W=440,H=420,CX=220,CY=210,RAD=128,n=5,anim=0;
+ function pos(i,r){var a=-Math.PI/2+2*Math.PI*i/n;return{x:CX+(r||RAD)*Math.cos(a),y:CY+(r||RAD)*Math.sin(a)};}
+ function full0(){var L=[];for(var i=0;i<n;i++)for(var j=i+1;j<n;j++)L.push([i,j]);return L;}
+ function BI(){return n>12?Math.round(n/4):1;}function SI(){return n<3?1:n>12?Math.round(n/2):n-1;}
+ function full1(){var B=BI(),L=n>1?[[0,B]]:[];for(var i=1;i<n;i++)if(i!==B){L.push([i,0]);L.push([i,B]);}return L;}
+ function two1(){var B=BI(),L=[];for(var i=1;i<n;i++)for(var j=i+1;j<n;j++)if(i!==B&&j!==B)L.push([i,j]);return L;}
+ function role(i,dr){return !dr?'':i===0?'DR':i===BI()?'BDR':'DROTHER';}
+ function svg(dr){
+  var h='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+n+' Router '+(dr?'mit':'ohne')+' DR"><g class="cab">';
+  for(var i=0;i<n;i++){var p=pos(i);h+='<line x1="'+p.x+'" y1="'+p.y+'" x2="'+CX+'" y2="'+CY+'" stroke="#b0bec5" stroke-width="2"/>';}
+  h+='</g>';
+  if(dr&&$('n2way').checked)two1().forEach(function(l){var a=pos(l[0]),b=pos(l[1]);h+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#90a4ae" stroke-opacity="'+(n>20?.4:1)+'" stroke-width="'+(n>20?.5:n>12?.9:1.5)+'" stroke-dasharray="'+(n>20?'2 2':'5 4')+'"/>';});
+  (dr?full1():full0()).forEach(function(l){var a=pos(l[0]),b=pos(l[1]),c=!dr?'#7e57c2':(l[1]===0||l[0]===0)?'#2e7d32':'#1565c0';h+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+c+'" stroke-width="'+(dr&&n>12?1.3:n>30?.45:n>20?.7:n>12?1.2:n>8?2:2.6)+'" stroke-opacity="'+(n>20?.7:.85)+'"/>';});
+  h+='<g transform="translate('+CX+','+CY+')">'+SW+'</g><g class="dots"></g>';
+  var sc=n>30?.26:n>20?.34:n>12?.46:n>8?.62:.78,lab=function(i){return n<=20||i===0||i===BI()||i===SI()||((i+1)%10===0&&i<n-2);};
+  for(i=0;i<n;i++){p=pos(i);var q=pos(i,RAD+(n>20?24:n>8?30:34)),up=(pos(i).y-CY)<-0.3*RAD,r=role(i,dr),src=i===SI();
+   h+='<g transform="translate('+p.x+','+p.y+') scale('+sc+')">'+ICON+'</g>';
+   if(lab(i))h+='<text x="'+q.x+'" y="'+(q.y+4)+'" text-anchor="middle" font-family="var(--body),sans-serif" font-size="'+(n>20?11:14)+'" font-weight="700" fill="#263238">R'+(i+1)+(src?'★':'')+'</text>';
+   if(r&&(n<=12||r!=='DROTHER')&&lab(i)){var col=r==='DR'?'#2e7d32':r==='BDR'?'#1565c0':'#78909c',tw=r==='DROTHER'?58:r==='BDR'?34:28;h+='<g transform="translate('+q.x+','+(q.y+(up?-15:18))+')"><rect x="'+(-tw/2)+'" y="-8" width="'+tw+'" height="15" rx="7" fill="'+col+'"/><text y="3.5" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#fff">'+r+'</text></g>';}}
+  return h+'</svg>';}
+ function render(){
+  anim++;var a=n*(n-1)/2,b=2*n-3,sv=a-b;
+  $('nval').textContent=n+' Router am Switch';
+  $('dsvg0').innerHTML=svg(0);$('dsvg1').innerHTML=svg(1);
+  $('dcnt0').innerHTML=a+' <small>Full-Nachbarschaften</small>';$('dcnt1').innerHTML=b+' <small>Full-Nachbarschaften</small>';
+  $('dlsu0').textContent='';$('dlsu1').textContent='';
+  $('dsave').innerHTML=sv>0?'Der DR erspart dir <b>'+sv+'</b> von '+a+' Full-Nachbarschaften (<b>'+Math.round(100*sv/a)+' %</b>).<div class="sbar"><i style="width:'+(100*sv/a)+'%"></i></div>':'Bei '+n+' Routern bringt der DR noch nichts – ab 4 Routern spart er, und je mehr Router, desto mehr.<div class="sbar"><i style="width:0"></i></div>';
+ }
+ function flows(dr){var s=SI(),P=[];
+  if(!dr){var p1=[],p2=[];for(var i=0;i<n;i++)if(i!==s)p1.push([s,i]);p1.forEach(function(f){for(var j=0;j<n;j++)if(j!==f[1]&&j!==s)p2.push([f[1],j]);});P=[p1,p2];}
+  else{var B=BI(),q1=[[s,0]];if(s!==B)q1.push([s,B]);var q2=[];for(var k=1;k<n;k++)if(k!==s)q2.push([0,k]);P=[q1,q2];}
+  return P;}
+ function play(){
+  var id=++anim,F=[flows(0),flows(1)],t0=null,DUR=1100,cnt=[0,0];
+  [0,1].forEach(function(d){$('dlsu'+d).textContent='';});
+  function step(ts){if(id!==anim)return;if(t0===null)t0=ts;var t=(ts-t0)/DUR,ph=Math.floor(t),f=t-ph;
+   [0,1].forEach(function(d){var g=document.querySelector('#dsvg'+d+' .dots');if(!g)return;var h='',P=F[d];
+    if(ph<P.length){var d='';P[ph].forEach(function(e){var a=pos(e[0]),b=pos(e[1]);d+='M'+(a.x+(b.x-a.x)*f).toFixed(1)+' '+(a.y+(b.y-a.y)*f).toFixed(1)+'h0';});var w=n>20?6:11;h='<path d="'+d+'" stroke="#e65100" stroke-width="'+(w+3)+'" stroke-linecap="round"/><path d="'+d+'" stroke="#ff9800" stroke-width="'+w+'" stroke-linecap="round"/>';}
+    g.innerHTML=h;var done=0;for(var k=0;k<Math.min(ph,P.length);k++)done+=P[k].length;if(ph<P.length&&f>.95)done+=P[ph].length;
+    var tot=0;P.forEach(function(x){tot+=x.length;});
+    $('dlsu'+d).textContent=(ph>=P.length?tot:done)+' Mal weitergeschickt'+(ph>=P.length?(d===0?' – viele davon doppelt!':' – über den DR, fertig.'):' …');});
+   if(ph<2)requestAnimationFrame(step);}
+  requestAnimationFrame(step);}
+ var tb='';[4,6,10,20,50,100].forEach(function(k){var a=k*(k-1)/2,b=2*k-3;tb+='<tr><td>'+k+'</td><td>'+a+'</td><td>'+b+'</td><td><b>'+(a-b)+'</b></td></tr>';});$('dtab').innerHTML=tb;
+ $('nrange').oninput=function(){n=+this.value;render();};$('n2way').onchange=render;$('dplay').onclick=play;
+ render();window.__drs={set:function(k){n=k;$('nrange').value=k;render();},flows:flows};
 })();
 </script>
 </body>

@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/standard-acl/">Standard-Access-Listen</a> und <a href="netzwerksicherheit/extended-acl/">Extended-Access-Listen</a> – Paket-Tester Zeile für Zeile, Wildcard-Rechner, Platzierung im Netzplan, Übungen. '
+    'news': ['<strong>Neu:</strong> In <a href="routing/ospf-2/#ersparnis">OSPF 2</a> zeigt ein Schieberegler bis 50 Router, wie viele Full-Nachbarschaften der DR erspart. Auf den ACL-Seiten gibt es den Trainer „Platzierung üben“. '
+             'Außerdem <a href="netzwerksicherheit/standard-acl/">Standard-Access-Listen</a> und <a href="netzwerksicherheit/extended-acl/">Extended-Access-Listen</a> – Paket-Tester Zeile für Zeile, Wildcard-Rechner, Platzierung im Netzplan, Übungen. '
              'Außerdem <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
              'Außerdem <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
              'Außerdem <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
