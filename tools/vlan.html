@@ -38,6 +38,9 @@ button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
 .cfg select{font:500 14px var(--body);padding:2px 4px}
 .hint{font-size:14px;color:var(--mute);margin:8px 0 0}
 .result{margin-top:10px;font-size:15px;min-height:1.6em}
+.cdpwarn{margin-top:10px;background:#fff8e1;border:1px solid #ffcc80;border-left:4px solid #e65100;border-radius:4px;padding:10px 14px}
+.cdpwarn b{color:#bf360c}
+.cdpwarn pre{margin:6px 0 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;color:#4e342e}
 .frames{margin-top:12px;font:13px var(--mono)}
 .frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
 .frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
@@ -116,6 +119,7 @@ pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;mar
    <div>Native VLAN: <select data-native="B"><option>1</option><option>10</option><option>20</option><option>30</option><option>99</option></select></div>
   </div>
  </div>
+ <div class="cdpwarn" id="sbcdp" hidden></div>
  <p class="hint">Probiere z. B.: VLAN 20 auf SW2 nicht erlauben, oder native VLAN 10 auf SW1 und 20 auf SW2 (Native-VLAN-Mismatch).</p>
  <div class="frames">
   <div class="flab">So sieht der Frame aus</div>
@@ -418,6 +422,16 @@ function readCfg(){
     if(al.indexOf(nat)<0)al.push(nat); /* native VLAN gilt immer als erlaubt, sonst würde es verworfen */
     SB.links[0][s]={allowed:al,native:nat};
   });
+  cdpUpdate();
+}
+function cdpUpdate(){
+  var box=$('sbcdp');if(!box)return;
+  var na=SB.links[0].A.native, nb=SB.links[0].B.native;
+  if(na===nb){box.hidden=true;box.innerHTML='';return;}
+  box.hidden=false;
+  box.innerHTML='<b>⚠ Native-VLAN-Mismatch</b> – die Native VLANs sind verschieden (SW1: '+na+', SW2: '+nb+'). '+
+   'Der Trunk bleibt oben und getaggte VLANs laufen normal, aber ungetaggte Frames springen ins jeweils andere Native VLAN. CDP erkennt das und meldet auf beiden Switches:'+
+   '<pre>SW1#\n%CDP-4-NATIVE_VLAN_MISMATCH: Native VLAN mismatch discovered on\n  GigabitEthernet0/1 ('+na+'), with SW2 GigabitEthernet0/1 ('+nb+').\n\nSW2#\n%CDP-4-NATIVE_VLAN_MISMATCH: Native VLAN mismatch discovered on\n  GigabitEthernet0/1 ('+nb+'), with SW1 GigabitEthernet0/1 ('+na+').</pre>';
 }
 function sbDraw(){
   var t=anim?anim.t:0;
