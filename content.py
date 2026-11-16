@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
+    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/standard-acl/">Standard-Access-Listen</a> und <a href="netzwerksicherheit/extended-acl/">Extended-Access-Listen</a> – Paket-Tester Zeile für Zeile, Wildcard-Rechner, Platzierung im Netzplan, Übungen. '
+             'Außerdem <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
              'Außerdem <a href="ip-services/hsrp-vrrp/">HSRP (und VRRP)</a> – ein Gateway, das nicht ausfällt: Animation, Preempt, Tracking mit IP SLA (mit Lizenzhinweis) und VRRP im Vergleich. '
              'Außerdem <a href="grundlagen/zahlensysteme/">Zahlensysteme</a> – Bezahlen mit echtem Euro-Geld und Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Smiley-Zahlensystem, Base64 und ASCII. '
              'Außerdem <a href="grundlagen/ip-grundlagen/">IP-Adresse, Subnetzmaske und Gateway</a> – ganz einfach erklärt, mit Dotted Decimal, CIDR, Gateway-Animation und einem Blick auf IPv6. '
@@ -105,6 +106,10 @@ AREAS = [
      ]},
     {'slug': 'netzwerksicherheit', 'title': 'Netzwerksicherheit', 'text': 'Angriffe im LAN verstehen und abwehren.',
      'topics': [
+         {'slug': 'standard-acl', 'title': 'Standard-Access-Listen', 'tool': 'standard-acl',
+          'text': 'First Match und implicit deny im Paket-Tester, Wildcard-Rechner, Konfiguration, access-class für VTY, Platzierung nahe am Ziel im Netzplan – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'extended-acl', 'title': 'Extended-Access-Listen', 'tool': 'extended-acl',
+          'text': 'Protokoll, Quelle, Ziel und Port: Paket-Tester, wichtige Ports, named ACLs mit Sequenznummern, DMZ-Beispiel, Platzierung nahe an der Quelle – mit Übungen und Zufallsgenerator.'},
          {'slug': 'arp-spoofing', 'title': 'ARP-Spoofing', 'tool': 'arp-spoofing',
           'text': 'Man-in-the-Middle im LAN mit Ettercap: warum ARP angreifbar ist, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection – mit Übungen und Zufallsgenerator.'},
          {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'tool': 'dhcp-starvation',

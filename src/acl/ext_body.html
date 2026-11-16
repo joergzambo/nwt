@@ -1,0 +1,92 @@
+<main class="vmain">
+<h1>Extended-Access-Listen</h1>
+<p class="sub">Eine <a href="../standard-acl/">Standard-ACL</a> kennt nur die Quelle. Eine <b>Extended-ACL</b> prüft viel genauer: <b>Protokoll</b>, <b>Quelle</b>, <b>Ziel</b> und bei TCP/UDP den <b>Port</b> – also welcher Dienst gemeint ist. Damit lässt sich zum Beispiel sagen: „Das Schülernetz darf auf den Webserver, aber nicht per Telnet.“</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#aufbau">Aufbau einer Zeile</a><a href="#ports">Ports und Protokolle</a><a href="#tester">Paket-Tester</a><a href="#cisco">Konfiguration</a><a href="#dmz">Beispiel DMZ</a><a href="#platz">Platzierung</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="aufbau">Aufbau einer Zeile</h2>
+<div class="card"><div class="syn" id="syn"></div>
+ <div class="scroll"><table class="cmp"><tr><th>Teil</th><th>Bedeutung</th><th>Beispiele</th></tr>
+ <tr><td class="t1">Nummer</td><td>100–199 oder 2000–2699 = Extended</td><td class="mono">110</td></tr>
+ <tr><td class="t2">Aktion</td><td>erlauben oder verwerfen</td><td class="mono">permit · deny</td></tr>
+ <tr><td class="t3">Protokoll</td><td><b>ip</b> = alles · <b>tcp</b> · <b>udp</b> · <b>icmp</b></td><td class="mono">tcp</td></tr>
+ <tr><td class="t4">Quelle</td><td>Adresse + Wildcard, <code>host</code> oder <code>any</code></td><td class="mono">192.168.10.0 0.0.0.255</td></tr>
+ <tr><td class="t5">Ziel</td><td>genauso</td><td class="mono">host 10.1.1.10</td></tr>
+ <tr><td class="t6">Port (optional)</td><td>nur bei tcp/udp, meist der <b>Ziel</b>-Port</td><td class="mono">eq 80 · gt 1023 · range 20 21</td></tr>
+ <tr><td class="t7">Zusätze</td><td><code>established</code>, <code>log</code>, bei ICMP der Typ</td><td class="mono">echo · log</td></tr></table></div>
+ <p class="hint">Wichtig: Die Port-Angabe steht <b>hinter dem Ziel</b> – dann meint sie den Ziel-Port (den Dienst). Steht sie hinter der Quelle, prüft sie den Quell-Port. Ohne Port-Angabe gilt die Zeile für alle Ports. Wildcards, <code>host</code> und <code>any</code> funktionieren wie bei der Standard-ACL.</p></div>
+
+<h2 class="part" id="ports">Ports und Protokolle</h2>
+<div class="rules">
+ <div class="card"><h3 class="h3">Wichtige Ports</h3><div class="scroll"><table class="cmp ports"><tr><th>Dienst</th><th>Protokoll</th><th>Port</th></tr>
+  <tr><td>FTP</td><td>tcp</td><td>20 (Daten), 21 (Steuerung)</td></tr><tr><td>SSH</td><td>tcp</td><td>22</td></tr><tr><td>Telnet</td><td>tcp</td><td>23</td></tr><tr><td>SMTP (E-Mail senden)</td><td>tcp</td><td>25</td></tr>
+  <tr><td>DNS</td><td>udp (und tcp)</td><td>53</td></tr><tr><td>DHCP</td><td>udp</td><td>67 Server, 68 Client</td></tr><tr><td>TFTP</td><td>udp</td><td>69</td></tr><tr><td>HTTP</td><td>tcp</td><td>80</td></tr>
+  <tr><td>POP3</td><td>tcp</td><td>110</td></tr><tr><td>IMAP</td><td>tcp</td><td>143</td></tr><tr><td>SNMP</td><td>udp</td><td>161</td></tr><tr><td>HTTPS</td><td>tcp</td><td>443</td></tr><tr><td>RDP (Remotedesktop)</td><td>tcp</td><td>3389</td></tr></table></div>
+  <p class="hint">Für viele Ports kennt IOS auch Namen: <code>eq www</code>, <code>eq telnet</code>, <code>eq domain</code>, <code>eq smtp</code> …</p></div>
+ <div class="card check"><h3 class="h3">Operatoren und Zusätze</h3><table class="cmp"><tr><td class="mono">eq 80</td><td>gleich 80</td></tr><tr><td class="mono">neq 23</td><td>ungleich 23</td></tr><tr><td class="mono">lt 1024</td><td>kleiner als 1024</td></tr><tr><td class="mono">gt 1023</td><td>größer als 1023</td></tr><tr><td class="mono">range 20 21</td><td>von 20 bis 21</td></tr>
+  <tr><td class="mono">established</td><td>nur TCP-Pakete einer schon bestehenden Verbindung (ACK- oder RST-Bit gesetzt) – praktisch für Antworten von außen</td></tr>
+  <tr><td class="mono">log</td><td>Treffer werden protokolliert</td></tr>
+  <tr><td class="mono">icmp … echo</td><td>Ping-Anfrage (<code>echo-reply</code> = Antwort)</td></tr></table>
+  <p class="hint"><b>ip</b> umfasst alle Protokolle. Eine Zeile <code>deny ip …</code> sperrt also auch TCP, UDP und Ping. UDP kennt kein <code>established</code> – es hat keine Verbindungen.</p></div>
+</div>
+
+<h2 class="part" id="tester">Paket-Tester: Zeile für Zeile</h2>
+<p class="sub">Ein Schulnetz 192.168.10.0/24, ein Server 10.1.1.10. Wähle ein Paket oder baue ein eigenes – der Tester zeigt für jede Zeile, welches Merkmal passt und welches nicht.</p>
+<div class="card">
+ <div class="split one"><div><pre class="cli" id="tacl"></pre><div class="pres" id="tpk"></div>
+  <div class="pbuild"><label>Quelle <input id="bs" class="one" value="192.168.10.25" size="14"></label><label>Ziel <input id="bd" class="one" value="10.1.1.10" size="12"></label><label>Protokoll <select id="bp" class="one"><option>tcp</option><option>udp</option><option>icmp</option></select></label><label>Ziel-Port <input id="bpo" class="one" value="22" size="5"></label><button type="button" class="btn ghost sm" id="bgo">Prüfen</button></div></div>
+ <div><div class="pkcard" id="tcard"></div><div id="twalk"></div></div></div>
+</div>
+
+<h2 class="part" id="cisco">Konfiguration</h2>
+<div class="stack">
+ <div class="card"><h3 class="h3">Nummerierte Extended-ACL</h3><pre class="cli">R1(config)# access-list 110 permit tcp 192.168.10.0 0.0.0.255 host 10.1.1.10 eq 80
+R1(config)# access-list 110 permit tcp 192.168.10.0 0.0.0.255 host 10.1.1.10 eq 443
+R1(config)# access-list 110 deny   icmp any host 10.1.1.10 echo
+R1(config)# access-list 110 permit ip any any
+!
+! nahe an der Quelle, Richtung in
+R1(config)# interface Gi0/1
+R1(config-if)#  ip access-group 110 in</pre></div>
+ <div class="card"><h3 class="h3">Named Extended-ACL mit Sequenznummern</h3><pre class="cli">R1(config)# ip access-list extended SCHUELER-IN
+R1(config-ext-nacl)#  10 permit tcp 192.168.10.0 0.0.0.255 host 10.1.1.10 eq www
+R1(config-ext-nacl)#  20 deny   tcp 192.168.10.0 0.0.0.255 any eq telnet log
+R1(config-ext-nacl)#  30 permit ip any any
+R1(config-ext-nacl)#  25 deny udp any any eq tftp      ! zwischen 20 und 30 eingefügt
+R1(config-ext-nacl)#  no 20                            ! Zeile 20 gelöscht
+R1(config)# interface Gi0/1
+R1(config-if)#  ip access-group SCHUELER-IN in
+
+R1# show access-lists SCHUELER-IN
+R1# show ip interface Gi0/1</pre>
+  <p class="hint">Auf aktuellen IOS-Versionen kann man auch eine nummerierte ACL mit <code>ip access-list extended 110</code> öffnen und Zeilen über Sequenznummern einfügen oder löschen. Sicher ist trotzdem: ACL im Editor schreiben und dann einfügen.</p></div>
+</div>
+
+<h2 class="part" id="dmz">Beispiel: Webserver in der DMZ</h2>
+<div class="card"><div id="dmzsvg"></div>
+ <pre class="cli">R1(config)# access-list 120 permit tcp any host 172.16.1.80 eq 80
+R1(config)# access-list 120 permit tcp any host 172.16.1.80 eq 443
+R1(config)# access-list 120 deny   ip any any log
+R1(config)# interface Gi0/0                    ! Richtung Internet
+R1(config-if)#  ip access-group 120 in</pre>
+ <p class="hint">Aus dem Internet ist nur der Webserver erreichbar – und nur auf Port 80 und 443. Alles andere wird verworfen und protokolliert. Für den Rückweg der Verbindungen, die von innen aufgebaut werden, bräuchte man zusätzlich z. B. <code>permit tcp any 192.168.10.0 0.0.0.255 established</code> oder gleich eine Firewall.</p></div>
+
+<h2 class="part" id="platz">Platzierung: so nahe an der Quelle wie möglich</h2>
+<p class="sub">Eine Extended-ACL kennt Quelle <b>und</b> Ziel. Sie kann also gefahrlos <b>nahe an der Quelle</b> stehen: am Router des Quell-Netzes, auf dem Interface, an dem die Pakete hereinkommen, <b>inbound</b>. Unerwünschter Verkehr wird so gleich verworfen und belastet keine Leitungen. Probiere es im Netzplan aus deinem Arbeitsblatt aus:</p>
+<div class="card">
+ <div class="inrow"><label>Quelle <select id="ps" class="one"></select></label><label>Ziel <select id="pd" class="one"></select></label><button type="button" class="btn" id="pgo">ACL platzieren</button></div>
+ <div id="psvg"></div><div class="explain" aria-live="polite"><p id="ptxt"></p></div></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Jede Aufgabe hat drei Teile: ACL auswerten, eine Zeile zusammenbauen, die ACL im Netzplan platzieren.</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht</option><option value="M" selected>Mittel</option><option value="S">Schwer (Operatoren, Reihenfolge)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+</main>

@@ -1,0 +1,91 @@
+<main class="vmain">
+<h1>Standard-Access-Listen</h1>
+<p class="sub">Eine <b>Access-Liste (ACL)</b> ist eine Liste von Regeln auf dem Router: Welche Pakete dürfen durch (<b>permit</b>), welche nicht (<b>deny</b>)? Die einfachste Art ist die <b>Standard-ACL</b> – sie schaut sich nur eines an: die <b>Quell-IP-Adresse</b>. Weiter geht es mit den <a href="../extended-acl/">Extended-Access-Listen</a>.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#idee">So arbeitet eine ACL</a><a href="#tester">Paket-Tester</a><a href="#wildcard">Wildcard-Masken</a><a href="#cisco">Konfiguration</a><a href="#vty">Zugriff auf den Router</a><a href="#platz">Platzierung</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="idee">So arbeitet eine ACL</h2>
+<div class="rules three">
+ <div class="card"><h3 class="h3">1. Von oben nach unten</h3><p style="margin:0">Der Router vergleicht jedes Paket mit der <b>ersten</b> Zeile, dann mit der zweiten und so weiter. Die <b>Reihenfolge</b> ist entscheidend.</p></div>
+ <div class="card"><h3 class="h3">2. First Match</h3><p style="margin:0">Sobald eine Zeile <b>passt</b>, wird ihre Aktion ausgeführt (permit oder deny) – und <b>nicht weitergesucht</b>, auch wenn weiter unten eine genauere Zeile stünde. Darum: Genaues nach oben, Allgemeines nach unten.</p></div>
+ <div class="card check"><h3 class="h3">3. Implicit deny</h3><p style="margin:0">Passt <b>keine</b> Zeile, wird das Paket verworfen. Am Ende jeder ACL steht ein unsichtbares <code>deny any</code>. Eine ACL mit nur deny-Zeilen sperrt also <b>alles</b> – oft braucht man am Ende ein <code>permit any</code>.</p></div>
+</div>
+<div class="rules">
+ <div class="card"><h3 class="h3">Inbound oder outbound?</h3><p style="margin:0 0 6px">Eine ACL wird an ein <b>Interface</b> und eine <b>Richtung</b> gebunden:</p><ul style="margin:0;padding-left:20px"><li><b>in</b>: Pakete werden geprüft, <b>bevor</b> der Router sie routet – spart Arbeit.</li><li><b>out</b>: Pakete werden <b>nach</b> dem Routing geprüft, kurz bevor sie das Interface verlassen.</li></ul>
+  <p class="hint">Pro Interface, pro Richtung und pro Protokoll gibt es <b>eine</b> ACL. Eine ACL kann aber an mehreren Interfaces verwendet werden.</p></div>
+ <div class="card"><h3 class="h3">Gut zu wissen</h3><ul style="margin:0;padding-left:20px"><li>ACLs filtern Verkehr <b>durch</b> den Router – nicht Pakete, die der Router selbst erzeugt (z. B. seine Routing-Updates).</li><li>Wird ein Paket verworfen, schickt der Router meist eine ICMP-Meldung „administratively prohibited“ zurück.</li><li>Erst die ACL fertig schreiben, dann an das Interface binden – sonst sperrt das implizite deny kurz alles.</li></ul></div>
+</div>
+
+<h2 class="part" id="tester">Paket-Tester: Zeile für Zeile</h2>
+<p class="sub">Beispiel aus dem Hausnetz 10.10.20.0/24: Der Chef (10.10.20.100) soll den Server-Bereich nicht erreichen, alle anderen Mitarbeiter schon. Wähle ein Paket und sieh zu, wie der Router die ACL abarbeitet.</p>
+<div class="card">
+ <div class="split"><div><pre class="cli" id="tacl"></pre><div class="pres" id="tpk"></div><p class="hint">Eigene Quelle: <input id="town" class="one" size="15" placeholder="z. B. 10.10.20.7" autocomplete="off"> <button type="button" class="btn ghost sm" id="tgo">Prüfen</button></p></div>
+ <div><div class="pkcard" id="tcard"></div><div id="twalk"></div></div></div>
+</div>
+
+<h2 class="part" id="wildcard">Wildcard-Masken</h2>
+<div class="rules">
+ <div class="card"><h3 class="h3">0 = muss passen, 1 = egal</h3><p style="margin:0 0 6px">ACLs geben Adressbereiche nicht mit der Subnetzmaske an, sondern mit der <b>Wildcard-Maske</b> (auch „Bitmaske“). Sie ist die <b>Umkehrung</b> der Subnetzmaske:</p>
+  <ul style="margin:0;padding-left:20px"><li>Ein <b>0</b>-Bit heißt: Dieses Bit muss <b>genau</b> so sein wie in der Adresse.</li><li>Ein <b>1</b>-Bit heißt: Dieses Bit ist <b>egal</b>.</li></ul>
+  <p class="formula">Wildcard = 255.255.255.255 − Subnetzmaske</p>
+  <p class="hint">Beispiel: Maske 255.255.248.0 → 255−255 . 255−255 . 255−248 . 255−0 = <b>0.0.7.255</b>.</p></div>
+ <div class="card check"><h3 class="h3">Abkürzungen</h3><table class="cmp"><tr><th>Schreibweise</th><th>bedeutet</th></tr>
+  <tr><td class="mono">host 10.10.20.100</td><td>genau dieser Host = <span class="mono">10.10.20.100 0.0.0.0</span></td></tr>
+  <tr><td class="mono">any</td><td>jede Adresse = <span class="mono">0.0.0.0 255.255.255.255</span></td></tr>
+  <tr><td class="mono">10.10.20.100</td><td>bei Standard-ACLs ohne Maske = host</td></tr></table></div>
+</div>
+<div class="card"><h3 class="h3">Wildcard-Rechner</h3>
+ <div class="inrow"><label>Adresse <input id="wa" class="one" value="192.168.150.0" autocomplete="off"></label><label>Wildcard <input id="ww" class="one" value="0.0.0.63" autocomplete="off"></label><span class="or">oder</span><label>Präfix <select id="wp" class="one"><option value="">–</option></select></label><label>Passt diese IP? <input id="wt" class="one" value="192.168.150.37" autocomplete="off"></label></div>
+ <div id="wout" aria-live="polite"></div></div>
+
+<h2 class="part" id="cisco">Konfiguration</h2>
+<div class="stack">
+ <div class="card"><h3 class="h3">Nummerierte Standard-ACL</h3><pre class="cli">! Nummern 1–99 oder 1300–1999 = Standard-ACL
+R1(config)# access-list 10 deny host 10.10.20.100
+R1(config)# access-list 10 permit 10.10.20.0 0.0.0.255
+!                                   (implizit: deny any)
+! an das Interface binden – nahe am Ziel, Richtung out
+R1(config)# interface Fa0/0
+R1(config-if)#  ip access-group 10 out</pre>
+  <p class="hint">Mit <code>no access-list 10</code> löscht man die <b>ganze</b> Liste. <code>no ip access-group 10 out</code> entfernt nur die Bindung am Interface.</p></div>
+ <div class="card"><h3 class="h3">Named Standard-ACL</h3><pre class="cli">R1(config)# ip access-list standard CHEF-SPERRE
+R1(config-std-nacl)#  10 deny host 10.10.20.100
+R1(config-std-nacl)#  20 permit 10.10.20.0 0.0.0.255
+R1(config-std-nacl)#  15 deny host 10.10.20.101        ! wird zwischen 10 und 20 eingefügt
+R1(config-std-nacl)#  no 15                           ! einzelne Zeile löschen
+R1(config)# interface Fa0/0
+R1(config-if)#  ip access-group CHEF-SPERRE out</pre>
+  <p class="hint">Named ACLs haben „sprechende“ Namen und Sequenznummern. Damit lassen sich einzelne Zeilen löschen und dazwischen einfügen. Auf älteren IOS-Versionen ging das nicht – dort hängt man neue Zeilen nur ans Ende an.</p></div>
+ <div class="card"><h3 class="h3">Kontrollieren</h3><pre class="cli">R1# show access-lists
+Standard IP access list 10
+    10 deny   10.10.20.100 (12 matches)
+    20 permit 10.10.20.0, wildcard bits 0.0.0.255 (318 matches)
+R1# show ip interface Fa0/0          ! zeigt „Outgoing access list is 10“</pre></div>
+</div>
+
+<h2 class="part" id="vty">Sonderfall: Zugriff auf den Router selbst</h2>
+<div class="card"><p style="margin:0 0 6px">Soll nur der Administrator per SSH/Telnet auf den Router dürfen, hilft eine ACL am Interface nicht: Outbound filtert keine Pakete, die der Router selbst erzeugt, und inbound würde auch den Verkehr <b>durch</b> den Router treffen. Darum bindet man die ACL an die <b>virtuellen Terminal-Leitungen (VTY)</b> – mit <code>access-class</code> statt <code>access-group</code>:</p>
+ <pre class="cli">R1(config)# access-list 5 permit host 10.10.20.100      ! nur der Admin
+R1(config)# line vty 0 4
+R1(config-line)#  access-class 5 in</pre>
+ <p class="hint">Hier passt eine Standard-ACL perfekt: Das Ziel ist immer der Router selbst, entscheidend ist nur, <b>wer</b> sich verbinden will.</p></div>
+
+<h2 class="part" id="platz">Platzierung: so nahe am Ziel wie möglich</h2>
+<p class="sub">Eine Standard-ACL kennt nur die Quelle. Setzt man sie nahe an der Quelle, sperrt sie die Quelle für <b>alle</b> Ziele dahinter – nicht nur für das eine. Darum gehört sie <b>nahe ans Ziel</b>: an den Router des Ziel-Netzes, auf das Interface Richtung Ziel, <b>outbound</b>. Probiere es im Netzplan aus deinem Arbeitsblatt aus:</p>
+<div class="card">
+ <div class="inrow"><label>Quelle <select id="ps" class="one"></select></label><label>Ziel <select id="pd" class="one"></select></label><button type="button" class="btn" id="pgo">ACL platzieren</button></div>
+ <div id="psvg"></div><div class="explain" aria-live="polite"><p id="ptxt"></p></div></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Jede Aufgabe hat drei Teile: Wildcard lesen, ACL auswerten, ACL platzieren (Netzplan oben).</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht</option><option value="M" selected>Mittel</option><option value="S">Schwer (Reihenfolge-Fallen)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+</main>
