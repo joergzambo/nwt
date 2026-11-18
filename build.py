@@ -38,6 +38,8 @@ def head(title, depth, desc):
 <link rel="icon" type="image/png" sizes="512x512" href="{r}assets/img/nwt-512.png">
 <link rel="apple-touch-icon" href="{r}assets/img/nwt-180.png">
 <link rel="stylesheet" href="{r}assets/aecp.css">
+<script defer src="{r}assets/search-index.js"></script>
+<script defer src="{r}assets/search.js"></script>
 </head>
 '''
 
@@ -50,10 +52,10 @@ def header(depth, active=''):
     return f'''<header class="aecp-header">
  <div class="aecp-wrap aecp-header-in">
   <a class="aecp-brand" href="{r}"><img src="{r}assets/img/nwt-logo-120.png" alt="{esc(SITE["name"])}" width="160" height="42"></a>
-  <form class="aecp-find" id="aecp-find" role="search" hidden>
-   <input id="aecp-find-in" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Beispiel-Nr., z. B. M-305" aria-label="Zu einer Beispielnummer springen">
-   <button type="submit" class="aecp-find-go" aria-label="Zum Beispiel springen">→</button>
-  </form>
+  <div class="aecp-find" id="aecp-find">
+   <form role="search" autocomplete="off" onsubmit="return false"><input id="aecp-find-in" type="search" autocomplete="off" spellcheck="false" placeholder="Thema suchen …" aria-label="Thema oder Beispielnummer suchen" role="combobox" aria-expanded="false" aria-controls="aecp-find-list"></form>
+   <ul class="aecp-find-list" id="aecp-find-list" role="listbox" hidden></ul>
+  </div>
   <input type="checkbox" id="aecp-menu" class="aecp-menu-toggle"><label for="aecp-menu" class="aecp-menu-btn" aria-label="Menü öffnen">Menü</label>
   <nav class="aecp-nav" aria-label="Hauptmenü">{links}</nav>
  </div>
@@ -111,6 +113,8 @@ def build_tool(area, topic, depth):
     src = src.replace('</head>', f'''<meta name="description" content="{esc(topic["text"])}">
 <link rel="icon" type="image/png" sizes="512x512" href="{r}assets/img/nwt-512.png">
 <link rel="stylesheet" href="{r}assets/aecp.css">
+<script defer src="{r}assets/search-index.js"></script>
+<script defer src="{r}assets/search.js"></script>
 <style>
 /* Schriften der Plattform auch im Tool */
 body{{font-family:"Open Sans","Helvetica Neue",Arial,sans-serif}}
@@ -124,7 +128,6 @@ main button,.jump,.atabs button,.pager>button{{font-family:"Bitter",Georgia,seri
     src = re.sub(r'<body([^>]*)>', lambda m: f'<body{m.group(1)}>\n' + header(depth, area['slug']) + crumbs, src, count=1)
     if topic['tool'] in ZOOM_TOOLS:
         src = src.replace('</body>', f'<script src="{r}assets/zoom.js"></script>\n</body>', 1)
-    src = src.replace('</body>', f'<script src="{r}assets/jump.js"></script>\n</body>', 1)
     src = src.replace('</body>', footer(depth) + '</body>', 1)
     return src
 
@@ -137,6 +140,15 @@ def build():
     # Startseite
     areas = ''.join(area_card(a, 0) for a in AREAS)
     news = ''.join(f'<p class="aecp-center">{n}</p>' for n in SITE['news'])
+    # Suchindex für die Kopfzeilen-Suche (root-relative URLs, auf jeder Seite nutzbar)
+    idx_items = []
+    for a in AREAS:
+        for t in a['topics']:
+            it = {'t': t['title'], 'd': t['text'], 'a': a['title'], 'on': live(t)}
+            if live(t):
+                it['u'] = f'/{a["slug"]}/{t["slug"]}/'
+            idx_items.append(it)
+    write('assets/search-index.js', 'window.NWT_INDEX=' + json.dumps(idx_items, ensure_ascii=False) + ';')
     write('index.html', page(SITE['name'], 0, SITE['description'], f'''<section class="aecp-hero aecp-wrap">
  <h1 class="nwt-title"><img src="assets/img/nwt-logo.png" alt="NWT" width="1983" height="521"></h1>
  <p class="aecp-tagline">Netzwerktechnik lernen</p>
