@@ -85,9 +85,9 @@ a.aecp-area:hover,a.aecp-card:hover{border-color:#000;box-shadow:0 6px 18px rgba
 
 /* Suche in der Titelleiste (neben dem Logo) */
 .aecp-header-in{justify-content:flex-start}
-.aecp-find{position:relative;flex:0 1 300px;max-width:360px;min-width:0;margin-left:18px}
+.aecp-find{position:relative;flex:0 1 210px;max-width:230px;min-width:0;margin-left:14px}
 .aecp-nav{margin-left:auto}
-.aecp-find input{width:100%;padding:9px 14px;border:1.5px solid #000;border-radius:5px;font:600 15px "Bitter",Georgia,serif;color:#000;background:#fff}
+.aecp-find input{width:100%;padding:7px 12px;border:1.5px solid #000;border-radius:5px;font:600 14px "Bitter",Georgia,serif;color:#000;background:#fff}
 .aecp-find input::placeholder{color:#8a8a8a;font-weight:400}
 .aecp-find input:focus{outline:2px solid #61a229;outline-offset:1px}
 .aecp-find-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;margin:0;padding:6px;list-style:none;background:#fff;border:1.5px solid #000;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);max-height:min(70vh,460px);overflow:auto}
