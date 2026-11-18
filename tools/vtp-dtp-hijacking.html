@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VTP-Hijacking und VLAN-Hopping mit Yersinia</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:760px){.rules{grid-template-columns:minmax(0,1fr)}}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--soft);font:600 14px var(--ui)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:5em}
+.explain h3{font:400 21px var(--head);margin:0 0 4px}.explain p{margin:0 0 6px}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.pcap{border:1px solid #c5c9cc;border-radius:4px;overflow:hidden;margin-top:8px;font-family:var(--mono);font-size:12.5px}
+.pcap .hd{display:grid;grid-template-columns:40px 56px 118px 96px 46px 1fr;background:#e4e7e9;font-weight:700;padding:4px 8px;gap:8px}
+.pcap .rows{max-height:360px;overflow:auto}
+.pcap .rw{display:grid;grid-template-columns:40px 56px 118px 96px 46px 1fr;padding:3px 8px;gap:8px;border-top:1px solid #eef1f2;white-space:nowrap}
+.pcap .rw.att{background:#fdecea}.pcap .rw.coup{background:#fde3e3;font-weight:700}
+.pcap .rw:nth-child(even){background-image:linear-gradient(rgba(0,0,0,.015),rgba(0,0,0,.015))}
+.filt{font-family:var(--mono);font-size:13px;background:#eafaf0;border:1px solid #abdcbd;border-radius:4px;padding:5px 9px;margin:8px 0 0;display:inline-block}
+.lab{counter-reset:step}
+.lab .st{border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:4px;padding:12px 16px 12px 52px;margin:10px 0;position:relative}
+.lab .st::before{counter-increment:step;content:counter(step);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font:700 15px var(--ui);display:flex;align-items:center;justify-content:center}
+.lab .st h4{font:600 16px var(--ui);margin:0 0 4px}.lab .st p{margin:0 0 6px}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px}
+.key{display:inline-block;font:600 12px var(--ui);background:#eceff1;border:1px solid #cfd8dc;border-radius:4px;padding:1px 7px;margin:0 1px}
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}.opts.col{flex-direction:column;align-items:flex-start}
+.disc{background:#fff3e0;border:1px solid #ffcc80;border-radius:4px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+.pager{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0}
+.pinfo{font:600 15px var(--ui)}.pinfo span{color:var(--mute);margin-left:8px;font-weight:400}
+.toc{display:flex;flex-wrap:wrap;gap:4px;width:100%}
+.toc button{width:30px;height:30px;border:1.5px solid var(--ink);background:#fff;border-radius:4px;cursor:pointer;font:600 13px var(--ui)}
+.toc button.on{background:var(--ink);color:#fff}.toc button.ok{border-color:var(--ok);color:var(--ok)}.toc button.on.ok{background:var(--ok);color:#fff}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.genbar select,.genbar input{padding:6px 8px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14px var(--ui)}
+.err{color:var(--bad);font-size:14px}.navrow{display:flex;justify-content:space-between;margin-top:10px}
+.task .ph{font:600 13.5px var(--ui);margin:10px 0 2px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>VTP-Hijacking und VLAN-Hopping mit Yersinia</h1>
+<p class="sub">Zwei Angriffe, die sich verketten: Zuerst erzwingt der Angreifer über <b>DTP</b> einen Trunk zu seinem Zugangs-Port (<b>Switch-Spoofing</b>) und sieht damit <b>alle VLANs</b> statt nur eines – das ist <b>VLAN-Hopping</b>. Über denselben Trunk schickt er dann eine gefälschte <b>VTP</b>-Ankündigung mit hoher Revisionsnummer und <b>überschreibt die VLAN-Datenbank</b> der ganzen Domäne. Werkzeug: <b>Yersinia</b>. Diese Einheit setzt <a href="../../switching/vtp-dtp/">VTP und DTP</a> voraus.</p>
+<div class="disc">⚠️ <b>Nur im eigenen Labornetz.</b> Diese Anleitung dient dem Unterricht und dem Verständnis der Abwehr. Angriffe auf fremde Netze sind strafbar (in Österreich u. a. § 118a, § 126a, § 126b StGB).</div>
+<nav class="jumps" aria-label="Abschnitte"><a href="#warum">Warum es funktioniert</a><a href="#anim">Der Angriff</a><a href="#wireshark">Im Wireshark</a><a href="#lab">Yersinia-Lab</a><a href="#schutz">Schutz</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="warum">Warum funktioniert der Angriff?</h2>
+<div class="rules">
+ <div class="card"><h3>DTP steht oft offen (Switch-Spoofing)</h3><p style="margin:0 0 6px">Viele Zugangs-Ports stehen ab Werk auf <b>dynamic auto</b> oder <b>dynamic desirable</b>. Ein Gerät, das <b>desirable</b> sendet, bringt den Port dazu, einen <b>Trunk</b> zu bilden.</p>
+  <ul style="margin:0;padding-left:20px"><li>Ein Trunk überträgt <b>alle VLANs</b> getaggt – der Angreifer sieht plötzlich den Verkehr aller VLANs.</li>
+  <li>Ein Port, der fest auf <b>trunk</b> steht (auch mit <code>nonegotiate</code>), liefert die VLANs sogar ohne Aushandlung.</li>
+  <li>Nur ein fester <b>Access</b>-Port verweigert den Trunk.</li></ul></div>
+ <div class="card"><h3>VTP vertraut der Revisionsnummer</h3><p style="margin:0 0 6px">Sobald der Angreifer auf einem Trunk sitzt, kann er <b>VTP</b> sprechen. VTP glaubt der Ankündigung mit der <b>höchsten Revision</b> – ohne starke Prüfung.</p>
+  <ul style="margin:0;padding-left:20px"><li>Gleicher <b>Domänenname</b> genügt; ist <b>kein Passwort</b> gesetzt, wird die gefälschte Datenbank übernommen.</li>
+  <li>Mit einer leeren VLAN-Liste und hoher Revision <b>löscht</b> er VLAN 10, 20, 30 … in der ganzen Domäne – ein <b>Denial of Service</b>.</li>
+  <li><b>Transparent</b> oder <b>off</b> nehmen nicht teil – sie sind nicht betroffen.</li></ul></div>
+</div>
+
+<h2 class="part" id="anim">Der Angriff Schritt für Schritt</h2>
+<div class="card">
+ <div id="animsvg"></div>
+ <div class="explain" id="animtxt"><h3></h3><p></p></div>
+ <div class="stepbar"><button class="btn ghost" id="aprev" type="button">‹ Zurück</button><button class="btn" id="anext" type="button">Weiter ›</button><span class="stepno" id="astep"></span></div>
+</div>
+
+<h2 class="part" id="wireshark">So sieht es im Wireshark aus</h2>
+<p class="sub">Über einen SPAN-Port läuft der Verkehr auf den Mitschnitt-PC. Zuerst die DTP-Aushandlung, dann – sobald der Trunk steht – die gefälschte VTP-Ankündigung mit hoher Revision.</p>
+<div class="card">
+ <span class="filt">dtp || vtp</span>
+ <div class="pcap"><div class="hd"><span>No.</span><span>Time</span><span>Source</span><span>Dest.</span><span>Prot.</span><span>Info</span></div><div class="rows" id="pcap"></div></div>
+ <p class="hint" id="pcaphint" style="margin-top:8px"></p>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Woran man den Angriff erkennt</h3><ul style="margin:0;padding-left:20px;font-size:15px">
+ <li>Ein <b>DTP</b>-Frame von einem Zugangs-Port, der eigentlich nie trunken sollte.</li>
+ <li>Ein Port wechselt plötzlich in den <b>Trunk</b>-Zustand (<code>%DTP-...-TRUNKPORTON</code> im Log).</li>
+ <li>Eine <b>VTP Summary Advertisement</b> mit auffällig <b>hoher Revision</b> und weniger VLANs als vorher.</li>
+ <li>VLANs verschwinden sprunghaft (<code>show vlan brief</code>), Ports fallen aus.</li></ul></div>
+
+<h2 class="part" id="lab">Yersinia-Lab</h2>
+<div class="card"><h3 style="font:400 20px var(--head);margin:0 0 4px">Aufbau</h3>
+ <p style="margin:0 0 6px">Angreifer-PC (Kali mit Yersinia) an einem gewöhnlichen Zugangs-Port des Switches (VTP-Domäne CAMPUS). Opfer-PCs in VLAN 10/20. Der Mitschnitt-PC hängt am SPAN-Zielport.</p>
+ <div id="labsvg"></div>
+</div>
+
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">1 · Switch-Spoofing: Trunk erzwingen (DTP)</h3>
+<div class="lab">
+ <div class="st"><h4>Yersinia starten und Interface wählen</h4><p>Als root starten, mit <span class="key">i</span> das Interface zum Switch (z. B. <code>eth0</code>) aktivieren.</p><pre class="cli">sudo yersinia -I</pre></div>
+ <div class="st"><h4>Zum Protokoll DTP wechseln und Trunk anfordern</h4><p>Mit <span class="key">g</span> das Protokoll <b>DTP</b> wählen, dann <span class="key">x</span> (Launch attack) → <b>„enabling trunking"</b>. Yersinia sendet laufend DTP-<b>desirable</b>-Frames.</p>
+  <div class="warn">Einzeiler: <code>sudo yersinia dtp -attack 1 -interface eth0</code> &nbsp;(Attack 1 = enabling trunking).</div></div>
+ <div class="st"><h4>Trunk prüfen</h4><p>Der Port wird Trunk – der Angreifer sieht jetzt alle VLANs:</p><pre class="cli">Switch# show interfaces Gi0/5 switchport
+! Operational Mode: trunk
+Switch# show dtp interface Gi0/5</pre>
+  <p>Mit <code>sudo vconfig add eth0 20</code> (bzw. einer VLAN-fähigen NIC) kann der Angreifer gezielt in VLAN 20 lauschen – das ist das <b>VLAN-Hopping</b>.</p></div>
+</div>
+
+<h3 style="font:400 21px var(--head);margin:18px 0 2px">2 · VTP-Hijacking: VLAN-Datenbank überschreiben</h3>
+<div class="lab">
+ <div class="st"><h4>Domäne auslesen</h4><p>Auf dem Trunk hört der Angreifer die VTP-Summary mit – daraus liest er <b>Domänenname</b> und aktuelle <b>Revision</b> ab (im Wireshark oder in Yersinia).</p></div>
+ <div class="st"><h4>Gefälschte VTP-Ankündigung senden</h4><p>Mit <span class="key">g</span> das Protokoll <b>VTP</b> wählen, dann <span class="key">x</span> → <b>„deleting all VTP vlans"</b>. Yersinia setzt die Domäne, eine <b>höhere Revision</b> und eine (fast) leere VLAN-Liste.</p>
+  <div class="warn">Einzeiler: <code>sudo yersinia vtp -attack 2 -interface eth0</code> &nbsp;(Attack 2 = delete all VLANs). Ohne gesetztes <b>VTP-Passwort</b> übernimmt die Domäne die gefälschte Datenbank.</div></div>
+ <div class="st"><h4>Wirkung prüfen</h4><p>Auf den Switches sind die VLANs weg, die Ports in VLAN 10/20 fallen aus:</p><pre class="cli">Switch# show vlan brief        ! VLAN 10/20/30 fehlen
+Switch# show vtp status         ! Revision sprunghaft erhöht</pre></div>
+ <div class="st"><h4>Aufräumen</h4><p>VLANs am Server neu anlegen – oder die Konfiguration zurückspielen. Danach die Lücken schließen (siehe unten).</p></div>
+</div>
+
+<h2 class="part" id="schutz">Schutz: DTP abschalten und VTP absichern</h2>
+<div class="rules">
+ <div class="card"><h3>Zugangs-Ports dicht machen (gegen Switch-Spoofing)</h3>
+  <pre class="cli" style="margin:0">Switch(config)# interface range Gi0/5 - 24
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport nonegotiate     ! kein DTP mehr
+Switch(config-if-range)# switchport access vlan 10
+Switch(config-if-range)# spanning-tree bpduguard enable</pre>
+  <p class="hint" style="margin:8px 0 0">Nicht genutzte Ports <b>abschalten</b> (<code>shutdown</code>) und in ein ungenutztes VLAN legen. <b>Native VLAN</b> nicht auf VLAN 1 lassen – das schützt zusätzlich gegen Double-Tagging-Hopping.</p></div>
+ <div class="card"><h3>VTP absichern (gegen Hijacking)</h3>
+  <pre class="cli" style="margin:0">Switch(config)# vtp domain CAMPUS
+Switch(config)# vtp password S3hr-G3h3im!      ! Pflicht!
+Switch(config)# vtp version 3                  ! Primary Server nötig
+! oder ganz aussteigen:
+Switch(config)# vtp mode transparent</pre>
+  <p class="hint" style="margin:8px 0 0">Ein <b>VTP-Passwort</b> macht gefälschte Ankündigungen wertlos. <b>VTPv3</b> lässt nur den <b>Primary Server</b> schreiben. Wer VTP nicht braucht: <b>transparent</b> oder <b>off</b>.</p></div>
+</div>
+<div class="card"><h3 style="font:400 19px var(--head);margin:0 0 6px">Was greift wogegen?</h3>
+<table class="cmp"><thead><tr><th>Maßnahme</th><th>Stoppt Switch-Spoofing?</th><th>Stoppt VTP-Hijacking?</th></tr></thead><tbody>
+<tr><td><code>switchport mode access</code> + <code>nonegotiate</code></td><td><b>ja</b> – kein Trunk, kein Zugang zu fremden VLANs</td><td><b>indirekt</b> – ohne Trunk kein VTP</td></tr>
+<tr><td>VTP-Passwort / VTPv3</td><td>nein</td><td><b>ja</b> – gefälschte Ankündigung wird verworfen</td></tr>
+<tr><td>VTP transparent / off</td><td>nein</td><td><b>ja</b> – der Switch übernimmt keine fremde Datenbank</td></tr>
+</tbody></table>
+<p class="hint" style="margin:8px 0 0">Am besten kombinieren: Ports dicht <b>und</b> VTP mit Passwort – dann scheitert schon der erste Schritt, und selbst ein Trunk brächte dem Angreifer kein VTP.</p></div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<p class="sub">Lies Port- und VTP-Konfiguration: Gelingt dem Angreifer das Switch-Spoofing? Und kann er damit die VLAN-Datenbank löschen?</p>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<p class="sub">Jede Aufgabe hat eine Nummer. Mit der Nummer bekommt jede Schülerin und jeder Schüler genau dieselbe Aufgabe.</p>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Port + VTP-Modus)</option><option value="M" selected>Mittel (auch Passwort, transparent/off)</option><option value="S">Schwer (auch nonegotiate, trunk)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gout"></div>
+</main>
+<script>
+/* NWT · Netzwerksicherheit: VTP-Hijacking und VLAN-Hopping mit Yersinia.
+   Switch-Spoofing über DTP + Überschreiben der VLAN-DB über VTP. Aufgaben-Generator.
+   Browser: window.VH · Node: globalThis.VH */
+(function (G) {
+'use strict';
+var LVNAME = {L: 'Leicht', M: 'Mittel', S: 'Schwer'};
+var LVCODE = {L: 3, M: 4, S: 5};
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function ri(r,a,b){return a+Math.floor(r()*(b-a+1));}
+function pick(r,a){return a[Math.floor(r()*a.length)];}
+
+/* ---- DTP (wie in der VTP/DTP-Einheit) ---- */
+var LABEL = {access: 'access', trunk: 'trunk', auto: 'dynamic auto', desirable: 'dynamic desirable', 'trunk-noneg': 'trunk + nonegotiate', 'access-noneg': 'access + nonegotiate'};
+function isAccess(m){return m === 'access' || m === 'access-noneg';}
+function isTrunk(m){return m === 'trunk' || m === 'trunk-noneg';}
+function sendsDTP(m){return m !== 'trunk-noneg' && m !== 'access-noneg';}
+function opMode(self, peer) {
+  if (isAccess(self)) return 'access';
+  if (isTrunk(self)) return 'trunk';
+  if (self === 'auto') return (sendsDTP(peer) && (peer === 'desirable' || isTrunk(peer))) ? 'trunk' : 'access';
+  if (isAccess(peer)) return 'access';
+  if (!sendsDTP(peer)) return 'access';
+  return (isTrunk(peer) || peer === 'desirable' || peer === 'auto') ? 'trunk' : 'access';
+}
+/* Angreifer (Yersinia) sendet DTP „desirable" und liest/injiziert rohe Frames.
+   Entscheidend ist, ob der SWITCH-PORT betrieblich zum Trunk wird – dann sieht
+   der Angreifer alle VLANs und kann VTP einspeisen. Ein fest getrunkter Port
+   (auch mit nonegotiate) liefert die VLANs sogar ohne Aushandlung. */
+function spoofs(portMode) {
+  return opMode(portMode, 'desirable') === 'trunk';
+}
+
+/* ---- VTP-Hijacking ----
+   Der Angreifer kann die VLAN-DB nur überschreiben, wenn:
+   - ein Trunk zustande kommt (Switch-Spoofing), UND
+   - der Switch an der Domäne teilnimmt (Server oder Client), UND
+   - kein VTP-Passwort gesetzt ist (sonst bräuchte er den MD5-Hash). */
+function analyze(t) {
+  var trunk = spoofs(t.portMode);
+  var participates = t.vtpMode === 'server' || t.vtpMode === 'client';
+  var hijack = trunk && participates && !t.vtpPass;
+  var why;
+  if (!trunk) why = 'Kein Trunk: Der Port bleibt Access (' + LABEL[t.portMode] + '), der Angreifer sieht nur sein eigenes VLAN – und VTP läuft nur über Trunks.';
+  else if (!participates) why = 'Trunk steht, aber der Switch ist VTP ' + t.vtpMode + ' – er übernimmt keine fremde Datenbank, die VLANs bleiben.';
+  else if (t.vtpPass) why = 'Trunk steht und der Switch nimmt an VTP teil, aber es ist ein VTP-Passwort gesetzt – ohne das Passwort wird die gefälschte Ankündigung verworfen.';
+  else why = 'Trunk steht, Switch ist VTP ' + t.vtpMode + ' ohne Passwort: Die gefälschte Ankündigung mit höherer Revision überschreibt die VLAN-Datenbank.';
+  return {trunk: trunk, participates: participates, hijack: hijack, why: why};
+}
+
+/* ---- Generator ---- */
+function build(r, lvl) {
+  var modes = lvl === 'L' ? ['auto', 'desirable', 'access'] : lvl === 'M' ? ['auto', 'desirable', 'access', 'access-noneg'] : ['auto', 'desirable', 'access', 'access-noneg', 'trunk-noneg'];
+  var portMode = pick(r, modes);
+  var vtpMode = lvl === 'L' ? pick(r, ['server', 'server', 'client']) : pick(r, ['server', 'client', 'transparent', 'off']);
+  var vtpPass = lvl === 'L' ? false : r() < (lvl === 'S' ? 0.45 : 0.3);
+  var t = {portMode: portMode, vtpMode: vtpMode, vtpPass: vtpPass, port: 'Gi0/' + ri(r, 2, 12), dom: pick(r, ['CAMPUS', 'HTL', 'LAB', 'CORE', 'SCHULE']), rev: ri(r, 3, 20)};
+  t.res = analyze(t);
+  return t;
+}
+function portCfg(t) {
+  var m = t.portMode, L = ['interface ' + t.port];
+  if (isAccess(m)) L.push(' switchport mode access');
+  else if (isTrunk(m)) L.push(' switchport mode trunk');
+  else L.push(' switchport mode dynamic ' + m);
+  if (/noneg/.test(m)) L.push(' switchport nonegotiate');
+  return L.join('\n');
+}
+function vtpCfg(t) {
+  var L = ['vtp domain ' + t.dom, 'vtp mode ' + t.vtpMode];
+  if (t.vtpPass) L.push('vtp password ********');
+  return L.join('\n');
+}
+function makeTask(seed, lvl) {
+  if (!LVCODE[lvl] || !(seed >= 1)) return null;
+  var r = mulberry32((seed * 7919 + LVCODE[lvl] * 1000003 + 7307) >>> 0), t = build(r, lvl);
+  t.level = lvl; t.code = lvl + '-' + seed;
+  return t;
+}
+
+G.VH = {LVNAME: LVNAME, LABEL: LABEL, opMode: opMode, spoofs: spoofs, analyze: analyze, portCfg: portCfg, vtpCfg: vtpCfg, makeTask: makeTask, mulberry32: mulberry32};
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},V=window.VH,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tx(x,y,t,o){o=o||{};return'<text x="'+x+'" y="'+y+'" text-anchor="'+(o.a||'middle')+'" font-size="'+(o.fs||13)+'" font-weight="'+(o.fw||400)+'" fill="'+(o.c||'#1c2b33')+'" font-family="Open Sans,Arial,sans-serif">'+esc(t)+'</text>';}
+var ICON_S='<path d="M-30 -5l10 -10h48l-10 10z" fill="#6aaecb" stroke="#1f5872"/><path d="M-30 -5h48v16h-48z" fill="#2f7392"/><path d="M18 -5l10 -10v16l-10 10z" fill="#1f5872"/><path d="M-22 1h10M-6 1h10M-18 6h10M-2 6h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>';
+function pc(col){return'<rect x="-20" y="-16" width="40" height="28" rx="3" fill="#fff" stroke="'+col+'" stroke-width="2.5"/><rect x="-15" y="-12" width="30" height="19" fill="'+col+'" opacity=".16"/><path d="M-8 15h16M0 12v3" stroke="'+col+'" stroke-width="2.5"/>';}
+
+/* ===== Lab-Topologie ===== */
+(function(){
+ var W=880,H=250,sw=[440,110],att=[150,110],vic=[300,110],mon=[640,110],srv=[440,220];
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Lab-Aufbau">';
+ [att,vic,mon,srv].forEach(function(p){h+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+sw[0]+'" y2="'+sw[1]+'" stroke="#1c2b33" stroke-width="2.2"/>';});
+ h+='<path d="M'+att[0]+' '+(att[1]-26)+' Q'+((att[0]+mon[0])/2)+' 24 '+mon[0]+' '+(mon[1]-26)+'" fill="none" stroke="#e65100" stroke-width="2" stroke-dasharray="6 5"/>'+tx((att[0]+mon[0])/2,28,'SPAN zum Mitschnitt',{fs:12,fw:700,c:'#e65100'});
+ h+='<g transform="translate('+sw[0]+' '+sw[1]+')">'+ICON_S+'</g>'+tx(sw[0],sw[1]+30,'Switch · VTP CAMPUS',{fs:12,fw:700});
+ h+='<g transform="translate('+att[0]+' '+att[1]+')">'+pc('#c62828')+'</g>'+tx(att[0],att[1]+30,'Angreifer (Yersinia)',{fs:12,fw:700,c:'#c62828'})+tx(att[0],att[1]-28,'Gi0/5 · dynamic auto',{fs:11,c:'#546e7a'});
+ h+='<g transform="translate('+vic[0]+' '+vic[1]+')">'+pc('#455a64')+'</g>'+tx(vic[0],vic[1]+30,'Opfer · VLAN 10/20',{fs:12,fw:700});
+ h+='<g transform="translate('+mon[0]+' '+mon[1]+')">'+pc('#e65100')+'</g>'+tx(mon[0],mon[1]+30,'Mitschnitt-PC',{fs:12,fw:700,c:'#e65100'});
+ h+='<g transform="translate('+srv[0]+' '+srv[1]+')">'+ICON_S+'</g>'+tx(srv[0]+34,srv[1]+4,'VTP-Server',{a:'start',fs:12,fw:700,c:'#2e7d32'});
+ $('labsvg').innerHTML=h+'</svg>';
+})();
+
+/* ===== Animation ===== */
+var SW=[440,80],A=[120,80],VIC=[290,185],MON=[760,80];
+var steps=[
+ {t:'Normalbetrieb',txt:'Der Angreifer hängt an einem gewöhnlichen Zugangs-Port (Gi0/5, dynamic auto). Er sieht nur sein eigenes VLAN. Der Switch ist VTP-Server der Domäne CAMPUS mit VLAN 10, 20, 30.',role:'normal'},
+ {t:'Yersinia sendet DTP desirable',txt:'Yersinia schickt DTP-„desirable"-Frames. Der auto-Port handelt daraufhin einen Trunk aus.',role:'dtp'},
+ {t:'Trunk steht – VLAN-Hopping',txt:'Der Port ist jetzt Trunk. Der Angreifer empfängt alle VLANs getaggt und kann gezielt in VLAN 20 lauschen – er ist aus seinem VLAN „gehüpft".',role:'trunk'},
+ {t:'Gefälschte VTP-Ankündigung',txt:'Über den Trunk sendet Yersinia eine VTP-Summary mit der Domäne CAMPUS, Revision 99 und fast leerer VLAN-Liste. Kein VTP-Passwort gesetzt – also wird sie akzeptiert.',role:'vtp'},
+ {t:'VLAN-Datenbank überschrieben',txt:'Revision 99 gewinnt: Server und alle Clients übernehmen die leere Liste. VLAN 10, 20, 30 sind weg, die Ports fallen aus – ein Denial of Service für das ganze VLAN-Netz.',role:'wipe'}
+];
+var ai=0;
+function animSvg(st){
+ var W=880,H=235,h='<svg viewBox="0 0 '+W+' '+H+'" role="img"><defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0l7 3-7 3z" fill="#c62828"/></marker></defs>';
+ var trunk=st.role==='trunk'||st.role==='vtp'||st.role==='wipe';
+ /* Leitungen: Opfer (unten) und Wireshark (rechts) ganz normal, Angreifer-Leitung ist die Trunk-Strecke */
+ h+='<line x1="'+VIC[0]+'" y1="'+VIC[1]+'" x2="'+SW[0]+'" y2="'+SW[1]+'" stroke="#1c2b33" stroke-width="2"/>';
+ h+='<line x1="'+SW[0]+'" y1="'+SW[1]+'" x2="'+MON[0]+'" y2="'+SW[1]+'" stroke="#1c2b33" stroke-width="2"/>';
+ h+='<line x1="'+(A[0]+22)+'" y1="'+A[1]+'" x2="'+(SW[0]-34)+'" y2="'+SW[1]+'" stroke="'+(trunk?'#2e7d32':'#1c2b33')+'" stroke-width="'+(trunk?6:2)+'"/>';
+ if(trunk)h+=tx((A[0]+SW[0])/2,A[1]-14,'TRUNK – alle VLANs',{fs:12,fw:700,c:'#2e7d32'});
+ h+='<g transform="translate('+SW[0]+' '+SW[1]+')">'+ICON_S+'</g>'+tx(SW[0],SW[1]-24,'Switch (VTP-Server)',{fs:12,fw:700});
+ var dbBad=st.role==='wipe';
+ h+='<g transform="translate('+SW[0]+' '+(SW[1]+36)+')"><rect x="-78" y="-13" width="156" height="26" rx="5" fill="'+(dbBad?'#fde3e3':'#eef6e6')+'" stroke="'+(dbBad?'#c62828':'#2e7d32')+'" stroke-width="1.5"/>'+tx(0,4,dbBad?'VLAN-DB: nur 1  (Rev 99)':'VLAN-DB: 1,10,20,30',{fs:12,fw:700,c:dbBad?'#c62828':'#2e7d32'})+'</g>';
+ var attCol=trunk?'#c62828':'#546e7a';
+ h+='<g transform="translate('+A[0]+' '+A[1]+')">'+pc(attCol)+'</g>'+tx(A[0],A[1]+30,'Angreifer',{fs:12,fw:700,c:attCol})+tx(A[0],A[1]-26,'Gi0/5',{fs:11,c:'#546e7a'});
+ h+='<g transform="translate('+VIC[0]+' '+VIC[1]+')">'+pc('#455a64')+'</g>'+tx(VIC[0],VIC[1]+30,'Opfer · VLAN 20',{fs:12,fw:700});
+ h+='<g transform="translate('+MON[0]+' '+SW[1]+')">'+pc('#e65100')+'</g>'+tx(MON[0],SW[1]+30,'Wireshark',{fs:12,fw:700,c:'#e65100'});
+ if(st.role==='dtp')h+='<path d="M'+(A[0]+22)+' '+(A[1]+10)+' L'+(SW[0]-34)+' '+(SW[1]+10)+'" stroke="#e65100" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#ah)"/>'+tx((A[0]+SW[0])/2,A[1]+26,'DTP desirable',{fs:12,fw:700,c:'#e65100'});
+ if(st.role==='vtp')h+='<path d="M'+(A[0]+22)+' '+(A[1]+10)+' L'+(SW[0]-34)+' '+(SW[1]+10)+'" stroke="#c62828" stroke-width="3" stroke-dasharray="7 4" marker-end="url(#ah)"/>'+tx((A[0]+SW[0])/2,A[1]+26,'VTP Rev 99, leere Liste',{fs:12,fw:700,c:'#c62828'});
+ return h+'</svg>';
+}
+function animRender(){var st=steps[ai];$('animsvg').innerHTML=animSvg(st);$('animtxt').querySelector('h3').textContent=(ai+1)+'. '+st.t;$('animtxt').querySelector('p').textContent=st.txt;$('astep').textContent='Schritt '+(ai+1)+' von '+steps.length;$('aprev').disabled=ai===0;$('anext').disabled=ai===steps.length-1;}
+$('aprev').onclick=function(){if(ai>0){ai--;animRender();}};$('anext').onclick=function(){if(ai<steps.length-1){ai++;animRender();}};animRender();
+
+/* ===== Wireshark ===== */
+(function(){
+ var rows=[['1','0.000','ca:03:1b:… (Angreifer)','01:00:0c:cc:cc:cc','DTP','Dynamic Trunking Protocol – Status: Desirable',true],
+  ['2','0.512','SW Gi0/5','01:00:0c:cc:cc:cc','DTP','Dynamic Trunking Protocol – Status: Trunk',false],
+  ['3','1.030','ca:03:1b:… (Angreifer)','01:00:0c:cc:cc:cc','VTP','Summary Advertisement, Domain: CAMPUS, Rev: 99',true,true],
+  ['4','1.031','ca:03:1b:… (Angreifer)','01:00:0c:cc:cc:cc','VTP','Subset Advertisement, Domain: CAMPUS, Rev: 99, VLANs: 1',true,true],
+  ['5','1.540','SW (Server)','01:00:0c:cc:cc:cc','VTP','Summary Advertisement, Domain: CAMPUS, Rev: 99',false]];
+ $('pcap').innerHTML=rows.map(function(x){return'<div class="rw'+(x[7]?' coup':x[6]?' att':'')+'"><span>'+x[0]+'</span><span>'+x[1]+'</span><span>'+esc(x[2])+'</span><span>'+esc(x[3])+'</span><span>'+x[4]+'</span><span>'+esc(x[5])+'</span></div>';}).join('');
+ $('pcaphint').innerHTML='Rot = Frames des Angreifers. Zuerst die DTP-Aushandlung, dann die VTP-Ankündigung mit <b>Revision 99</b> und nur noch <b>VLAN 1</b> – damit werden 10/20/30 gelöscht.';
+})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was ist das Ziel des Switch-Spoofings über DTP?',['Das WLAN-Passwort stehlen','Einen Trunk erzwingen, um alle VLANs zu sehen','Die Root Bridge werden','Den DHCP-Pool leeren'],1,'Mit einem Trunk empfängt der Angreifer alle VLANs getaggt – er „hüpft" aus seinem VLAN.'],
+ ['Welchen DTP-Status täuscht Yersinia vor?',['access','dynamic desirable','nonegotiate','shutdown'],1,'desirable fordert aktiv einen Trunk an; ein auto- oder desirable-Port macht mit.'],
+ ['Welcher Port verweigert das Switch-Spoofing zuverlässig?',['dynamic auto','dynamic desirable','access + nonegotiate','trunk'],2,'Fest access und nonegotiate: Der Port bildet keinen Trunk und sendet kein DTP.'],
+ ['Was braucht der Angreifer, bevor er VTP fälschen kann?',['Einen Trunk zum Switch','Das Enable-Passwort','Einen Konsolenzugang','Eine statische Route'],0,'VTP läuft nur über Trunks – ohne Switch-Spoofing kommt der Angreifer nicht an VTP.'],
+ ['Wie überschreibt die gefälschte VTP-Ankündigung die VLANs?',['Mit einer niedrigeren Revision','Mit einer höheren Revisionsnummer und (fast) leerer VLAN-Liste','Durch einen Reset','Durch mehr BPDUs'],1,'Die höchste Revision gewinnt. Mit leerer Liste verschwinden die echten VLANs.'],
+ ['Welche VTP-Einstellung schützt gegen das Hijacking?',['Ein VTP-Passwort (oder transparent/off)','Mehr VLANs','Eine kürzere Hello-Zeit','Portfast'],0,'Ein Passwort macht gefälschte Ankündigungen wertlos; transparent/off nehmen gar nicht teil.'],
+ ['Warum reicht switchport nonegotiate allein nicht, wenn der Port auf trunk steht?',['Weil nonegotiate den Port abschaltet','Weil ein fest getrunkter Port die VLANs auch ohne DTP liefert','Weil nonegotiate nur für VTP gilt','Weil der Port dann Access wird'],1,'Ein trunk-Port sendet getaggte Frames aller VLANs – egal ob DTP aus ist.'],
+ ['Was ist die Folge eines erfolgreichen VTP-Hijackings mit leerer Liste?',['Mehr Bandbreite','VLANs der ganzen Domäne verschwinden – Denial of Service','Die Switches starten neu','Das Spanning Tree konvergiert schneller'],1,'Alle teilnehmenden Switches übernehmen die leere Datenbank; Ports in gelöschten VLANs fallen aus.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return V.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function tagHTML(s){return'<span class="tag" style="background:#eceff1;color:#1c2b33;padding:2px 8px;border-radius:10px;font:600 12px var(--ui)">'+s+'</span>';}
+function taskHTML(s,id,label){
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' '+tagHTML(V.LVNAME[s.level])+' '+tagHTML('Nr. '+s.code)+'</h3>'+
+  '<div class="slist"><li>Der Angreifer (Yersinia) hängt am Port <b>'+s.port+'</b> und sendet DTP <b>desirable</b> und eine VTP-Ankündigung mit hoher Revision für die Domäne <b>'+s.dom+'</b>.</li></div>'+
+  '<p class="ph">Port-Konfiguration</p><pre class="cli">'+esc(V.portCfg(s))+'</pre>'+
+  '<p class="ph">VTP-Konfiguration des Switches</p><pre class="cli">'+esc(V.vtpCfg(s))+'</pre>'+
+  '<p class="qh">1. Gelingt das Switch-Spoofing (Trunk zum Angreifer)?</p><div class="opts"><label><input type="radio" name="'+id+'-t" value="1"> Ja</label><label><input type="radio" name="'+id+'-t" value="0"> Nein</label></div>'+
+  '<p class="qh">2. Kann der Angreifer damit die VLAN-Datenbank der Domäne löschen?</p><div class="opts"><label><input type="radio" name="'+id+'-h" value="1"> Ja</label><label><input type="radio" name="'+id+'-h" value="0"> Nein</label></div>'+
+  '<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function check(card){
+ var s=taskOf(card),R=s.res,ok=0,tot=2;
+ ['t','h'].forEach(function(key,idx){var want=idx===0?R.trunk:R.hijack;var sel=card.querySelector('input[name$="-'+key+'"]:checked');card.querySelectorAll('input[name$="-'+key+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add((rb.value==='1')===want?'right':'wrong');});if(sel&&(sel.value==='1')===want)ok++;});
+ var fb=card.querySelector('.fb'),all=ok===tot;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von '+tot+' richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){var R=s.res;return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">'+
+ '<li><b>1. '+(R.trunk?'Ja, der Trunk entsteht':'Nein, kein Trunk')+'</b></li>'+
+ '<li><b>2. '+(R.hijack?'Ja, die VLANs werden überschrieben':'Nein, die VLANs bleiben')+'</b><br><span class="hint">'+esc(R.why)+'</span></li></ul>';}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=["L-1", "L-2", "L-3", "M-1", "M-2", "M-3", "M-4", "S-1", "S-2", "S-3"];
+var host=$('tasks'),cp=0;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=V.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=V.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gout').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>
