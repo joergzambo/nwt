@@ -11,7 +11,8 @@ SITE = {
     'description': 'NWT – Netzwerktechnik lernen mit Animationen, Erklärungen und Übungen: Switching, Routing, IP-Services und Netzwerksicherheit.',
     'intro': 'Topologien durchschauen, verstehen, warum das Netz so entscheidet, selbst konfigurieren – und üben, bis es sitzt. '
              'Vom OSI-Modell bis zu Angriffen im LAN, mit Animationen, Lösungen zum Aufklappen und Zufallsgenerator.',
-    'news': ['<strong>Neu:</strong> <a href="netzwerksicherheit/hsrp-hijacking/">HSRP-Hijacking mit Yersinia</a> – das virtuelle Gateway mit Priorität 255 übernehmen, im Wireshark erkennen, Schutz mit MD5-Authentifizierung. '
+    'news': ['<strong>Neu:</strong> <a href="switching/vtp-dtp/">VTP und DTP</a> – die VLAN-Datenbank verteilen samt Revisions-Falle und Trunks automatisch aushandeln, mit interaktiver Aushandel-Tabelle und Zufallsgenerator. '
+             'Außerdem <a href="netzwerksicherheit/hsrp-hijacking/">HSRP-Hijacking mit Yersinia</a> – das virtuelle Gateway mit Priorität 255 übernehmen, im Wireshark erkennen, Schutz mit MD5-Authentifizierung. '
              'In <a href="routing/ospf-2/#ersparnis">OSPF 2</a> zeigt ein Schieberegler bis 50 Router, wie viele Full-Nachbarschaften der DR erspart. Auf den ACL-Seiten gibt es den Trainer „Platzierung üben“. '
              'Außerdem <a href="netzwerksicherheit/standard-acl/">Standard-Access-Listen</a> und <a href="netzwerksicherheit/extended-acl/">Extended-Access-Listen</a> – Paket-Tester Zeile für Zeile, Wildcard-Rechner, Platzierung im Netzplan, Übungen. '
              'Außerdem <a href="switching/etherchannel/">EtherChannel: LACP und PAgP</a> – Kabel bündeln statt blockieren, welche Modi passen, Praxisbeispiel mit zwei Dark-Fiber-Leitungen. '
@@ -71,6 +72,8 @@ AREAS = [
           'text': 'Access- und Trunk-Ports, 802.1Q-Tags und native VLAN – zum Ausprobieren, mit 30 Übungen und Zufallsgenerator.'},
          {'slug': 'etherchannel', 'title': 'EtherChannel: LACP und PAgP', 'tool': 'etherchannel',
           'text': 'Mehrere Kabel zu einem Port-Channel bündeln: Animation, welche Modi zusammenpassen, Voraussetzungen, show etherchannel summary – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'vtp-dtp', 'title': 'VTP und DTP', 'tool': 'vtp-dtp',
+          'text': 'VLAN-Datenbank automatisch verteilen (VTP) samt der Revisions-Falle und Trunks automatisch aushandeln (DTP) – mit interaktiver Tabelle, Übungen und Zufallsgenerator.'},
          {'slug': 'cdp', 'title': 'CDP – Nachbarn erkennen', 'tool': 'cdp',
           'text': 'CDP-Ausgaben lesen, Modelle und IPs ablesen und den Netzplan selbst verkabeln – mit Zufallsgenerator.'},
          {'slug': 'layer-3-switching', 'title': 'Layer-3-Switching', 'tool': 'layer-3-switching',

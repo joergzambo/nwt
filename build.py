@@ -101,6 +101,28 @@ def page(title, depth, desc, body, active=''):
     return head(title, depth, desc) + '<body class="aecp">\n' + header(depth, active) + '<main class="aecp-main">\n' + body + '\n</main>\n' + footer(depth) + '</body>\n</html>\n'
 
 
+# Eindeutige Themen-Kürzel für Beispielnummern (z. B. VLN-M-305)
+TAGS = {
+    'zahlensysteme': 'ZAH', 'ip-grundlagen': 'IPG', 'netzadresse': 'NET', 'osi-modell': 'OSI',
+    'subnetting': 'SUB', 'supernetting': 'SUP', 'collision-broadcast-domains': 'DOM',
+    'ethernet-switching': 'ETH', 'spanning-tree': 'STP', 'vlan': 'VLN', 'etherchannel': 'ECH',
+    'cdp': 'CDP', 'layer-3-switching': 'L3S', 'show-ip-route': 'RTB', 'inter-vlan-routing': 'IVR',
+    'statisches-routing': 'STR', 'rip': 'RIP', 'routing-schleifen': 'LOP', 'ospf-1': 'OS1',
+    'ospf-2': 'OS2', 'ospf-3': 'OS3', 'pat': 'PAT', 'static-nat': 'SNA', 'dhcp': 'DHC',
+    'hsrp-vrrp': 'HSR', 'vtp-dtp': 'VDP', 'standard-acl': 'SAC', 'extended-acl': 'EAC', 'arp-spoofing': 'ARP',
+    'dhcp-starvation': 'STV', 'hsrp-hijacking': 'HIJ', 'rogue-dhcp': 'ROG',
+}
+
+
+def has_generator(tool):
+    """Prüft, ob die Tool-Seite einen Nummern-Generator hat (Eingabefeld für Beispielnummern)."""
+    try:
+        src = open(os.path.join(ROOT, 'tools', tool + '.html'), encoding='utf-8').read()
+    except OSError:
+        return False
+    return 'id="gcode"' in src or 'id="gencode"' in src or 'id="ltcode"' in src
+
+
 # Seiten mit Netzplänen bekommen die Zoom-Leiste (static/zoom.js)
 ZOOM_TOOLS = {'spanning-tree', 'vlan', 'inter-vlan-routing', 'collision-broadcast-domains', 'statisches-routing', 'rip', 'ethernet-switching', 'dhcp', 'routing-schleifen', 'layer-3-switching', 'cdp', 'ospf-1', 'ospf-2', 'ospf-3', 'dhcp-starvation', 'rogue-dhcp', 'arp-spoofing', 'hsrp-hijacking', 'show-ip-route', 'pat', 'static-nat', 'netzadresse', 'ip-grundlagen', 'zahlensysteme', 'hsrp-vrrp', 'etherchannel', 'standard-acl', 'extended-acl'}
 
@@ -113,6 +135,7 @@ def build_tool(area, topic, depth):
     src = src.replace('</head>', f'''<meta name="description" content="{esc(topic["text"])}">
 <link rel="icon" type="image/png" sizes="512x512" href="{r}assets/img/nwt-512.png">
 <link rel="stylesheet" href="{r}assets/aecp.css">
+<script>window.NWT_TAG={json.dumps(TAGS.get(topic['tool'], ''))};</script>
 <script defer src="{r}assets/search-index.js"></script>
 <script defer src="{r}assets/search.js"></script>
 <style>
@@ -147,6 +170,9 @@ def build():
             it = {'t': t['title'], 'd': t['text'], 'a': a['title'], 'on': live(t)}
             if live(t):
                 it['u'] = f'/{a["slug"]}/{t["slug"]}/'
+                tag = TAGS.get(t.get('tool'))
+                if tag and has_generator(t['tool']):
+                    it['g'] = tag
             idx_items.append(it)
     write('assets/search-index.js', 'window.NWT_INDEX=' + json.dumps(idx_items, ensure_ascii=False) + ';')
     write('index.html', page(SITE['name'], 0, SITE['description'], f'''<section class="aecp-hero aecp-wrap">
