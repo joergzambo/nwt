@@ -50,6 +50,10 @@ def header(depth, active=''):
     return f'''<header class="aecp-header">
  <div class="aecp-wrap aecp-header-in">
   <a class="aecp-brand" href="{r}"><img src="{r}assets/img/nwt-logo-120.png" alt="{esc(SITE["name"])}" width="160" height="42"></a>
+  <form class="aecp-find" id="aecp-find" role="search" hidden>
+   <input id="aecp-find-in" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Beispiel-Nr., z. B. M-305" aria-label="Zu einer Beispielnummer springen">
+   <button type="submit" class="aecp-find-go" aria-label="Zum Beispiel springen">→</button>
+  </form>
   <input type="checkbox" id="aecp-menu" class="aecp-menu-toggle"><label for="aecp-menu" class="aecp-menu-btn" aria-label="Menü öffnen">Menü</label>
   <nav class="aecp-nav" aria-label="Hauptmenü">{links}</nav>
  </div>
@@ -120,6 +124,7 @@ main button,.jump,.atabs button,.pager>button{{font-family:"Bitter",Georgia,seri
     src = re.sub(r'<body([^>]*)>', lambda m: f'<body{m.group(1)}>\n' + header(depth, area['slug']) + crumbs, src, count=1)
     if topic['tool'] in ZOOM_TOOLS:
         src = src.replace('</body>', f'<script src="{r}assets/zoom.js"></script>\n</body>', 1)
+    src = src.replace('</body>', f'<script src="{r}assets/jump.js"></script>\n</body>', 1)
     src = src.replace('</body>', footer(depth) + '</body>', 1)
     return src
 
