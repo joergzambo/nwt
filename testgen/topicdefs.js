@@ -51,6 +51,16 @@ function build(E) {
                      ' Hosts/Subnetz; ' + (T.idx + 1) + '. Subnetz: ' + a.net] };
       }
     },
+    'subnet-super': {
+      label: 'Supernetting (Netze zusammenfassen)', levels: LV, points: { L: 3, M: 4, S: 5 },
+      gen(seed, lvl) {
+        const T = SN.makeTask(seed, lvl, 'sup'); const a = T.ans;
+        return { intro: 'Fasse die folgenden Netze zum kleinstmöglichen gemeinsamen Supernetz zusammen.',
+          lines: T.nets.map(function (n) { return 'Netz: ' + n.net + '/' + n.p; })
+            .concat(['Supernetz (Adresse / Präfix): ' + blank, 'Subnetzmaske: ' + blank]),
+          solution: [a.net + '/' + a.p + '  (' + a.mask + ')'] };
+      }
+    },
     'dtp': {
       label: 'DTP-Aushandlung (Trunk / Access / Mismatch)', levels: LV, points: { L: 2, M: 3, S: 4 },
       gen(seed, lvl) {

@@ -1,4 +1,9 @@
 {
-  "version": 1,
-  "files": ["engines/netz.js", "engines/sub.js", "engines/dtp.js", "topicdefs.js"]
+  "version": 2,
+  "files": [
+    "engines/netz.js",
+    "engines/sub.js",
+    "engines/dtp.js",
+    "topicdefs.js"
+  ]
 }
