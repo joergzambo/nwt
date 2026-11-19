@@ -3,6 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "description": "Lokaler Test-Generator für die NWT-Plattform (Wdh-NWT-Vorlage)",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "jszip": "^3.10.1" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "vorlage.docx",
+      "engines/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  }
 }

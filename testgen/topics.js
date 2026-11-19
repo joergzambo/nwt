@@ -1,91 +1,59 @@
-/* Themen-Registry: nutzt die vorhandenen Generatoren aus ../src wieder.
-   Jedes Thema erzeugt aus einem Seed ein Beispiel {lines, solution, points}.
-   Zwei komplementäre Gruppen = dasselbe Thema, gleiche Schwierigkeit, zwei Seeds. */
+/* Orchestrator: Auto-Abgleich ausführen, Generatoren + Themen laden, Gruppen bauen. */
 const path = require('path');
-const SRC = path.resolve(__dirname, '..', 'src');
-require(path.join(SRC, 'netz', 'netz.js'));
-require(path.join(SRC, 'subnet', 'sub.js'));
-require(path.join(SRC, 'vtpdtp', 'dtp.js'));
-const NA = globalThis.NA, SN = globalThis.SN, VD = globalThis.VD;
+const fs = require('fs');
+const sync = require('./sync.js');
 
 const LV = ['L', 'M', 'S'];
 const LVNAME = { L: 'Leicht', M: 'Mittel', S: 'Schwer' };
-const blank = '____________';
 
-const TOPICS = {
-  'netz-adresse': {
-    label: 'Netzadresse & Broadcast berechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
-    gen(seed, lvl) {
-      const d = NA.makeTask(seed, lvl).d;
-      return {
-        intro: 'Bestimme Netzadresse und Broadcast-Adresse.',
-        lines: ['Host-IP: ' + d.ip, 'Subnetzmaske: ' + d.mask + '  (/' + d.p + ')',
-                'Netzadresse: ' + blank, 'Broadcast-Adresse: ' + blank],
-        solution: ['Netzadresse: ' + d.net, 'Broadcast: ' + d.bc]
-      };
-    }
-  },
-  'netz-gleich': {
-    label: 'Sind zwei Geräte im selben Netz?', levels: LV, points: { L: 2, M: 3, S: 4 },
-    gen(seed, lvl) {
-      const q = NA.makeTask(seed, lvl).q;
-      return {
-        intro: 'Liegen die beiden Geräte im selben Netz? Begründe mit den Netzadressen.',
-        lines: ['Gerät A: ' + q.a, 'Gerät B: ' + q.b, 'Subnetzmaske: ' + q.mask + '  (/' + q.p + ')',
-                'Im selben Netz? ' + blank, 'Netzadresse A: ' + blank + '   Netzadresse B: ' + blank],
-        solution: [(q.same ? 'Ja' : 'Nein') + ' – Netz A: ' + q.na + ', Netz B: ' + q.nb]
-      };
-    }
-  },
-  'subnet-calc': {
-    label: 'Subnetz analysieren (Netz, Broadcast, Hosts)', levels: LV, points: { L: 3, M: 4, S: 5 },
-    gen(seed, lvl) {
-      const T = SN.makeTask(seed, lvl, 'calc'); const a = T.ans;
-      return {
-        intro: 'Bestimme zur Adresse alle folgenden Angaben.',
-        lines: ['Adresse: ' + T.ip + '/' + T.p, 'Netzadresse: ' + blank, 'Broadcast: ' + blank,
-                'Erster Host: ' + blank, 'Letzter Host: ' + blank,
-                'Anzahl nutzbarer Hosts: ' + blank, 'Subnetzmaske: ' + blank],
-        solution: ['Netz ' + a.net + ', Broadcast ' + a.bc + ', Hosts ' + a.first + '–' + a.last +
-                   ' (' + a.hosts + '), Maske ' + a.mask]
-      };
-    }
-  },
-  'subnet-equal': {
-    label: 'Gleich große Subnetze bilden', levels: LV, points: { L: 3, M: 4, S: 5 },
-    gen(seed, lvl) {
-      const T = SN.makeTask(seed, lvl, 'equal'); const a = T.ans;
-      return {
-        intro: 'Teile das Ausgangsnetz in gleich große Subnetze.',
-        lines: ['Ausgangsnetz: ' + T.base + '/' + T.bp, 'Benötigte Subnetze: mindestens ' + T.want,
-                'Neue Präfixlänge: ' + blank, 'Subnetzmaske: ' + blank, 'Anzahl Subnetze: ' + blank,
-                'Hosts je Subnetz: ' + blank, 'Netzadresse des ' + (T.idx + 1) + '. Subnetzes: ' + blank],
-        solution: ['/' + a.p + ' (' + a.mask + '), ' + a.count + ' Subnetze, ' + a.hosts +
-                   ' Hosts/Subnetz; ' + (T.idx + 1) + '. Subnetz: ' + a.net]
-      };
-    }
-  },
-  'dtp': {
-    label: 'DTP-Aushandlung (Trunk / Access / Mismatch)', levels: LV, points: { L: 2, M: 3, S: 4 },
-    gen(seed, lvl) {
-      const T = VD.makeTask(seed, lvl);
-      return {
-        intro: 'Welcher Port-Modus ergibt sich aus der DTP-Aushandlung?',
-        lines: ['Port: ' + T.port, 'SW1: switchport mode ' + T.m1, 'SW2: switchport mode ' + T.m2,
-                'Ergebnis (Trunk / Access / Mismatch): ' + blank, 'Begründung: ' + blank],
-        solution: [T.res.outcome + ' – ' + T.res.why]
-      };
-    }
-  }
-};
+let TOPICS = {};
+let SYNC_INFO = { status: 'unbekannt', version: 0, msg: '' };
 
-/* Erzeugt N komplementäre Beispielpaare: Gruppe 1 Seeds s, Gruppe 2 Seeds s+offset.
-   Gleiche Themenmischung/Schwierigkeit, andere Zahlen. */
+function loadExternalTopics() {
+  const base = sync.baseDir();
+  const dir = path.join(base, 'themen');
+  const added = [];
+  try {
+    if (!fs.existsSync(dir)) return added;
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith('.js')) continue;
+      try {
+        const mod = require(path.join(dir, f));
+        if (mod && mod.id && typeof mod.gen === 'function') {
+          TOPICS[mod.id] = { label: mod.label || mod.id, levels: mod.levels || LV,
+            points: mod.points || { L: 2, M: 3, S: 4 }, gen: mod.gen };
+          added.push(mod.id);
+        }
+      } catch (e) { console.error('Thema-Datei übersprungen (' + f + '):', e.message); }
+    }
+  } catch (e) { /* kein themen-Ordner */ }
+  return added;
+}
+
+function loadFresh(file) {
+  // Cache-Version bevorzugen; require-Cache leeren, damit Updates greifen
+  const p = sync.resolveFile(file);
+  try { delete require.cache[require.resolve(p)]; } catch (e) {}
+  return require(p);
+}
+
+async function init(logfn) {
+  SYNC_INFO = await sync.run(logfn);
+  // Generatoren laden (setzen globalThis.NA/SN/VD)
+  loadFresh('engines/netz.js');
+  loadFresh('engines/sub.js');
+  loadFresh('engines/dtp.js');
+  const defs = loadFresh('topicdefs.js');
+  TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD });
+  const ext = loadExternalTopics();
+  return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };
+}
+
 function buildGroups(topicId, levels, count, seedBase) {
   const t = TOPICS[topicId];
   if (!t) throw new Error('Unbekanntes Thema: ' + topicId);
   seedBase = seedBase || Math.floor(Math.random() * 90000) + 1000;
-  const OFF = 50000; // großer Versatz -> garantiert andere Beispiele in Gruppe 2
+  const OFF = 50000;
   const g1 = [], g2 = [], sol1 = [], sol2 = [];
   for (let i = 0; i < count; i++) {
     const lvl = levels[i % levels.length];
@@ -96,11 +64,12 @@ function buildGroups(topicId, levels, count, seedBase) {
     sol1.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e1.solution.join(' | '));
     sol2.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e2.solution.join(' | '));
   }
-  return {
-    groups: [{ examples: g1 }, { examples: g2 }],
-    solutions: [{ title: 'Gruppe 1', lines: sol1 }, { title: 'Gruppe 2', lines: sol2 }],
-    seedBase
-  };
+  return { groups: [{ examples: g1 }, { examples: g2 }],
+    solutions: [{ title: 'Gruppe 1', lines: sol1 }, { title: 'Gruppe 2', lines: sol2 }], seedBase };
 }
 
-module.exports = { TOPICS, buildGroups, LVNAME };
+module.exports = {
+  init, buildGroups, LVNAME,
+  getTopics: () => TOPICS,
+  getSyncInfo: () => SYNC_INFO
+};
