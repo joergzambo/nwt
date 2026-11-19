@@ -1,9 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "files": [
     "engines/netz.js",
     "engines/sub.js",
     "engines/dtp.js",
-    "topicdefs.js"
+    "topicdefs.js",
+    "pool.json"
   ]
 }

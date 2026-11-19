@@ -30,6 +30,32 @@ function loadExternalTopics() {
   return added;
 }
 
+function slug(s) {
+  return s.toLowerCase().replace(/[äöü]/g, c => ({ 'ä': 'ae', 'ö': 'oe', 'ü': 'ue' }[c]))
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+/* Fragen-Pool aus pool.json als "Fragenkatalog"-Themen (offene Fragen aus alten Tests) */
+function loadPoolTopics() {
+  try {
+    const p = sync.resolveFile('pool.json');
+    if (!fs.existsSync(p)) return;
+    const pool = JSON.parse(fs.readFileSync(p, 'utf8'));
+    const order = pool.order || Object.keys(pool.groups || {});
+    for (const name of order) {
+      const qs = (pool.groups || {})[name] || [];
+      if (qs.length < 2) continue;
+      TOPICS['pool-' + slug(name)] = {
+        label: 'Fragenkatalog: ' + name + ' (' + qs.length + ' Fragen aus alten Tests)',
+        levels: LV, points: { L: 2, M: 3, S: 4 }, isPool: true,
+        gen(seed, lvl) {
+          const item = qs[((seed % qs.length) + qs.length) % qs.length];
+          return { intro: '', lines: [item.q], solution: ['(offene Frage – Bewertung durch Lehrkraft)'] };
+        }
+      };
+    }
+  } catch (e) { console.error('Pool nicht geladen:', e.message); }
+}
+
 function loadFresh(file) {
   // Cache-Version bevorzugen; require-Cache leeren, damit Updates greifen
   const p = sync.resolveFile(file);
@@ -45,6 +71,7 @@ async function init(logfn) {
   loadFresh('engines/dtp.js');
   const defs = loadFresh('topicdefs.js');
   TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD });
+  loadPoolTopics();
   const ext = loadExternalTopics();
   return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };
 }

@@ -1,0 +1,917 @@
+{
+ "order": [
+  "Sonstiges",
+  "Subnetting/IP",
+  "OSI/Kapselung",
+  "VLAN/Trunk/VTP/DTP",
+  "NAT/PAT",
+  "STP/Root Bridge",
+  "Routing allg.",
+  "ARP",
+  "Security/sonst",
+  "RIP",
+  "DHCP",
+  "OSPF",
+  "VPN",
+  "EIGRP",
+  "HSRP/FHRP"
+ ],
+ "groups": {
+  "STP/Root Bridge": [
+   {
+    "q": "Welche 5 Portstatus kennst du bei einem Switchport mit aktivem Spanning-Tree",
+    "src": "2018-19/JG04-4BHIF-2.docx"
+   },
+   {
+    "q": "Wer wird in einem Spanning-Tree-Netzwerk die Root-Bridge? Welche beiden Faktoren spielen hier eine Rolle?",
+    "src": "2018-19/JG04-4BHIF-2.docx"
+   },
+   {
+    "q": "Was ist ein Root Port und was ist ein Designated Port? Welchen Porttyp haben die Anschlüsse auf der Root Bridge?",
+    "src": "2018-19/JG04-4BHIF-2.docx"
+   },
+   {
+    "q": "Was ist der grobe Unterschied zwischen Spanning Tree und Rapid Spanning – Tree? Welche Port Status sind zusammengefasst?",
+    "src": "2018-19/JG04-4BHIF-2.docx"
+   },
+   {
+    "q": "Welche 5 Portstatus kennst du bei einem Switchport mit aktivem Spanning-Tree? (5P)Nenne kurz was im jeweiligen Status bekannt ist",
+    "src": "2021-22/2022_05_wdh-STP-4AHIF.docx"
+   },
+   {
+    "q": "Welche der beiden Switches wird Root Bridge und warum? Markiere den Switch! (2P)",
+    "src": "2021-22/2022_05_wdh-STP-4AHIF.docx"
+   },
+   {
+    "q": "Erkläre die Unterschiede zwischen einem Designated Port und einem Root Port! (2P) Welche Porttyp ist auf einer Root Bridge zu finden? (1P)",
+    "src": "2021-22/2022_05_wdh-STP-4AHIF.docx"
+   },
+   {
+    "q": "Beschreibe die Spanning-Tree Attacke! Was ist eine Root Bridge und wie kann ein Hacker die Rolle dieser übernehmen? (Technische Erklärung)",
+    "src": "2021-22/2021-12 - ITSEC-Root Bridge.docx"
+   },
+   {
+    "q": "Welche der drei Switches wird Root Bridge und warum? Markiere den Switch! (2P)",
+    "src": "2025-26/2026_01-STP+PortChannels.docx"
+   },
+   {
+    "q": "Zeichne Root und Designated Ports ein. (2P)Welche Verbindung wird geblockt? (1P)Errechne den kürzesten Weg vom Switch 5 zur Root Bridge und begründe ihn! (2P)",
+    "src": "2025-26/2026_01-STP+PortChannels.docx"
+   },
+   {
+    "q": "Welche der beiden Switches wird Root Bridge? Markiere den Switch! (1P) Wie wird die Root Bridge ausgewählt? (2P)",
+    "src": "2020-21/Spanning-Tree ITSEC 3.Klasse.docx"
+   },
+   {
+    "q": "Erkläre den Angriff den wir im Unterricht mittels Spanning-Tree analysiert haben. Was passiert beim Aktivieren im Yersinia mit dem Netzwerk? (2P)Was sind die Gegenmaßnahmen? (1P)",
+    "src": "2020-21/Spanning-Tree ITSEC 3.Klasse.docx"
+   }
+  ],
+  "NAT/PAT": [
+   {
+    "q": "Erkläre das Prinzip von PAT (Port Address Translation)!",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Nenne im Groben die wesentlichen Konfigurationen die für PAT durchführen musst.Was ist auf den Interfaces zu tun, was ist im Global Config Mode zu tun?",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Wozu wird static NAT (Destination NAT) in Firmen verwendet. Was genau passiert beim static NAT?",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Beschreibe Gründe warum NAT in einem IP Netzwerk notwendig ist!",
+    "src": "2022-23/2023-05 - NAT JG4.docx"
+   },
+   {
+    "q": "Was passiert beim PAT (Port Adress Translation?)",
+    "src": "2022-23/2023-05 - NAT JG4.docx"
+   },
+   {
+    "q": "Erkläre den Begriff Static NAT!",
+    "src": "2022-23/2023-05 - NAT JG4.docx"
+   },
+   {
+    "q": "Wie/Wo würdest du Static NAT in einem Netzwerk einsetzen? Was ist Static NAT?",
+    "src": "2022-23/2023-05 - NAT JG4v2.docx"
+   },
+   {
+    "q": "Was sind Gründe für den Einsatz von NAT in modernen Netzwerken? Erkläre besonders den Begriff private Adressen!",
+    "src": "2022-23/2023-05 - NAT JG4v2.docx"
+   },
+   {
+    "q": "Beschreibe Gründe/Vorteile/Nachteile warum NAT in einem IP Netzwerk notwendig ist!",
+    "src": "2026-27/2026-10 - NAT JG4.docx"
+   },
+   {
+    "q": "Was passiert beim PAT (Port Adress Translation?) Erkläre insbesonders den Begriff private Adressen! Nenne einen Bereich!Ist die Adresse öffentlich oder privat (ö oder p)?172.32.11.12172.31.17.18192.169.17.178.8.8.8",
+    "src": "2026-27/2026-10 - NAT JG4.docx"
+   },
+   {
+    "q": "Erkläre den Begriff Static NAT! Nenne ein praktisches Beispiel!",
+    "src": "2026-27/2026-10 - NAT JG4.docx"
+   },
+   {
+    "q": "Was sind Gründe für den Einsatz von NAT in modernen Netzwerken? Erkläre besonders den Begriff private Adressen!Sind folgende Adressen öffentlich (ö) oder privat (p)?172.20.4.1172.32.4.1192.169.0.510.10.10.108.8.4.4192.168.100.1",
+    "src": "2026-27/NAT JG4v2.docx"
+   },
+   {
+    "q": "Wo/Wie würdest du Static NAT in einem Netzwerk einsetzen? Was ist Static NAT?!",
+    "src": "2020-21/2021-05 - NAT JG4.docx"
+   }
+  ],
+  "Sonstiges": [
+   {
+    "q": "Welche beiden Dinge sind bei der Erstellung von Access Listen zu beachten, was bedeutet in diesem Zusammenhang implicit deny?",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Errechne die Wildcardmask für folgende Fälle:",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Nenne 3 Einsatzgebiete von Access-Listen!",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Ergänze die wichtigsten Komponenten eines VPNs laut dieser in dieser Skizze und beschreibe sie!",
+    "src": "2022-23/2022-12 - VPN JG2.docx"
+   },
+   {
+    "q": "Erkläre Confidentiality!Wozu verwendet man ein WAN? Beschreibe die Funktionsweise!",
+    "src": "2022-23/2022-12 - VPN JG2.docx"
+   },
+   {
+    "q": "Erkläre die Begriffe: Inside Global:Outside Local:Inside Local: Schreibe die jeweilige IP (Inside Global, Outside Global, Inside Local) in die Tabelle der Grafik!",
+    "src": "2022-23/2023-05 - NAT JG4.docx"
+   },
+   {
+    "q": "Nenne zwei typische Einsatzgebiete von Accesslists und beschreibe sie grob!",
+    "src": "2022-23/JG05-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Was bedeutet „Implicit Deny-Any“?",
+    "src": "2022-23/JG05-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff „outbound Access List!“",
+    "src": "2022-23/JG05-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Erkläre den Begriff „Access“ Port! Gehe hier genauer auf den Begriff „TAG“ ein!",
+    "src": "2022-23/2023_06_17 - Abendschule-B.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff Standardgateway!",
+    "src": "2022-23/2023_06_17 - Abendschule-B.docx"
+   },
+   {
+    "q": "Weise dem PC in violett seine IP-Konfiguration zu!",
+    "src": "2022-23/2023_06_17 - Abendschule-B.docx"
+   },
+   {
+    "q": "Was verstehst du unter Referenzbandbreite und wie hoch ist diese in Cisco Netzwerken?",
+    "src": "2022-23/JG04-2BHIF- OSI.docx"
+   },
+   {
+    "q": "Wozu dient der Designated Router? Nach welchen drei Kriterien wird er gefunden?",
+    "src": "2022-23/JG04-2BHIF- OSI.docx"
+   },
+   {
+    "q": "Errechne die Wildcard Mask eines /23 Netzwerks",
+    "src": "2022-23/JG04-2BHIF- OSI.docx"
+   },
+   {
+    "q": "Wie würdest du die Funktionsweise von Port Address Translation in einem Netzwerk beschreiben? Was passiert?",
+    "src": "2022-23/2023-05 - NAT JG4v2.docx"
+   },
+   {
+    "q": "Welche Geräte/Komponenten sind auf Layer2?",
+    "src": "2022-23/JG04-2BHIF- OSI_B.docx"
+   },
+   {
+    "q": "Wie beschreibst du „proprietäres Modell“?",
+    "src": "2022-23/JG04-2BHIF- OSI_B.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Notationsbezeichnung)?Erkläre die Funktion des Gateways!",
+    "src": "2022-23/2021-05 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Notationsbezeichnung)?Ekläre die Funktion des Gateways!",
+    "src": "2022-23/2021-05 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Erkläre den Begriff Gateway!",
+    "src": "2022-23/Abendschule NVS.docx"
+   },
+   {
+    "q": "Erkläre den Begriff IP Adresse!",
+    "src": "2022-23/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Was bedeutet CIA? Beschreibe die Eigenschaften!",
+    "src": "2021-22/2022-04 - ITSEC-Hashing.docx"
+   },
+   {
+    "q": "Wie bezeichnet man diese Route? Wo wendet man sie an?ip route 0.0.0.0 0.0.0.0. 10.0.0.0.254",
+    "src": "2021-22/2022-03 - Wiederholung statisches Routing.docx"
+   },
+   {
+    "q": "Beschreibe den roten Eintrag!",
+    "src": "2021-22/2022-03 - Wiederholung statisches Routing.docx"
+   },
+   {
+    "q": "Welche IP Adresse wird auf dem Client als Gateway eingetragen? Beschreibe den Failover!",
+    "src": "2021-22/2022-03 - HSRP.docx"
+   },
+   {
+    "q": "Wie ist die Regel zur Findung des Feasible Successors?",
+    "src": "2021-22/JG04-4BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Berechne für R1 im unten angegebenen Beispiel die Feasible Distance (FD) u. Advertised Distance (AD) für das Netz 10.7.5.0/24. Markiere den „feasible successor\" „successor\".ADFDR2R3R4",
+    "src": "2021-22/JG04-4BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Nenne und beschreibe den größten Unterschied zwischen RIPv1 und RIPv2!",
+    "src": "2021-22/2022_05_wdh-RIP.docx"
+   },
+   {
+    "q": "Was bedeutet „First-Match-Prinzip?“ und „Implicit deny any“",
+    "src": "2021-22/JG04-5AHIF-ACLs.docx"
+   },
+   {
+    "q": "Erkläre den Unterschied zwischen vollständigem, inkrementellem und differentiellem Backup!",
+    "src": "2021-22/2022-04 - ITSEC-Ransomware.docx"
+   },
+   {
+    "q": "Was bedeutet „First-Match-Prinzip?“?",
+    "src": "2021-22/JG04-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff „inbound Access List!“",
+    "src": "2021-22/JG04-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff „Shared Secret“, wo muss dieses konfiguriert werden?",
+    "src": "2021-22/2022-1 - ITSEC-RADIUS.docx"
+   },
+   {
+    "q": "Nenne und beschreibe die drei Timer von RIPv2",
+    "src": "2021-22/2021_11_12_wdh-RIP.docx"
+   },
+   {
+    "q": "Welche Maßnahmen hast du mit dem KALI-Linux ausgeführt bzw. was war das Resultat?",
+    "src": "2025-26/ITSEC-RIP Authentication - ARP Poisoning.docx"
+   },
+   {
+    "q": "Was sind die Gegenmaßnahmen?",
+    "src": "2025-26/2025-09 - VTP.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff „Management LAN“ genauer! Was musst du hinsichtlich Sicherheit beachten?",
+    "src": "2025-26/JG04-VLAN.docx"
+   },
+   {
+    "q": "Wie wird der Designated Router gefunden?",
+    "src": "2025-26/OSPF-STP-Abendschule.docx"
+   },
+   {
+    "q": "Errechne die Wildcard Mask eines /27 Netzwerks!",
+    "src": "2025-26/OSPF-STP-Abendschule.docx"
+   },
+   {
+    "q": "Errechne den kürzesten Weg von 0 zu 8!Kürzester Weg: ________Cost: _______",
+    "src": "2025-26/OSPF-STP-Abendschule.docx"
+   },
+   {
+    "q": "Erklären Sie die wichtigsten Komponenten eines VPNs laut dieser Skizze:",
+    "src": "2025-26/2026-05 - 1AHIT - VPN.docx"
+   },
+   {
+    "q": "Nenne und beschreibe drei Unterschiede zwischen RIPv1 und RIPv2!",
+    "src": "2025-26/JG04-OSPF-RIP.docx"
+   },
+   {
+    "q": "Errrechne den kürzesten Weg von 0 zu 8!Kürzester Weg: ________Cost: _______",
+    "src": "2025-26/JG04-OSPF-RIP.docx"
+   },
+   {
+    "q": "Nenne die drei wichtigsten Cisco-Konfigurationsmodi und beschreibe kurz, wofür man sie verwendet.",
+    "src": "2025-26/2025-09 - 1AHIT.docx"
+   },
+   {
+    "q": "Was ist der Unterschied zwischen running-config und startup-config? Wo werden sie gespeichert? Warum gibt es zwei Konfigurationen?",
+    "src": "2025-26/2025-09 - 1AHIT.docx"
+   },
+   {
+    "q": "Erkläre kurz wofür CSMA/CD verwendet wird. Beschreibe detailliert die drei Schritte!",
+    "src": "2025-26/2025-09 - 1AHIT.docx"
+   },
+   {
+    "q": "Erkläre die Sinnhaftigkeit von PortChannels!",
+    "src": "2025-26/2026_01-STP+PortChannels.docx"
+   },
+   {
+    "q": "Wie würdest du den Begriff Configuration Revision beschreiben?",
+    "src": "2024-25/3AHIT-VLSM.docx"
+   },
+   {
+    "q": "Nenne und erkläre den größten Vorteil von virtuellen Maschinen!",
+    "src": "2024-25/2024-09 - COPR - Virtuelle Maschinen.docx"
+   },
+   {
+    "q": "Worauf muss man bei der Zuweisung des RAMs achten?",
+    "src": "2024-25/2024-09 - COPR - Virtuelle Maschinen.docx"
+   },
+   {
+    "q": "Wozu dienen Snapshots (Sicherungspunkte)?",
+    "src": "2024-25/2024-09 - COPR - Virtuelle Maschinen.docx"
+   },
+   {
+    "q": "123 4Beschreibe die vier Punkte!",
+    "src": "2024-25/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Beschreibe „Split Horzion“ (2P), zeichne und beschreibe ein anschauliches Beispiel (2P)!",
+    "src": "2024-25/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Erkläre den Begriff Successor bzw. Feasible Successor!",
+    "src": "2024-25/JG04-OSPF-EIGRP.docx"
+   },
+   {
+    "q": "Erkläre die Standard-Problematik mit 10.000, 1.000 und 100 Mbit/s! Was ist in modernen Netzwerken zu tun?",
+    "src": "2024-25/JG04-OSPFv2.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Notationsbezeichnung)? (2P)Erkläre den Aufbau einer MAC-Adresse? Welche beiden Teile gibt es?",
+    "src": "2024-25/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Notationsbezeichnung)? (2P)Funktioniert dieser Ping? Begründe deine Antwort! (1P)",
+    "src": "2024-25/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Beschreibe die ausgegebenen Parameter!11223333",
+    "src": "2024-25/2025-01 - HSRP.docx"
+   },
+   {
+    "q": "Welche IP Adresse wird auf dem Client als Gateway eingetragen? Beschreibe den Failover! Wie genau wird der Ausfall des Routers erkannt?",
+    "src": "2024-25/2025-01 - HSRP.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff Administrative Distanz",
+    "src": "2024-25/2025_05_wdh-RIP-neueversion.docx"
+   },
+   {
+    "q": "Erkläre die Begriffe: Inside Global:Outside Local:Inside Local: Outside Global",
+    "src": "2026-27/2026-10 - NAT JG4.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Welche beiden Teile gibt es…)?",
+    "src": "2026-27/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Wie würdest du die Funktionsweise von Port Address Translation in einem Netzwerk beschreiben? Was passiert? Woran erkennt der Router, zu welchem internen PC ein Antwortpaket gehört?",
+    "src": "2026-27/NAT JG4v2.docx"
+   },
+   {
+    "q": "Erkläre die Begriffe: Inside Global:Outside Local:Inside Local:",
+    "src": "2026-27/NAT JG4v2.docx"
+   },
+   {
+    "q": "Nenne und beschreibe die drei Interface-Stati eines Cisco Routers!1.2.3.",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Erkläre den Unterschied zwischen Running und Startup-Config! In welchem Speicher befindet sich die jeweilige Config?",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Konfiguriere das GigabitEthernet0/2 des roten Routers mit einer gültigen IP:Konfiguriere den grünen PC mit einer gültigen IP-Adresse, sodass er alle Netzwerke erreichen könnte:",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Welche Geräte/Komponenten sind auf Layer 3?",
+    "src": "2023-24/JG02-OSI.docx"
+   },
+   {
+    "q": "Wie beschreibst du „offenes Modell“?",
+    "src": "2023-24/JG02-OSI.docx"
+   },
+   {
+    "q": "Nenne und erkläre die drei Parameter der IP-Konfiguration!1.2.3.",
+    "src": "2023-24/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Wie sieht eine MAC-Adresse aus (Aufbau)? Beschreibe die MAC-Adresse (Bitanzahl, Eigenschaften)!",
+    "src": "2023-24/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse! (Bitanzahl, Notationsbezeichnung). Erkläre die Funktion des Gateways!",
+    "src": "2020-21/2021-05 - IP Adressierung JG2_SERVAS_Mrz-08-142900-2022_Conflict.docx"
+   },
+   {
+    "q": "Wo/Wie würdest du Port Address Translation in einem Netzwerk einsetzen?",
+    "src": "2020-21/2021-05 - NAT JG4.docx"
+   },
+   {
+    "q": "Erkläre die drei Eigenschaften eines proprietären Systems!",
+    "src": "2020-21/2019_10_11_wdh.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer IP Adresse und den Aufbau einer MAC-Adresse?Erkläre die Funktion des Gateways!",
+    "src": "2020-21/2021-10 - Wiederholung Jahrgang2.docx"
+   },
+   {
+    "q": "Erkläre die drei Eigenschaften eines offenen Systems!",
+    "src": "2020-21/2019_10_20_wdh.docx"
+   },
+   {
+    "q": "Nenne drei Eigenschaften der Client/Server-Architektur",
+    "src": "2020-21/2019_10_20_wdh.docx"
+   }
+  ],
+  "Security/sonst": [
+   {
+    "q": "Was ist der Unterschied zwischen extended und standard ACLs?",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Was ist der Unterschied zwischen Inbound und Outbound ACLs?",
+    "src": "2018-19/JG04-4BHIF-3.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau von Extended ACLs. Wo würdest du die ACLs platzieren?",
+    "src": "2022-23/JG05-5BHIF-ACLs.docx"
+   },
+   {
+    "q": "Wozu dient ein Hash-Wert beim Download?",
+    "src": "2021-22/2022-04 - ITSEC-Hashing.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau von Standard ACLs, insbesondere die Nachteile hinsichtlich Effizienz. Wo würdest du die ACLs platzieren?",
+    "src": "2021-22/JG04-5AHIF-ACLs.docx"
+   },
+   {
+    "q": "Beschreibe den Unterschied zwischen inbound und outbound ACL!",
+    "src": "2021-22/JG04-5AHIF-ACLs.docx"
+   },
+   {
+    "q": "Was ist Ransomware? Was ist das Ziel eines Ransomware-Angriffs?",
+    "src": "2021-22/2022-04 - ITSEC-Ransomware.docx"
+   },
+   {
+    "q": "Was bedeutet die Abkürzung RADIUS und wozu wird es in Unternehmen verwendet?Was sind die Vorteile hinsichtlich Sicherheit?",
+    "src": "2021-22/2022-1 - ITSEC-RADIUS.docx"
+   }
+  ],
+  "VPN": [
+   {
+    "q": "Erkläre Integritiy!Wozu verwendet man ein Client-VPN? Beschreibe die Funktionsweise!",
+    "src": "2022-23/2022-12 - VPN JG2.docx"
+   },
+   {
+    "q": "Erklären Sie die praktische Bedeutung von einem Site-to-Site VPN Netzwerk in einem Unternehmen.",
+    "src": "2025-26/2026-05 - 1AHIT - VPN.docx"
+   },
+   {
+    "q": "Erklären Sie die praktische Bedeutung von einem Client-to-Site VPN Netzwerk in einem Unternehmen.",
+    "src": "2025-26/2026-05 - 1AHIT - VPN.docx"
+   }
+  ],
+  "Subnetting/IP": [
+   {
+    "q": "Zeichne mit unterschiedlichen Farben die Collision und Broadcasts Domains ein:Anzahl Broadcast Domains: ________________________Anzahl Collision Domains: _________________________",
+    "src": "2022-23/2023_04_28_Col-BC-Domains2.docx"
+   },
+   {
+    "q": "Was ist die Subnetzmaske? Wie sieht eine gültige Subnetzmaske aus?Errechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!)199.12.77.99 Subnetzmaske: 255.255.128.0",
+    "src": "2022-23/2021-05 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff DNS! Warum verwenden wir DNS im Internet?Errechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!)12.13.222.99 Subnetzmaske: 255.255.192.0",
+    "src": "2022-23/2021-05 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Wie sieht eine Subnetzmaske aus? Wozu braucht ein Rechner eine Subnetzmaske?",
+    "src": "2022-23/Abendschule NVS.docx"
+   },
+   {
+    "q": "Zeichne die Broadcast-Domains ein!",
+    "src": "2022-23/Abendschule NVS.docx"
+   },
+   {
+    "q": "Zeichne alle Broadcast-Domains ein!",
+    "src": "2022-23/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Gegeben sind 2048 Hosts, wie ist die Subnetzmaske?Gegeben sind 55 Hosts, wie ist die Subnetzmaske?",
+    "src": "2025-26/2025-10 - 4xhif - Subnetz errechnen + RIP.docx"
+   },
+   {
+    "q": "Gegeben ist 130.128.0.0 mit 255.252.0.0. Wie lautet der erste Host, der letzte Host, wie lautet die Broadcast- und wie die Netzadresse?Netzadresse: Broadcastadresse:erster Host:letzter Host:",
+    "src": "2025-26/2025-10 - 4xhif - Subnetz errechnen + RIP.docx"
+   },
+   {
+    "q": "Gegeben sind 250 Hosts, wie ist die Subnetzmaske?Gegeben sind 1023 Hosts, wie ist die Subnetzmaske?",
+    "src": "2025-26/2025-10 - 4xhif - Subnetz errechnen + RIP.docx"
+   },
+   {
+    "q": "Gegeben ist 129.129.128.0 mit 255.255.192.0. Wie lautet der erste Host, der letzte Host, wie lautet die Broadcast- und wie die Netzadresse?Netzadresse: Broadcastadresse:erster Host:letzter Host:",
+    "src": "2025-26/2025-10 - 4xhif - Subnetz errechnen + RIP.docx"
+   },
+   {
+    "q": "Was ist die Subnetzmaske? Wie sieht eine gültige Subnetzmaske aus? (1P)Errechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!) (2P)",
+    "src": "2024-25/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Was ist das? Wie teilst du diese Adresse? Wie heißen die beiden Teile? (1P)34-E1-2D-CC-BB-4FErrechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!) (2P)",
+    "src": "2024-25/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": ": Sind beide Geräte im gleichen Netz?172.17.5.10 und 172.33.8.4 mit der Subnetzmaske 255.240.0.0Aufgabe 2: Sind beide Geräte im gleichen Netz?192.168.50.130 und 192.168.50.190 mit der Subnetzmaske 255.255.255.192Aufgabe 3: Sind beide Geräte im gleichen Netz?10.20.130.5 und 10.20.131.250 mit der Subnetzmaske 255.255.254.0",
+    "src": "2026-27/202601 - IP Adressierung JG2v3.docx"
+   },
+   {
+    "q": ": Sind beide Geräte im gleichen Netz?192.168.7.100 und 192.168.8.20 mit der Subnetzmaske 255.255.248.0Aufgabe 2: Sind beide Geräte im gleichen Netz?172.16.99.200 und 172.16.100.3 mit der Subnetzmaske 255.255.192.0Aufgabe 3: Sind beide Geräte im gleichen Netz?10.1.200.1 und 10.1.223.254 mit der Subnetzmaske 255.255.224.0",
+    "src": "2026-27/202601 - IP Adressierung JG2v3.docx"
+   },
+   {
+    "q": ": Sind beide Geräte im gleichen Netz?172.20.15.7 und 172.31.200.9 mit der Subnetzmaske 255.240.0.0Aufgabe 2: Sind beide Geräte im gleichen Netz?192.168.100.20 und 192.168.104.45 mit der Subnetzmaske 255.255.252.0Aufgabe 3: Sind beide Geräte im gleichen Netz?10.77.127.5 und 10.77.128.6 mit der Subnetzmaske 255.255.192.0",
+    "src": "2026-27/202601 - IP Adressierung JG2v2.docx"
+   },
+   {
+    "q": "Errechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!)Sind beide Geräte im gleichen Netz? 10.240.231.212 und 10.250.212.231 mit der Subnetzmaske 255.240.0.0",
+    "src": "2026-27/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Errechne die Netzadresse von folgenden der folgenden IP! (Rechenweg angeben!)A",
+    "src": "2026-27/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Beschreibe den Aufbau einer Subnetzmaske! (Bitanzahl, Wie heißen die beiden Teile)? Sind beide Geräte im gleichen Netz? 10.251.231.212 und 10.252.212.231 mit der Subnetzmaske 255.240.0.0",
+    "src": "2026-27/202501 - IP Adressierung JG2.docx"
+   },
+   {
+    "q": "Sind die beiden Geräte im gleichen Netz? Berechne beide Netzadressen (Rechenweg angeben!) und entscheide.Gerät A: 10.60.148.33Gerät B: 10.60.200.200Subnetzmaske: 255.255.192.0Netzadresse A: ____________ Netzadresse B: ____________Gleiches Netz? Ja ☐ Nein ☐",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Sind die beiden Geräte im gleichen Netz? Berechne beide Netzadressen (Rechenweg angeben!) und entscheide.Gerät A: 172.20.19.250Gerät B: 172.20.28.4Subnetzmaske: 255.255.240.0Netzadresse A: ____________ Netzadresse B: ____________Gleiches Netz? Ja ☐ Nein ☐",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Zeichne die Broadcast- und Collision Domains ein!",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Welche Broadcast-Domains bzw. Netzwerke sind auf dem rot markierten Router vorhanden, welche musst du ihm (entweder statisch oder dynamisch) mitteilen?vorhanden :nicht vorhanden:",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Wie sieht eine Subnetzmaske aus (Aufbau)? Handelt es sich bei 255.255.1.0 um eine gültige Subnetzmaske?",
+    "src": "2023-24/Abendschule NVS.docx"
+   },
+   {
+    "q": "Funktioniert diese IP Konfiguration (Sind die beiden IPs im gleichen Netz?)? Rechenweg: Errechne die Netzadresse von der folgenden IP! (Rechenweg angeben!)199.12.77.99 Subnetzmaske: 255.255.252.0",
+    "src": "2023-24/Abendschule NVS.docx"
+   },
+   {
+    "q": "Sind die beiden IPs im gleichen Netz? 200.201.202.37255.255.255.252200.201.202.40Rechenweg: Errechne die Netzadresse von der folgenden IP! (Rechenweg angeben!)212.37.99.0 - 255.255.128.0",
+    "src": "2023-24/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Was ist die Subnetzmaske? In welche beiden Teile teilt sie die IP-Adresse? Wie ermittelst du die Netzadresse? Sind folgende beiden IP-Adressen im gleichen Netz? (Rechenweg angeben!)192.168.12.125 und 192.168.12.129 – Subnetzmaske: 255.255.255.128",
+    "src": "2020-21/2021-05 - IP Adressierung JG2_SERVAS_Mrz-08-142900-2022_Conflict.docx"
+   },
+   {
+    "q": "Beschreibe den Vorgang des bei der Umwandlung von einer IP in eine MAC-Adresse? Wie heißen die drei Schritte und was passiert?Sind folgende beiden IP-Adressen im gleichen Netz? (Rechenweg angeben!)192.168.12.121 und 192.168.12.123 – Subnetzmaske: 255.255.255.252",
+    "src": "2020-21/2021-10 - Wiederholung Jahrgang2.docx"
+   },
+   {
+    "q": "Sind folgende beiden IP-Adressen im gleichen Netz? (Rechenweg angeben!)172.16.12.124 und 172.16.12.127 – Subnetzmaske: 255.255.255.252",
+    "src": "2020-21/2021-10 - Wiederholung Jahrgang2.docx"
+   },
+   {
+    "q": "Was ist die Subnetzmaske? In welche beiden Teile teilt sie die IP-Adresse? Wie ermittelst du die Netzadresse? Beschreibe den Vorgang des bei der Umwandlung von einer IP in eine MAC-Adresse? Wie heißen die drei Schritte und was passiert?",
+    "src": "2020-21/2021-10 - Wiederholung Jahrgang2.docx"
+   }
+  ],
+  "OSI/Kapselung": [
+   {
+    "q": "Vervollständige und schreibe die PDUs dazu!ApplicationPhysical",
+    "src": "2022-23/2023_06_17 - Abendschule-B.docx"
+   },
+   {
+    "q": "Nenne die sieben Schichten des OSI-Modells!PhysicalApplication",
+    "src": "2022-23/JG04-2BHIF- OSI_B.docx"
+   },
+   {
+    "q": "Welche PDU wird auf Layer 3 verwendet?",
+    "src": "2022-23/JG04-2BHIF- OSI_B.docx"
+   },
+   {
+    "q": "Vervollständige und schreibe die PDUs dazu!PhysicalApplication",
+    "src": "2022-23/2023_06_17 - Abendschule.docx"
+   },
+   {
+    "q": "Wer wird in einem Spanning-Tree-Netzwerk die Root-Bridge? Welche beiden Faktoren spielen hier eine Rolle? (2P) Erkläre den Begriff BPDU (Welche drei Felder gibt es?) (1P)",
+    "src": "2021-22/2022_05_wdh-STP-4AHIF.docx"
+   },
+   {
+    "q": "Wie sind die beiden Gegenmaßnahmen auf einem Cisco-Switch? Was ist ein BPDU? Nenne zwei der drei Felder die ein solches Paket beinhaltet!",
+    "src": "2021-22/2021-12 - ITSEC-Root Bridge.docx"
+   },
+   {
+    "q": "Erkläre die Sinnhaftigkeit von BPDUGuard und BPDUFilter! Was bewirken sie jeweils auf einem Switchport",
+    "src": "2024-25/2025_01-STP-3AHIT.docx"
+   },
+   {
+    "q": "Ergänze die fehlenden Schichtnamen:Schicht 7: ________________Schicht 6: PresentationSchicht 5: ________________Schicht 4: TransportSchicht 3: ________________Schicht 2: Data LinkSchicht 1: ________________",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Trage die fehlende Dateneinheit (PDU) ein:Application (Schicht 7): DatenPresentation (Schicht 6): ________________Session (Schicht 5): DatenTransport (Schicht 4): ________________Network (Schicht 3): PaketData Link (Schicht 2): ________________Physical (Schicht 1): Bits",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Ergänze die fehlenden Schichtnamen:Schicht 7: ApplicationSchicht 6: ________________Schicht 5: SessionSchicht 4: ________________Schicht 3: NetworkSchicht 2: ________________Schicht 1: Physical",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Trage die fehlende Dateneinheit (PDU) ein:Application (Schicht 7): ________________Presentation (Schicht 6): DatenSession (Schicht 5): ________________Transport (Schicht 4): SegmentNetwork (Schicht 3): ________________Data Link (Schicht 2): FramePhysical (Schicht 1): ________________",
+    "src": "2026-27/OSI-Test_Vorlage.docx"
+   },
+   {
+    "q": "Nenne die sieben Schichten des OSI-Modells!ApplicationPhysical",
+    "src": "2023-24/JG02-OSI.docx"
+   },
+   {
+    "q": "Nenne die fünf fehlenden Schichten des OSI Modells!TransportNetworkb.) Welche PDU und welches Gerät findest du auf dem Transport Layer?",
+    "src": "2023-24/Abendschule NVS.docx"
+   },
+   {
+    "q": "Nenne die fünf fehlenden Schichten des OSI Modells!Data LinkTransportb.) Welche PDU und welches Gerät findest du auf dem Data Link?",
+    "src": "2023-24/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Nenne die sieben Schichten des OSI-Modells in der richtigen Reihenfolge!",
+    "src": "2020-21/2019_10_11_wdh.docx"
+   }
+  ],
+  "VLAN/Trunk/VTP/DTP": [
+   {
+    "q": "Zeichne Trunk (T) und Access Ports (A) ein!",
+    "src": "2022-23/2023_06_17 - Abendschule-B.docx"
+   },
+   {
+    "q": "Erkläre den Begriff „Trunk“ Port! Gehe hier genauer auf den Begriff „TAG“ ein!",
+    "src": "2022-23/2023_06_17 - Abendschule.docx"
+   },
+   {
+    "q": "Wie würdest du VTP beschreiben und was ist der Einfallsvektor?",
+    "src": "2025-26/2025-09 - VTP.docx"
+   },
+   {
+    "q": "Erkläre, was das VLAN Trunking Protocol ist und welchen Zweck es in einem Netzwerk erfüllt.",
+    "src": "2025-26/JG04-VLAN.docx"
+   },
+   {
+    "q": "Beschreibe die verschiedenen Betriebsmodi des VLAN Trunking Protocol und erkläre, wie sie sich voneinander unterscheiden.",
+    "src": "2025-26/JG04-VLAN.docx"
+   },
+   {
+    "q": "Wozu dient das Feld „VLAN-Identifier“? Beschreibe den 802.1Q Frame genauer!",
+    "src": "2025-26/JG04-VLAN.docx"
+   },
+   {
+    "q": "Welcher dieser Ports ist ein Trunk, welcher ist ein Access-Port? Kennzeichne sie mit einem T oder einem A!",
+    "src": "2025-26/3AHIT-VLANs.docx"
+   },
+   {
+    "q": "Wie würdest du den Unterschied zwischen Layer 2 und Layer 3 VLAN beschreiben?Was ist auf einem Router-Interface hinsichtlich VLAN Konfiguration zu tun?",
+    "src": "2025-26/3AHIT-VLANs.docx"
+   },
+   {
+    "q": "Fülle folgende Tabelle aus:Dynamic AutoDynamic DesireableTrunkAccessDynamic autoDynamic DesireableTrunkAccess",
+    "src": "2024-25/3AHIT-VLSM.docx"
+   },
+   {
+    "q": "Erkläre den Unterschied zwischen Client, Server und Transparent beim VTP ProtokollWozu dient das VTP Protokoll?",
+    "src": "2024-25/3AHIT-VLSM.docx"
+   },
+   {
+    "q": "Fülle folgende Tabelle aus:TrunkDynamic AutoAccessDynamic DesireableDynamic DesirableTrunkDynamic AutoAccess",
+    "src": "2024-25/3AHIT-VLSM-B.docx"
+   },
+   {
+    "q": "Erkläre den Unterschied zwischen Trunk, Dynamic Auto und Dynamic Desireable beim DTP Protokoll?Warum sollte man das DTP Protokoll in modernen Netzen abdrehen?",
+    "src": "2024-25/3AHIT-VLSM-B.docx"
+   },
+   {
+    "q": "Was bewirkt eine höhere Revisionsnummer in der gleichen VTP Domain?Wie kann VTP abgesichert werden?",
+    "src": "2024-25/3AHIT-VLSM-B.docx"
+   },
+   {
+    "q": "Was ist/Wozu dient dieses Kabel? Welche alternativen Möglichkeiten können zur Konfiguration eines Routers verwendet werden? Was sind die Vorrausetzungen dafür?",
+    "src": "2023-24/Abendschule NVS-Sommersemester.docx"
+   }
+  ],
+  "Routing allg.": [
+   {
+    "q": "Erkläre zwei wesentliche Unterschiede vom Link-State Routing zu Distance Vektor genauer!",
+    "src": "2022-23/JG04-2BHIF- OSI.docx"
+   },
+   {
+    "q": "Nenne und beschreibe je drei Vor- und Nachteile von statischem Routing",
+    "src": "2021-22/2022-03 - Wiederholung statisches Routing.docx"
+   },
+   {
+    "q": "Wie nennt man den Algorithmus von EIGRP und welche Art von Routing Protocol ist EIGRP?",
+    "src": "2021-22/JG04-4BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Beschreibe Link State Routing!",
+    "src": "2021-22/2021_11_12_wdh-RIP.docx"
+   },
+   {
+    "q": "Führe das Routing für Router 6 (gelb) durch!RIP config:Gib die statischen Routen für die Netze 10.3.0.0 und 10.7.0.0 an!",
+    "src": "2024-25/2025_04_wdh-RIP.docx"
+   },
+   {
+    "q": "Führe das Routing für Router 2 (rot) durch!RIP config:Gib die statischen Routen für die Netze 10.3.0.0 und 10.7.0.0 an!",
+    "src": "2024-25/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Beschreibe den Begriff „Administrative Distanz“!Bringe folgende Routingprotokolle in die aufsteigende Reihenfolge!1 EIGRP, 2 OSPF, 3 directly connected, 4 statisch, 5 RIPReihenfolge: ___________________________",
+    "src": "2024-25/Abendschule NVS-Sommersemester.docx"
+   },
+   {
+    "q": "Beschreibe die wichtigsten Unterschiede/Nachteile zu statischem Routing!",
+    "src": "2024-25/2025_04_wdh-RIP-B.docx"
+   },
+   {
+    "q": "Führe das Routing für Router in blau durch!RIP config:Gib die statischen Routen für die Netze 10.3.0.0 und 10.7.0.0 an!",
+    "src": "2024-25/2025_04_wdh-RIP-B.docx"
+   },
+   {
+    "q": "Erkläre zwei wesentliche Unterschiede vom Link-State Routing zu Distance Vektor genauer!OSPF ist ein ____________ Protokoll, EIGRP ein ______________ Protokoll",
+    "src": "2024-25/JG04-OSPF-EIGRP.docx"
+   },
+   {
+    "q": "Erkläre kurz den Unterschied zwischen Distance Vector Routing und Link State Routing. Erkläre wie die Routenfindung bei RIP funktioniert!",
+    "src": "2024-25/2025_05_wdh-RIP-neueversion.docx"
+   },
+   {
+    "q": "Beschreibe die wichtigsten Unterschiede/Nachteile zu Link State Routing!",
+    "src": "2023-24/2023_11_wdh-RIP-B.docx"
+   }
+  ],
+  "OSPF": [
+   {
+    "q": "Welche drei Tabellen kennst du in OSPF? Nenne kurz den Inhalt!",
+    "src": "2022-23/JG04-2BHIF- OSI.docx"
+   },
+   {
+    "q": "Welche drei Tabellen kennst du in OSPF?",
+    "src": "2025-26/OSPF-STP-Abendschule.docx"
+   },
+   {
+    "q": "Nenne zwei wesentliche Vorteile von EIGRP gegenüber von RIP und/oder OSPF",
+    "src": "2024-25/JG05-5BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Erkläre wie sich der der Cost Wert von OSPF zusammensetzt! Was macht der Bandwidth-Parameter am Interface?",
+    "src": "2024-25/JG04-OSPFv2.docx"
+   }
+  ],
+  "ARP": [
+   {
+    "q": "Nenne die drei Schritte und erkläre die Funktionsweise von ARP!1.2.3.",
+    "src": "2022-23/Abendschule NVS.docx"
+   },
+   {
+    "q": "Nenne die drei Schritte und erkläre die Funktionsweise von ARP!123",
+    "src": "2022-23/Abendschule NVS-GruppeB.docx"
+   },
+   {
+    "q": "Wie würdest du die Attacke „ARP Poisoning“ beschreiben? Wie läuft der Angriff ab? Stelle die Verbindung zum ARP Protokoll her.",
+    "src": "2025-26/ITSEC-RIP Authentication - ARP Poisoning.docx"
+   },
+   {
+    "q": "Was bedeutet „ARP Spoofing“ bzw. „ARP Poisoning“? Wie läuft der Angriff ab? Fertige dazu eine Skizze an!",
+    "src": "2024-25/2024-10 - DHCP Starvation - ARP Spoofing.docx"
+   },
+   {
+    "q": "Warum ist das ARP Protokoll im Zusammenhang mit dem OSI-Modell wichtig?",
+    "src": "2024-25/JG02-ARP.docx"
+   },
+   {
+    "q": "Welche drei Schritte hast du bei ARP? Erkläre den zweiten Schritt genauer!",
+    "src": "2024-25/JG02-ARP.docx"
+   },
+   {
+    "q": "Fülle die fehlenden Felder aus! SRC IPDEST IPSRC MACDEST MACWelche Felder sind vor dem ARP Request bekannt? Kreise ein!",
+    "src": "2024-25/JG02-ARP.docx"
+   },
+   {
+    "q": "Erkläre den Ablauf des ARP Protokolls!",
+    "src": "2023-24/ITSEC-WHLG1.docx"
+   },
+   {
+    "q": "Erkläre Ablauf des ARP-Protokolls!",
+    "src": "2023-24/JG02-ARP - A.docx"
+   },
+   {
+    "q": "Welche drei Schritte hast du bei ARP? Erkläre den ersten Schritt genauer!",
+    "src": "2023-24/JG02-ARP - A.docx"
+   },
+   {
+    "q": "Fülle die fehlenden Felder aus! SRC MACDEST IPSRC IPDEST MACWelches Feld ist nach dem ARP Reply bekannt? Kreise ein!",
+    "src": "2023-24/JG02-ARP - A.docx"
+   },
+   {
+    "q": "Wozu benötigen wir das ARP-Protokoll?",
+    "src": "2023-24/Abendschule NVS-GruppeB.docx"
+   }
+  ],
+  "HSRP/FHRP": [
+   {
+    "q": "Nenne und beschreibe Gründe warum man FHRP, insbesondere HSRP-Protokolle in der Praxis einsetzt!",
+    "src": "2021-22/2022-03 - HSRP.docx"
+   },
+   {
+    "q": "Wie läuft die Bestimmung des aktiven Routers in HSRP ab? Was ist die virtuelle Mac, was die virtuelle IP?",
+    "src": "2021-22/2022-03 - HSRP.docx"
+   }
+  ],
+  "EIGRP": [
+   {
+    "q": "Welche Werte zwei Werte beeinflussen die Metric in EIGRP standardmäßig? Handelt es sich um statische oder dynamische Werte?",
+    "src": "2021-22/JG04-4BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Was ist die Neighbortable bei EIGRP und welche Werte beinhaltet sie?",
+    "src": "2021-22/JG04-4BHIF-EIGRP.docx"
+   },
+   {
+    "q": "Welche Werte vier(fünf) nimmt EIGRP zur Berechnung seiner besten Route her? Welche Werte sind statisch, welche sind dynamisch?Beschreibe die beiden statischen Werte genauer! (Wie setzen sie sich zusammen?)",
+    "src": "2024-25/JG04-OSPF-EIGRP.docx"
+   }
+  ],
+  "RIP": [
+   {
+    "q": "Erkläre detailliert das Split Horizon Problem! Skizziere dazu ein Beispiel!",
+    "src": "2021-22/2022_05_wdh-RIP.docx"
+   },
+   {
+    "q": "Wie misst RIP seine „beste“ Route? Skizziere ein Beispiel und beschreibe die Nachteile!",
+    "src": "2021-22/2022_05_wdh-RIP.docx"
+   },
+   {
+    "q": "Nenne mindestens fünf allgemeine Eigenschaften vom RIP Protokoll",
+    "src": "2021-22/2021_11_12_wdh-RIP.docx"
+   },
+   {
+    "q": "Wieso sollest du RIP Authentication verwenden?Wie würdest du allgemein den Begriff Authentication beschreiben? Vergleiche ihn mit dem Begriff",
+    "src": "2025-26/ITSEC-RIP Authentication - ARP Poisoning.docx"
+   },
+   {
+    "q": "Was verstehst du unter Split Horizon?",
+    "src": "2025-26/OSPF-STP-Abendschule.docx"
+   },
+   {
+    "q": "Nenne mindestens drei allgemeine Eigenschafte vom RIP Protokoll und erkläre sie!",
+    "src": "2023-24/2023_11_wdh-RIP-B.docx"
+   }
+  ],
+  "DHCP": [
+   {
+    "q": "Nenne die vier Schritte einer „normalen“ DHCP-Anfrage/Antwort und beschreibe sie!",
+    "src": "2021-22/2021-05 - ITSEC-VLAN Hopping.docx"
+   },
+   {
+    "q": "Was bedeutet DHCP und wozu wird es in einem Netzwerk eingesetzt?Nenne zwei der vier Einstellungsparameter die vom Server zum Client übertragen werden!",
+    "src": "2021-22/2021-05 - ITSEC-VLAN Hopping.docx"
+   },
+   {
+    "q": "Wie äußert sich „DHCP Starvation“? Wie läuft der Angriff ab?Tipp: Wo wird in den DHCP Prozess eingegriffen?",
+    "src": "2024-25/2024-10 - DHCP Starvation - ARP Spoofing.docx"
+   },
+   {
+    "q": "Wie verhinderst du DHCP Starvation auf dem Switch? Was wird damit unterbunden?",
+    "src": "2024-25/2024-10 - DHCP Starvation - ARP Spoofing.docx"
+   },
+   {
+    "q": "Wie läuft die Attacke „DHCP Starvation“ ab?Welche Gegenmaßnahmen kannst du am Switch setzen?",
+    "src": "2023-24/ITSEC-WHLG1.docx"
+   }
+  ]
+ },
+ "generatedFrom": "alte Tests 2016–2022",
+ "count": 216
+}
