@@ -44,12 +44,18 @@ function loadPoolTopics() {
     for (const name of order) {
       const qs = (pool.groups || {})[name] || [];
       if (qs.length < 2) continue;
+      const curated = qs.some(x => x.a || x.p);
+      const srcLabel = curated ? 'kuratierter Katalog' : 'Fragen aus alten Tests';
       TOPICS['pool-' + slug(name)] = {
-        label: 'Fragenkatalog: ' + name + ' (' + qs.length + ' Fragen aus alten Tests)',
+        label: 'Fragenkatalog: ' + name + ' (' + qs.length + ' ' + srcLabel + ')',
         levels: LV, points: { L: 2, M: 3, S: 4 }, isPool: true,
         gen(seed, lvl) {
-          const item = qs[((seed % qs.length) + qs.length) % qs.length];
-          return { intro: '', lines: [item.q], solution: ['(offene Frage – Bewertung durch Lehrkraft)'] };
+          let sub = qs.filter(x => !x.lvl || x.lvl === lvl);
+          if (!sub.length) sub = qs;
+          const item = sub[((seed % sub.length) + sub.length) % sub.length];
+          return { intro: '', lines: [item.q],
+            points: (item.p != null ? item.p : undefined),
+            solution: [item.a ? ('(Vorschlag) ' + item.a) : '(offene Frage – Bewertung durch Lehrkraft)'] };
         }
       };
     }
@@ -85,14 +91,13 @@ function buildGroups(topicId, levels, count, seedBase) {
   const t = TOPICS[topicId];
   if (!t) throw new Error('Unbekanntes Thema: ' + topicId);
   seedBase = seedBase || Math.floor(Math.random() * 90000) + 1000;
-  const OFF = 50000;
+  const OFF = 50021;
   const g1 = [], g2 = [], sol1 = [], sol2 = [];
   for (let i = 0; i < count; i++) {
     const lvl = levels[i % levels.length];
     const e1 = t.gen(seedBase + i, lvl), e2 = t.gen(seedBase + OFF + i, lvl);
-    const pts = t.points[lvl];
-    g1.push({ intro: e1.intro, lines: e1.lines, points: pts });
-    g2.push({ intro: e2.intro, lines: e2.lines, points: pts });
+    g1.push({ intro: e1.intro, lines: e1.lines, points: (e1.points != null ? e1.points : t.points[lvl]) });
+    g2.push({ intro: e2.intro, lines: e2.lines, points: (e2.points != null ? e2.points : t.points[lvl]) });
     sol1.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e1.solution.join(' | '));
     sol2.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e2.solution.join(' | '));
   }

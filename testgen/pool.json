@@ -1,5 +1,6 @@
 {
  "order": [
+  "Routing (Katalog)",
   "Sonstiges",
   "Subnetting/IP",
   "OSI/Kapselung",
@@ -909,6 +910,106 @@
    {
     "q": "Wie läuft die Attacke „DHCP Starvation“ ab?Welche Gegenmaßnahmen kannst du am Switch setzen?",
     "src": "2023-24/ITSEC-WHLG1.docx"
+   }
+  ],
+  "Routing (Katalog)": [
+   {
+    "q": "Was ist eine Routingtabelle und wozu dient sie einem Router?",
+    "p": 2,
+    "a": "Liste bekannter Zielnetze mit Next-Hop/Ausgangsinterface; der Router entscheidet damit, wohin ein Paket weitergeleitet wird.",
+    "lvl": "L",
+    "src": "Katalog"
+   },
+   {
+    "q": "Was bedeutet eine Default-Route (0.0.0.0/0) bzw. „Gateway of last resort\"?",
+    "p": 2,
+    "a": "Route für alle Ziele, die in keiner spezifischeren Route stehen; typisch Richtung Internet/Upstream.",
+    "lvl": "L",
+    "src": "Katalog"
+   },
+   {
+    "q": "Nenne den Unterschied zwischen statischem und dynamischem Routing in je einem Satz.",
+    "p": 3,
+    "a": "Statisch: manuell eingetragene Routen, kein Protokoll-Overhead, keine automatische Anpassung. Dynamisch: Router lernen Routen über ein Protokoll und passen sich bei Änderungen an.",
+    "lvl": "L",
+    "src": "Katalog"
+   },
+   {
+    "q": "Was gibt die administrative Distanz (AD) an? Welche Route gewinnt bei konkurrierenden Quellen?",
+    "p": 3,
+    "a": "Vertrauenswürdigkeit der Routenquelle; die kleinste AD gewinnt (verbunden 0, statisch 1, EIGRP 90, OSPF 110, RIP 120).",
+    "lvl": "L",
+    "src": "Katalog"
+   },
+   {
+    "q": "Erkläre die Metrik von RIP und ihre wichtigste Einschränkung.",
+    "p": 3,
+    "a": "Metrik = Hop Count; max. 15 Hops, 16 = unerreichbar. Nur für kleine Netze; berücksichtigt keine Bandbreite.",
+    "lvl": "M",
+    "src": "Katalog"
+   },
+   {
+    "q": "Wie wählt OSPF den besten Pfad und worauf basiert die Standard-Kostenmetrik?",
+    "p": 4,
+    "a": "Niedrigste Summe der Kosten (Cost) zum Ziel; Cost = Referenzbandbreite/Interface-Bandbreite (Standard-Referenz 100 Mbit/s). Mehr Bandbreite → weniger Kosten.",
+    "lvl": "M",
+    "src": "Katalog"
+   },
+   {
+    "q": "Nenne drei Eigenschaften von RIPv2 gegenüber RIPv1.",
+    "p": 3,
+    "a": "Klassenlos (VLSM/CIDR), Updates per Multicast 224.0.0.9, unterstützt Authentifizierung.",
+    "lvl": "M",
+    "src": "Katalog"
+   },
+   {
+    "q": "Was beschreibt „Split Horizon\" und welches Problem verhindert es?",
+    "p": 4,
+    "a": "Eine über ein Interface gelernte Route wird nicht über dasselbe Interface zurück beworben; verhindert Routing-Schleifen bei Distance-Vector-Protokollen.",
+    "lvl": "M",
+    "src": "Katalog"
+   },
+   {
+    "q": "Welche Angaben braucht eine statische Route mindestens? Gib ein Beispiel.",
+    "p": 3,
+    "a": "Zielnetz + Maske und Next-Hop-IP oder Ausgangsinterface; z. B. ip route 10.0.0.0 255.0.0.0 192.168.1.2.",
+    "lvl": "M",
+    "src": "Katalog"
+   },
+   {
+    "q": "Ein Netz ist über OSPF (AD 110) und über eine statische Route (AD 1) bekannt. Welche kommt in die Tabelle und warum?",
+    "p": 4,
+    "a": "Die statische Route (AD 1): die kleinere administrative Distanz gilt als vertrauenswürdiger – unabhängig von der Metrik.",
+    "lvl": "S",
+    "src": "Katalog"
+   },
+   {
+    "q": "Erkläre die drei RIP-Timer (Update, Invalid/Holddown, Flush).",
+    "p": 5,
+    "a": "Update (~30 s): Intervall der Updates. Invalid/Holddown (~180 s): Route ungültig bzw. keine schlechteren Infos annehmen. Flush (~240 s): Route wird entfernt. (typische Cisco-Defaults)",
+    "lvl": "S",
+    "src": "Katalog"
+   },
+   {
+    "q": "Warum skaliert OSPF besser als RIP? Nenne zwei technische Gründe.",
+    "p": 4,
+    "a": "Link-State mit voller Topologiekenntnis und schneller Konvergenz; keine 15-Hop-Grenze, bandbreitenbasierte Metrik; Hierarchie über Areas reduziert Updates.",
+    "lvl": "S",
+    "src": "Katalog"
+   },
+   {
+    "q": "Unterschied Distance-Vector (RIP) vs. Link-State (OSPF) – je ein Kernmerkmal.",
+    "p": 4,
+    "a": "Distance-Vector: kennt nur Richtung+Distanz von Nachbarn, periodische Updates („routing by rumor\"). Link-State: jeder Router kennt die gesamte Topologie (LSAs) und berechnet den kürzesten Pfad (Dijkstra).",
+    "lvl": "S",
+    "src": "Katalog"
+   },
+   {
+    "q": "Lies den Eintrag „O 10.1.0.0/24 [110/65] via 10.0.0.1\" – erkläre jede Angabe.",
+    "p": 5,
+    "a": "O = via OSPF gelernt; 10.1.0.0/24 = Zielnetz; [110/65] = AD 110 / Metrik 65; via 10.0.0.1 = Next-Hop.",
+    "lvl": "S",
+    "src": "Katalog"
    }
   ]
  },

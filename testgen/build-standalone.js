@@ -25,18 +25,21 @@ function slug(s){return s.toLowerCase().replace(/[äöü]/g,function(c){return {
   var order = pool.order || Object.keys(pool.groups||{});
   order.forEach(function(name){
     var qs=(pool.groups||{})[name]||[]; if(qs.length<2) return;
-    TOPICS['pool-'+slug(name)] = { label:'Fragenkatalog: '+name+' ('+qs.length+' Fragen aus alten Tests)', levels:LV, points:{L:2,M:3,S:4},
-      gen:function(seed,lvl){ var it=qs[((seed%qs.length)+qs.length)%qs.length]; return {intro:'',lines:[it.q],solution:['(offene Frage – Bewertung durch Lehrkraft)']}; } };
+    var curated=qs.some(function(x){return x.a||x.p;});
+    TOPICS['pool-'+slug(name)] = { label:'Fragenkatalog: '+name+' ('+qs.length+' '+(curated?'kuratierter Katalog':'Fragen aus alten Tests')+')', levels:LV, points:{L:2,M:3,S:4},
+      gen:function(seed,lvl){ var sub=qs.filter(function(x){return !x.lvl||x.lvl===lvl;}); if(!sub.length) sub=qs;
+        var it=sub[((seed%sub.length)+sub.length)%sub.length];
+        return {intro:'',lines:[it.q], points:(it.p!=null?it.p:undefined), solution:[it.a?('(Vorschlag) '+it.a):'(offene Frage – Bewertung durch Lehrkraft)']}; } };
   });
 })();
 function buildMixed(parts, levels){
-  var OFF=50000, g1=[],g2=[],s1=[],s2=[], idx=0, seeds=[];
+  var OFF=50021, g1=[],g2=[],s1=[],s2=[], idx=0, seeds=[];
   parts.forEach(function(part){
     var t=TOPICS[part.topic]; if(!t || !(part.count>0)) return;
     var sb=Math.floor(Math.random()*90000)+1000; seeds.push(sb);
     for(var i=0;i<part.count;i++){ var lvl=levels[idx%levels.length];
-      var e1=t.gen(sb+i,lvl), e2=t.gen(sb+OFF+i,lvl), pts=t.points[lvl];
-      g1.push({intro:e1.intro,lines:e1.lines,points:pts}); g2.push({intro:e2.intro,lines:e2.lines,points:pts});
+      var e1=t.gen(sb+i,lvl), e2=t.gen(sb+OFF+i,lvl);
+      g1.push({intro:e1.intro,lines:e1.lines,points:(e1.points!=null?e1.points:t.points[lvl])}); g2.push({intro:e2.intro,lines:e2.lines,points:(e2.points!=null?e2.points:t.points[lvl])});
       s1.push('A'+(idx+1)+': '+e1.solution.join(' | ')); s2.push('A'+(idx+1)+': '+e2.solution.join(' | ')); idx++; }
   });
   return {total:idx, seeds:seeds, groups:[{examples:g1},{examples:g2}], solutions:[{title:'Gruppe 1',lines:s1},{title:'Gruppe 2',lines:s2}]};
