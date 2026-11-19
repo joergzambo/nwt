@@ -3,9 +3,11 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
+  const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
+  const LET = ['a', 'b', 'c', 'd', 'e', 'f'];
   return {
     'netz-adresse': {
       label: 'Netzadresse & Broadcast berechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
@@ -69,6 +71,46 @@ function build(E) {
           lines: ['Port: ' + T.port, 'SW1: switchport mode ' + T.m1, 'SW2: switchport mode ' + T.m2,
                   'Ergebnis (Trunk / Access / Mismatch): ' + blank, 'Begründung: ' + blank],
           solution: [T.res.outcome + ' – ' + T.res.why] };
+      }
+    },
+    'etherchannel': {
+      label: 'EtherChannel-Aushandlung (LACP/PAgP)', levels: LV, points: { L: 2, M: 3, S: 4 },
+      gen(seed, lvl) {
+        const T = EC.makeTask(seed, lvl); const r = T.res;
+        return { intro: 'Bildet sich ein EtherChannel? Wenn ja, mit welchem Protokoll?',
+          lines: ['Anzahl parallele Leitungen: ' + T.n, 'SW1: channel-group mode ' + T.m1,
+                  'SW2: channel-group mode ' + T.m2, 'EtherChannel bildet sich? ' + blank, 'Protokoll: ' + blank],
+          solution: [(r.formed ? 'Ja, ' + r.proto : 'Nein') + ' – ' + r.why] };
+      }
+    },
+    'acl-wildcard': {
+      label: 'Wildcardmaske berechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
+      gen(seed, lvl) {
+        const w = ACL.makeTask(seed, lvl).wild;
+        return { intro: 'Gib die Wildcardmaske an und bestimme den Adressbereich.',
+          lines: ['Netz: ' + w.base + '/' + w.p, 'Wildcardmaske: ' + blank,
+                  'Erste Adresse: ' + blank, 'Letzte Adresse: ' + blank],
+          solution: ['Wildcard ' + w.wc + ', Bereich ' + w.first + ' – ' + w.last] };
+      }
+    },
+    'hsrp': {
+      label: 'FHRP (HSRP/VRRP/GLBP) – aktiver Router', levels: LV, points: { L: 2, M: 3, S: 4 },
+      gen(seed, lvl) {
+        const T = FH.makeTask(seed, lvl); const act = T.R[T.hist[0].active];
+        const lines = ['Protokoll: ' + T.proto + ' (Gruppe ' + T.g + ')', 'Virtuelle IP: ' + T.vip];
+        T.R.forEach(function (r) { lines.push(r.name + ': Priorität ' + r.prio + (r.pre ? ', preempt' : '')); });
+        lines.push('Welcher Router ist aktiv? ' + blank, 'Virtuelle MAC: ' + blank);
+        return { intro: 'Bestimme den aktiven Router (Priorität/Preempt) und die virtuelle MAC-Adresse.',
+          lines: lines, solution: [act.name + ' ist aktiv; virtuelle MAC ' + T.mac] };
+      }
+    },
+    'zahlensysteme': {
+      label: 'Zahlensysteme umrechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
+      gen(seed, lvl) {
+        const items = ZS.makeTask(seed, lvl).items;
+        return { intro: 'Rechne die Zahlen in das angegebene Zahlensystem um.',
+          lines: items.map(function (it, i) { return LET[i] + ') ' + it.q + ' (' + BASENAME[it.from] + ') → ' + BASENAME[it.to] + ': ' + blank; }),
+          solution: [items.map(function (it, i) { return LET[i] + ') ' + it.a; }).join('    ')] };
       }
     }
   };

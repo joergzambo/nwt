@@ -1,9 +1,13 @@
 {
-  "version": 3,
+  "version": 4,
   "files": [
     "engines/netz.js",
     "engines/sub.js",
     "engines/dtp.js",
+    "engines/ec.js",
+    "engines/acl.js",
+    "engines/fhrp.js",
+    "engines/zs.js",
     "topicdefs.js",
     "pool.json"
   ]

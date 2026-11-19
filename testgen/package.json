@@ -14,10 +14,13 @@
     "assets": [
       "public/**/*",
       "vorlage.docx",
-      "engines/**/*"
+      "engines/**/*",
+      "topicdefs.js",
+      "pool.json",
+      "sync-config.json"
     ],
     "targets": [
-      "node18-win-x64"
+      "node22-win-x64"
     ],
     "outputPath": "dist"
   }

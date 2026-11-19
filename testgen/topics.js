@@ -69,8 +69,13 @@ async function init(logfn) {
   loadFresh('engines/netz.js');
   loadFresh('engines/sub.js');
   loadFresh('engines/dtp.js');
+  loadFresh('engines/ec.js');
+  loadFresh('engines/acl.js');
+  loadFresh('engines/fhrp.js');
+  loadFresh('engines/zs.js');
   const defs = loadFresh('topicdefs.js');
-  TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD });
+  TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD,
+    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS });
   loadPoolTopics();
   const ext = loadExternalTopics();
   return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };
