@@ -9,6 +9,7 @@ const engEc = read('engines/ec.js');
 const engAcl = read('engines/acl.js');
 const engFhrp = read('engines/fhrp.js');
 const engZs = read('engines/zs.js');
+const engRoute = read('engines/route.js');
 const docxBrowser = read('docx-browser.js');
 // topicdefs: module.exports -> window.__TOPICDEFS
 let topicdefs = read('topicdefs.js').replace('module.exports = { build };', 'window.__TOPICDEFS = { build };');
@@ -18,7 +19,7 @@ const glue = `
 <script>
 // ---- Themen zusammenstellen (Generatoren + Fragen-Pool) ----
 var LV=['L','M','S'], LVNAME={L:'Leicht',M:'Mittel',S:'Schwer'};
-var TOPICS = window.__TOPICDEFS.build({NA:window.NA,SN:window.SN,VD:window.VD,EC:window.EC,ACL:window.ACL,FH:window.FH,ZS:window.ZS});
+var TOPICS = window.__TOPICDEFS.build({NA:window.NA,SN:window.SN,VD:window.VD,EC:window.EC,ACL:window.ACL,FH:window.FH,ZS:window.ZS,IR:window.IR});
 function slug(s){return s.toLowerCase().replace(/[äöü]/g,function(c){return {'ä':'ae','ö':'oe','ü':'ue'}[c];}).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
 (function(){
   var pool = ${pool};
@@ -33,14 +34,20 @@ function slug(s){return s.toLowerCase().replace(/[äöü]/g,function(c){return {
   });
 })();
 function buildMixed(parts, levels){
-  var OFF=50021, g1=[],g2=[],s1=[],s2=[], idx=0, seeds=[];
+  var OFF=2003, g1=[],g2=[],s1=[],s2=[], idx=0, seeds=[];
   parts.forEach(function(part){
     var t=TOPICS[part.topic]; if(!t || !(part.count>0)) return;
-    var sb=Math.floor(Math.random()*90000)+1000; seeds.push(sb);
+    var sb=Math.floor(Math.random()*1500)+1; seeds.push(sb);
+    var num=function(s,lvl){return t.tag? t.tag+'-'+lvl+'-'+s : null;};
     for(var i=0;i<part.count;i++){ var lvl=levels[idx%levels.length];
-      var e1=t.gen(sb+i,lvl), e2=t.gen(sb+OFF+i,lvl);
-      g1.push({intro:e1.intro,lines:e1.lines,points:(e1.points!=null?e1.points:t.points[lvl])}); g2.push({intro:e2.intro,lines:e2.lines,points:(e2.points!=null?e2.points:t.points[lvl])});
-      s1.push('A'+(idx+1)+': '+e1.solution.join(' | ')); s2.push('A'+(idx+1)+': '+e2.solution.join(' | ')); idx++; }
+      var sa=sb+i, sbb=sb+OFF+i;
+      var e1=t.gen(sa,lvl), e2=t.gen(sbb,lvl);
+      var n1=num(sa,lvl), n2=num(sbb,lvl);
+      var l1=n1?['Übung '+n1].concat(e1.lines):e1.lines, l2=n2?['Übung '+n2].concat(e2.lines):e2.lines;
+      g1.push({intro:e1.intro,lines:l1,points:(e1.points!=null?e1.points:t.points[lvl])});
+      g2.push({intro:e2.intro,lines:l2,points:(e2.points!=null?e2.points:t.points[lvl])});
+      s1.push('A'+(idx+1)+(n1?' ['+n1+']':'')+': '+e1.solution.join(' | '));
+      s2.push('A'+(idx+1)+(n2?' ['+n2+']':'')+': '+e2.solution.join(' | ')); idx++; }
   });
   return {total:idx, seeds:seeds, groups:[{examples:g1},{examples:g2}], solutions:[{title:'Gruppe 1',lines:s1},{title:'Gruppe 2',lines:s2}]};
 }
@@ -138,6 +145,7 @@ ${bodyHtml}
 <script>${engAcl}</script>
 <script>${engFhrp}</script>
 <script>${engZs}</script>
+<script>${engRoute}</script>
 <script>${topicdefs}</script>
 <script>${docxBrowser}</script>
 ${glue}

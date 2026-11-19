@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "files": [
     "engines/netz.js",
     "engines/sub.js",
@@ -8,6 +8,7 @@
     "engines/acl.js",
     "engines/fhrp.js",
     "engines/zs.js",
+    "engines/route.js",
     "topicdefs.js",
     "pool.json"
   ]

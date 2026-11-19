@@ -3,14 +3,14 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
   const LET = ['a', 'b', 'c', 'd', 'e', 'f'];
   return {
     'netz-adresse': {
-      label: 'Netzadresse & Broadcast berechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'Netzadresse & Broadcast berechnen', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'NET',
       gen(seed, lvl) {
         const d = NA.makeTask(seed, lvl).d;
         return { intro: 'Bestimme Netzadresse und Broadcast-Adresse.',
@@ -20,7 +20,7 @@ function build(E) {
       }
     },
     'netz-gleich': {
-      label: 'Sind zwei Geräte im selben Netz?', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'Sind zwei Geräte im selben Netz?', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'NET',
       gen(seed, lvl) {
         const q = NA.makeTask(seed, lvl).q;
         return { intro: 'Liegen die beiden Geräte im selben Netz? Begründe mit den Netzadressen.',
@@ -64,7 +64,7 @@ function build(E) {
       }
     },
     'dtp': {
-      label: 'DTP-Aushandlung (Trunk / Access / Mismatch)', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'DTP-Aushandlung (Trunk / Access / Mismatch)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'VDP',
       gen(seed, lvl) {
         const T = VD.makeTask(seed, lvl);
         return { intro: 'Welcher Port-Modus ergibt sich aus der DTP-Aushandlung?',
@@ -74,7 +74,7 @@ function build(E) {
       }
     },
     'etherchannel': {
-      label: 'EtherChannel-Aushandlung (LACP/PAgP)', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'EtherChannel-Aushandlung (LACP/PAgP)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'ECH',
       gen(seed, lvl) {
         const T = EC.makeTask(seed, lvl); const r = T.res;
         return { intro: 'Bildet sich ein EtherChannel? Wenn ja, mit welchem Protokoll?',
@@ -94,7 +94,7 @@ function build(E) {
       }
     },
     'hsrp': {
-      label: 'FHRP (HSRP/VRRP/GLBP) – aktiver Router', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'FHRP (HSRP/VRRP/GLBP) – aktiver Router', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'HSR',
       gen(seed, lvl) {
         const T = FH.makeTask(seed, lvl); const act = T.R[T.hist[0].active];
         const lines = ['Protokoll: ' + T.proto + ' (Gruppe ' + T.g + ')', 'Virtuelle IP: ' + T.vip];
@@ -105,12 +105,27 @@ function build(E) {
       }
     },
     'zahlensysteme': {
-      label: 'Zahlensysteme umrechnen', levels: LV, points: { L: 2, M: 3, S: 4 },
+      label: 'Zahlensysteme umrechnen', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'ZAH',
       gen(seed, lvl) {
         const items = ZS.makeTask(seed, lvl).items;
         return { intro: 'Rechne die Zahlen in das angegebene Zahlensystem um.',
           lines: items.map(function (it, i) { return LET[i] + ') ' + it.q + ' (' + BASENAME[it.from] + ') → ' + BASENAME[it.to] + ': ' + blank; }),
           solution: [items.map(function (it, i) { return LET[i] + ') ' + it.a; }).join('    ')] };
+      }
+    },
+    'iproute': {
+      label: 'Routing: welche Route wird installiert? (show ip route)', levels: LV, points: { L: 3, M: 4, S: 5 }, tag: 'RTB',
+      gen(seed, lvl) {
+        const T = IR.makeTask(seed, lvl);
+        const lines = ['Router ' + T.router + ' lernt folgende Netze. Welche Route kommt je Ziel in die Tabelle?',
+          'Admin-Distanz: verbunden 0, EIGRP 90, OSPF 110, RIP 120 – bei gleicher Quelle kleinere Metrik.'];
+        T.nets.forEach(function (n) {
+          lines.push(n.net + '/' + n.p + ':  ' + n.offers.map(function (o) {
+            return o.proto + (o.nh ? ' via ' + o.nh : '') + ' (Metrik ' + o.metric + ')'; }).join('   |   ') + '  → ' + blank);
+        });
+        return { intro: '', lines: lines,
+          solution: [T.nets.map(function (n) {
+            return n.net + '/' + n.p + ' → ' + n.win.proto + (n.win.nh ? ' via ' + n.win.nh : ' (direkt verbunden)'); }).join('   ·   ')] };
       }
     }
   };

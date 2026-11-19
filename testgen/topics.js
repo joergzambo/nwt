@@ -79,9 +79,10 @@ async function init(logfn) {
   loadFresh('engines/acl.js');
   loadFresh('engines/fhrp.js');
   loadFresh('engines/zs.js');
+  loadFresh('engines/route.js');
   const defs = loadFresh('topicdefs.js');
   TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD,
-    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS });
+    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS, IR: globalThis.IR });
   loadPoolTopics();
   const ext = loadExternalTopics();
   return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };
@@ -90,16 +91,21 @@ async function init(logfn) {
 function buildGroups(topicId, levels, count, seedBase) {
   const t = TOPICS[topicId];
   if (!t) throw new Error('Unbekanntes Thema: ' + topicId);
-  seedBase = seedBase || Math.floor(Math.random() * 90000) + 1000;
-  const OFF = 50021;
+  seedBase = seedBase || Math.floor(Math.random() * 1500) + 1;
+  const OFF = 2003; // Primzahl: verschiedene Gruppen, Seeds bleiben klein/auflösbar
   const g1 = [], g2 = [], sol1 = [], sol2 = [];
+  const num = (s, lvl) => (t.tag ? t.tag + '-' + lvl + '-' + s : null);
   for (let i = 0; i < count; i++) {
     const lvl = levels[i % levels.length];
-    const e1 = t.gen(seedBase + i, lvl), e2 = t.gen(seedBase + OFF + i, lvl);
-    g1.push({ intro: e1.intro, lines: e1.lines, points: (e1.points != null ? e1.points : t.points[lvl]) });
-    g2.push({ intro: e2.intro, lines: e2.lines, points: (e2.points != null ? e2.points : t.points[lvl]) });
-    sol1.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e1.solution.join(' | '));
-    sol2.push('A' + (i + 1) + ' (' + LVNAME[lvl] + '): ' + e2.solution.join(' | '));
+    const s1 = seedBase + i, s2 = seedBase + OFF + i;
+    const e1 = t.gen(s1, lvl), e2 = t.gen(s2, lvl);
+    const n1 = num(s1, lvl), n2 = num(s2, lvl);
+    const l1 = n1 ? ['Übung ' + n1].concat(e1.lines) : e1.lines;
+    const l2 = n2 ? ['Übung ' + n2].concat(e2.lines) : e2.lines;
+    g1.push({ intro: e1.intro, lines: l1, points: (e1.points != null ? e1.points : t.points[lvl]) });
+    g2.push({ intro: e2.intro, lines: l2, points: (e2.points != null ? e2.points : t.points[lvl]) });
+    sol1.push('A' + (i + 1) + (n1 ? ' [' + n1 + ']' : '') + ' (' + LVNAME[lvl] + '): ' + e1.solution.join(' | '));
+    sol2.push('A' + (i + 1) + (n2 ? ' [' + n2 + ']' : '') + ' (' + LVNAME[lvl] + '): ' + e2.solution.join(' | '));
   }
   return { groups: [{ examples: g1 }, { examples: g2 }],
     solutions: [{ title: 'Gruppe 1', lines: sol1 }, { title: 'Gruppe 2', lines: sol2 }], seedBase };
