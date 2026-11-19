@@ -1,0 +1,8 @@
+{
+  "name": "nwt-testgenerator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lokaler Test-Generator für die NWT-Plattform (Wdh-NWT-Vorlage)",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "jszip": "^3.10.1" }
+}
