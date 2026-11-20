@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -126,6 +126,42 @@ function build(E) {
         return { intro: '', lines: lines,
           solution: [T.nets.map(function (n) {
             return n.net + '/' + n.p + ' → ' + n.win.proto + (n.win.nh ? ' via ' + n.win.nh : ' (direkt verbunden)'); }).join('   ·   ')] };
+      }
+    },
+    'domains': {
+      label: 'Collision- & Broadcast-Domains zählen (Topologie)', levels: LV, points: { L: 3, M: 4, S: 5 }, tag: 'DOM', diagram: true,
+      gen(seed, lvl) {
+        const T = DOM.makeTask(seed, lvl); const s = T.sol;
+        return { intro: '',
+          lines: ['Bestimme in der abgebildeten Topologie die Anzahl der Collision-Domains und der Broadcast-Domains. Begründe kurz.',
+            '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
+            'Collision-Domains: ' + blank + '    Broadcast-Domains: ' + blank],
+          solution: [s.ncd + ' Collision-Domains, ' + s.nbd + ' Broadcast-Domains'] };
+      }
+    },
+    'ospf-dijkstra': {
+      label: 'OSPF/Dijkstra: kürzeste Pfade berechnen (Topologie)', levels: LV, points: { L: 4, M: 5, S: 6 }, tag: 'OS1', diagram: true,
+      gen(seed, lvl) {
+        const T = DJ.makeTask(seed, lvl); const src = T.nodes[T.res.src].name;
+        const sol = T.nodes.map(function (n, i) { return i === T.res.src ? null : n.name + ' = ' + T.res.d[i]; }).filter(Boolean).join(',  ');
+        return { intro: '',
+          lines: ['Berechne mit dem Dijkstra-Algorithmus von ' + src + ' aus die kürzesten Pfade (Gesamtkosten) zu allen anderen Routern.',
+            '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
+            'Kosten je Router: ' + blank],
+          solution: [sol] };
+      }
+    },
+    'ospf-refbw': {
+      label: 'OSPF-Referenzbandbreite setzen (running-config)', levels: LV, points: { L: 3, M: 4, S: 5 },
+      gen(seed, lvl) {
+        const T = ORB.makeTask(seed, lvl);
+        const lines = ['Gegeben die running-configs mehrerer Router. Setze die OSPF-Referenzbandbreite so, dass alle Leitungsgeschwindigkeiten korrekt unterschieden werden – auf allen Routern gleich. Gib den vollständigen Befehl an.'];
+        T.routers.forEach(function (R) { ORB.cfgLines(R).forEach(function (l) { lines.push(l); }); lines.push('––––––––––'); });
+        lines.push('Befehl (auf jedem Router): ' + blank);
+        const costs = T.costs.map(function (c) { return c.bw + ' Mbit/s → Kosten ' + c.cost; }).join(', ');
+        return { intro: '',
+          lines: lines,
+          solution: ['unter „router ospf 1": auto-cost reference-bandwidth ' + T.ref + ' – auf JEDEM Router identisch. Schnellste Leitung = ' + T.refName + ' = ' + T.ref + ' Mbit/s; Standard 100 Mbit/s kann Gigabit/10-Gigabit nicht unterscheiden. Resultierende Kosten: ' + costs] };
       }
     }
   };
