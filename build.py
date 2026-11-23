@@ -110,7 +110,7 @@ TAGS = {
     'statisches-routing': 'STR', 'rip': 'RIP', 'routing-schleifen': 'LOP', 'ospf-1': 'OS1',
     'ospf-2': 'OS2', 'ospf-3': 'OS3', 'pat': 'PAT', 'static-nat': 'SNA', 'dhcp': 'DHC',
     'hsrp-vrrp': 'HSR', 'vtp-dtp': 'VDP', 'vtp-dtp-hijacking': 'VLH', 'wildcard-masken': 'WCM', 'standard-acl': 'SAC', 'extended-acl': 'EAC', 'ssh-radius': 'SSH', 'arp-spoofing': 'ARP',
-    'dhcp-starvation': 'STV', 'hsrp-hijacking': 'HIJ', 'rogue-dhcp': 'ROG',
+    'dhcp-starvation': 'STV', 'hsrp-hijacking': 'HIJ', 'rogue-dhcp': 'ROG', 'stp-angriff': 'STA', 'rip-authentifizierung': 'RPA',
 }
 
 

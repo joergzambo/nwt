@@ -132,7 +132,9 @@ AREAS = [
           'text': 'Mit Yersinia per DTP einen Trunk erzwingen (Switch-Spoofing, VLAN-Hopping) und die VLAN-Datenbank per VTP überschreiben – Wireshark, Lab, Schutz, Übungen und Zufallsgenerator.'},
          {'slug': 'rogue-dhcp', 'title': 'Rogue-DHCP-Server', 'tool': 'rogue-dhcp',
           'text': 'Falsches Gateway unterschieben (Man-in-the-Middle): Wettlauf der Offer, im Wireshark erkennen, Schutz mit DHCP Snooping (Cisco) und DHCP Guarding (UniFi) – mit Übungen.'},
-         {'slug': 'stp-angriff', 'title': 'Angriff auf die Root Bridge', 'text': 'Gefälschte BPDUs und BPDU Guard / Root Guard.'},
-         {'slug': 'rip-authentifizierung', 'title': 'RIP-Authentifizierung', 'text': 'Gefälschte Routing-Updates verhindern.'},
+         {'slug': 'stp-angriff', 'title': 'Angriff auf die Root Bridge', 'tool': 'stp-angriff',
+          'text': 'Mit gefälschten BPDUs (Priorität 0) selbst Root Bridge werden und Verkehr umlenken – und wie BPDU Guard und Root Guard das verhindern. Mit interaktiver Root-Wahl, Yersinia, Quiz, Übungen und Zufallsgenerator.'},
+         {'slug': 'rip-authentifizierung', 'title': 'RIP-Authentifizierung', 'tool': 'rip-authentifizierung',
+          'text': 'Gefälschte Routing-Updates einschleusen – und mit key-chain und MD5 verhindern. Plaintext vs. MD5, Schlüssel-Mismatch, mit Injection-Demo, Quiz, Übungen und Zufallsgenerator.'},
      ]},
 ]

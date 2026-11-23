@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI, STPA = E.STPA, RIPA = E.RIPA;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -149,6 +149,26 @@ function build(E) {
             '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
             'Kosten je Router: ' + blank],
           solution: [sol] };
+      }
+    },
+    'stp-root-angriff': {
+      label: 'STP Root-Bridge-Angriff (BPDU-Spoofing, Schutz)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'STA',
+      gen(seed, lvl) {
+        const T = STPA.makeTask(seed, lvl); const want = T.wins ? T.defense : 'none';
+        return { intro: '', lines: [
+          T.sw[0].name + ' ist mit Priorität ' + T.legitRoot + ' Root Bridge. Ein Angreifer an einem ' + T.port.txt + ' sendet BPDUs mit Priorität ' + T.attPrio + '.',
+          'Wird der Angreifer zur Root Bridge? ' + blank, 'Beste Schutzmaßnahme? ' + blank],
+          solution: [(T.wins ? 'Ja' : 'Nein') + ' (' + T.attPrio + (T.wins ? ' ≤ ' : ' > ') + T.legitRoot + '); Schutz: ' + STPA.DEF[want]] };
+      }
+    },
+    'rip-auth': {
+      label: 'RIP-Authentifizierung (Konfiguration prüfen)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'RPA',
+      gen(seed, lvl) {
+        const T = RIPA.makeTask(seed, lvl);
+        const lines = ['R1-Konfiguration:'].concat(RIPA.cfg(T));
+        lines.push('Nachbar R2: ' + (T.mode === 'none' ? 'ebenfalls keine Authentifizierung' : 'key-string ' + T.keyB + ' (Modus ' + T.mode + ')'));
+        lines.push('Wie steht es um den Austausch der Routing-Updates? ' + blank);
+        return { intro: '', lines: lines, solution: [RIPA.OUT[T.out]] };
       }
     },
     'cisco-ios': {
