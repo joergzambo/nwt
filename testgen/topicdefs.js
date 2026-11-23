@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI, STPA = E.STPA, RIPA = E.RIPA, CDF = E.CDF, TS = E.TS;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI, STPA = E.STPA, RIPA = E.RIPA, CDF = E.CDF, TS = E.TS, TCP = E.TCP;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -178,6 +178,15 @@ function build(E) {
         lines.push('Nachbar R2: ' + (T.mode === 'none' ? 'ebenfalls keine Authentifizierung' : 'key-string ' + T.keyB + ' (Modus ' + T.mode + ')'));
         lines.push('Wie steht es um den Austausch der Routing-Updates? ' + blank);
         return { intro: '', lines: lines, solution: [RIPA.OUT[T.out]] };
+      }
+    },
+    'tcp-udp': {
+      label: 'TCP/UDP: Ports, Dienste und TCP-vs-UDP', levels: LV, points: { L: 2, M: 2, S: 3 }, tag: 'TUP',
+      gen(seed, lvl) {
+        const t = TCP.makeTask(seed, lvl);
+        if (t.type === 'scen') return { intro: '', lines: ['Anwendungsfall: ' + t.scen, 'TCP oder UDP? ' + blank], solution: [t.ans + ' – ' + t.why] };
+        if (t.dir === 'svc2port') return { intro: '', lines: ['Dienst: ' + t.svc, 'Port: ' + blank + '   Transport (TCP/UDP): ' + blank], solution: [t.svc + ': Port ' + t.port + '/' + t.proto] };
+        return { intro: '', lines: ['Port ' + t.port + '/' + t.proto + ' – welcher Dienst? ' + blank], solution: [t.svc] };
       }
     },
     'troubleshooting': {

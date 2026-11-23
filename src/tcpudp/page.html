@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TCP und UDP</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.tcp{color:#1565c0;font-weight:700}.udp{color:#e65100;font-weight:700}
+.scroll{overflow-x:auto}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 20px var(--head);margin:0 0 4px}.explain p{margin:0}
+.diag{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}.diag label{display:flex;flex-direction:column;gap:3px;font:600 13px var(--ui)}
+.prompt{font-size:16.5px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>TCP und UDP – die Transportschicht</h1>
+<p class="sub">Schicht 4 sorgt dafür, dass Daten zur richtigen <b>Anwendung</b> kommen – adressiert über <b>Ports</b>. Zwei Protokolle teilen sich die Arbeit: <b>TCP</b> zuverlässig mit Verbindungsaufbau, <b>UDP</b> schnell und verbindungslos.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#rolle">Ports &amp; Sockets</a><a href="#handshake">3-Way-Handshake</a><a href="#vergleich">TCP vs. UDP</a><a href="#ports">Well-known Ports</a><a href="#flags">TCP-Flags</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="rolle">Ports und Sockets</h2>
+<div class="card stack">
+<p>Ein Rechner hat eine IP-Adresse, aber viele Programme gleichzeitig. Damit die Daten beim richtigen Programm landen, bekommt jede Anwendung eine <b>Portnummer</b>. Die Kombination <b>IP-Adresse + Port</b> heißt <b>Socket</b> (z. B. <code>192.168.1.10:443</code>).</p>
+<ul class="slist">
+<li><b>Well-known Ports 0–1023:</b> feste Dienste (HTTP 80, HTTPS 443, SSH 22 …).</li>
+<li><b>Registered Ports 1024–49151:</b> für Anwendungen registriert.</li>
+<li><b>Dynamische/ephemere Ports 49152–65535:</b> der Client wählt für jede Verbindung kurzfristig einen.</li>
+</ul>
+</div>
+
+<h2 class="part" id="handshake">Der TCP-3-Way-Handshake</h2>
+<div class="card stack">
+<p>Bevor TCP Daten überträgt, baut es eine Verbindung auf – in drei Schritten:</p>
+<div id="hssvg"></div>
+<div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button><span class="stepno" id="no"></span></div>
+<div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="vergleich">TCP oder UDP?</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl">
+<tr><th></th><th class="tcp">TCP</th><th class="udp">UDP</th></tr>
+<tr><td>Verbindung</td><td>verbindungsorientiert (Handshake)</td><td>verbindungslos</td></tr>
+<tr><td>Zuverlässigkeit</td><td>Quittungen, Neuübertragung, Reihenfolge</td><td>keine – „fire and forget"</td></tr>
+<tr><td>Geschwindigkeit/Overhead</td><td>langsamer, mehr Overhead</td><td>schnell, wenig Overhead</td></tr>
+<tr><td>Flusskontrolle</td><td>ja (Windowing)</td><td>nein</td></tr>
+<tr><td>Header</td><td>20+ Byte</td><td>8 Byte</td></tr>
+<tr><td>Typisch für</td><td>Web, E-Mail, Datei-Download, SSH</td><td>DNS, DHCP, VoIP, Videostreaming, TFTP, NTP</td></tr>
+</table></div>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px"><b>Merksatz:</b> Muss <b>alles</b> ankommen? → TCP. Zählt <b>Tempo</b> und ein bisschen Verlust ist egal? → UDP.</div>
+</div>
+
+<h2 class="part" id="ports">Wichtige well-known Ports</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl" id="porttbl"></table></div>
+</div>
+
+<h2 class="part" id="flags">TCP-Flags (Steuerbits)</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl">
+<tr><th>Flag</th><th>Bedeutung</th></tr>
+<tr><td><code>SYN</code></td><td>Verbindungsaufbau (Synchronize), Sequenznummern abstimmen</td></tr>
+<tr><td><code>ACK</code></td><td>Bestätigung empfangener Daten</td></tr>
+<tr><td><code>FIN</code></td><td>Verbindung ordentlich beenden</td></tr>
+<tr><td><code>RST</code></td><td>Verbindung sofort abbrechen/zurückweisen</td></tr>
+<tr><td><code>PSH</code></td><td>Daten sofort an die Anwendung weiterreichen</td></tr>
+<tr><td><code>URG</code></td><td>dringende Daten (Urgent Pointer)</td></tr>
+</table></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (gängige Ports/Szenarien)</option><option value="M" selected>Mittel (mehr Dienste)</option><option value="S">Schwer (SNMP, NTP, TFTP …)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/*TCPJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},T=window.TCP,INK='#1c2b33',BL='#1565c0',GR='#2e7d32',MU='#607d8b';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+/* ===== Ports-Tabelle ===== */
+(function(){var h='<tr><th>Dienst</th><th>Port</th><th>Transport</th></tr>';
+ T.SERVICES.forEach(function(s){h+='<tr><td>'+esc(s.name)+'</td><td><code>'+s.port+'</code></td><td class="'+(s.proto==='TCP'?'tcp':'udp')+'">'+s.proto+'</td></tr>';});
+ $('porttbl').innerHTML=h;})();
+/* ===== Handshake-Stepper ===== */
+var STEPS=[
+ {t:'Schritt 1 – SYN',txt:'Der <b>Client</b> schickt ein <b>SYN</b> mit einer Start-Sequenznummer (seq=x). „Ich möchte eine Verbindung aufbauen."',ar:[{dir:1,lab:'SYN  seq=x',col:BL}]},
+ {t:'Schritt 2 – SYN, ACK',txt:'Der <b>Server</b> antwortet mit <b>SYN + ACK</b>: bestätigt x (ack=x+1) und sendet seine eigene Sequenznummer (seq=y).',ar:[{dir:-1,lab:'SYN, ACK  seq=y, ack=x+1',col:GR}]},
+ {t:'Schritt 3 – ACK',txt:'Der <b>Client</b> bestätigt mit <b>ACK</b> (ack=y+1). Die Verbindung steht – jetzt können Daten fließen.',ar:[{dir:1,lab:'ACK  ack=y+1',col:BL}]},
+ {t:'Verbindung steht',txt:'Beide Seiten sind synchronisiert. Daten werden gesendet und per <b>ACK</b> quittiert; verlorene Segmente werden erneut übertragen.',ar:[{dir:1,lab:'Daten',col:INK},{dir:-1,lab:'ACK',col:MU}]},
+ {t:'Verbindungsabbau – FIN',txt:'Zum Schluss beendet jede Seite ihre Richtung mit <b>FIN</b>, bestätigt per <b>ACK</b> (Vier-Wege-Abbau).',ar:[{dir:1,lab:'FIN',col:BL},{dir:-1,lab:'ACK, FIN',col:GR}]}
+];
+var si=0;
+function draw(i){
+ var W=680,H=230,cx=150,sx=530,st=STEPS[i];
+ var h='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(st.t)+'">';
+ h+='<text x="'+cx+'" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="'+BL+'" font-family="Open Sans,Arial">Client</text>';
+ h+='<text x="'+sx+'" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="'+GR+'" font-family="Open Sans,Arial">Server</text>';
+ h+='<line x1="'+cx+'" y1="36" x2="'+cx+'" y2="'+(H-10)+'" stroke="#b0bec5" stroke-width="2"/><line x1="'+sx+'" y1="36" x2="'+sx+'" y2="'+(H-10)+'" stroke="#b0bec5" stroke-width="2"/>';
+ var y=70;
+ st.ar.forEach(function(a){
+  var x1=a.dir>0?cx:sx,x2=a.dir>0?sx:cx;
+  h+='<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="'+a.col+'" stroke-width="2.5"/>';
+  var mx=(x1+x2)/2,ex=a.dir>0?x2:x2;
+  h+='<path d="M'+(x2-(a.dir>0?12:-12))+' '+(y-5)+'L'+x2+' '+y+'L'+(x2-(a.dir>0?12:-12))+' '+(y+5)+'" fill="'+a.col+'"/>';
+  h+='<rect x="'+(mx-a.lab.length*4-8)+'" y="'+(y-22)+'" width="'+(a.lab.length*8+16)+'" height="18" rx="9" fill="'+a.col+'"/><text x="'+mx+'" y="'+(y-9)+'" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff" font-family="ui-monospace,monospace">'+esc(a.lab)+'</text>';
+  y+=56;
+ });
+ $('hssvg').innerHTML=h+'</svg>';
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(i+1)+' von '+STEPS.length;$('prev').disabled=i===0;$('next').disabled=i===STEPS.length-1;
+}
+$('prev').onclick=function(){if(si>0)draw(--si);};$('next').onclick=function(){if(si<STEPS.length-1)draw(++si);};$('rst').onclick=function(){si=0;draw(0);};
+draw(0);
+/* ===== Quiz ===== */
+var Q=[
+ ['Wie viele Schritte hat der TCP-Verbindungsaufbau?',['Einen','Zwei','Drei (SYN, SYN-ACK, ACK)','Vier'],2,'Der 3-Way-Handshake: SYN → SYN,ACK → ACK.'],
+ ['Welches Protokoll ist verbindungslos?',['TCP','UDP','Beide','Keins'],1,'UDP baut keine Verbindung auf – „fire and forget".'],
+ ['Welcher Dienst nutzt UDP?',['HTTP','SSH','DNS','FTP'],2,'DNS nutzt üblicherweise UDP (Port 53); HTTP/SSH/FTP nutzen TCP.'],
+ ['Auf welchem Port läuft HTTPS?',['80','22','443','25'],2,'HTTPS = TCP 443, HTTP = TCP 80.'],
+ ['Wofür steht ein Socket?',['Nur die IP','Nur der Port','IP-Adresse + Port','Die MAC-Adresse'],2,'Ein Socket ist die Kombination aus IP-Adresse und Portnummer.'],
+ ['Wofür würdest du UDP wählen?',['Datei-Download','Live-Videostreaming','Online-Banking','E-Mail'],1,'Bei Echtzeit (Streaming/VoIP) zählt Tempo – UDP.'],
+ ['Welches Flag beendet eine TCP-Verbindung ordentlich?',['SYN','RST','FIN','PSH'],2,'FIN beendet geordnet; RST bricht hart ab.'],
+ ['Welchen Bereich haben die well-known Ports?',['0–1023','1024–49151','49152–65535','0–255'],0,'Well-known: 0–1023. Danach registered und dynamische Ports.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return T.makeTask(+m[1],m[0]);}
+function norm(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+T.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>';
+ if(s.type==='scen'){
+  h+='<p class="prompt">Anwendungsfall: <b>'+esc(s.scen)+'</b></p><p class="qh">Welches Transportprotokoll passt?</p><div class="opts"><label><input type="radio" name="'+id+'-a" value="TCP"> TCP</label><label><input type="radio" name="'+id+'-a" value="UDP"> UDP</label></div>';
+ }else if(s.dir==='svc2port'){
+  h+='<p class="prompt">Dienst: <b>'+esc(s.svc)+'</b></p><p class="qh">Port und Transportprotokoll?</p><div class="diag"><label>Port<input class="one port" inputmode="numeric" size="6" placeholder="z. B. 443"></label><label>Transport<select class="one proto"><option value="">–</option><option>TCP</option><option>UDP</option></select></label></div>';
+ }else{
+  h+='<p class="prompt">Port: <b>'+s.port+'/'+esc(s.proto)+'</b></p><p class="qh">Welcher Dienst läuft hier?</p><select class="one svc"><option value="">– wählen –</option>'+T.SERVICES.map(function(x){return'<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>';}).join('')+'</select>';
+ }
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){var s=cache[card.dataset.code],ok=false;
+ if(s.type==='scen'){var a=card.querySelector('input[name="'+card.id+'-a"]:checked');card.querySelectorAll('input[name="'+card.id+'-a"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked){var g=rb.value===s.ans;rb.parentNode.classList.add(g?'right':'wrong');ok=g;}});}
+ else if(s.dir==='svc2port'){var p=card.querySelector('.port'),pr=card.querySelector('.proto');var g1=+p.value===s.port,g2=pr.value===s.proto;mark(p,p.value===''?null:g1);mark(pr,pr.value===''?null:g2);ok=g1&&g2;}
+ else{var sv=card.querySelector('.svc');var g=sv.value===s.svc;mark(sv,sv.value===''?null:g);ok=g;}
+ var fb=card.querySelector('.fb');fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok)card.dataset.solved='1';markToc();}
+function solHTML(s){
+ if(s.type==='scen')return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(s.ans)+'</b> – '+esc(s.why)+'</li></ul>';
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(s.svc)+'</b>: Port <b>'+s.port+'</b> über <b>'+esc(s.proto)+'</b>.</li></ul>';}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(cache[card.dataset.code]);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;var hostEl=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=T.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=T.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

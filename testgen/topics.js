@@ -90,9 +90,10 @@ async function init(logfn) {
   loadFresh('engines/ripauth.js');
   loadFresh('engines/cdpflood.js');
   loadFresh('engines/ts.js');
+  loadFresh('engines/tcpudp.js');
   const defs = loadFresh('topicdefs.js');
   TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD,
-    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS, IR: globalThis.IR, DOM: globalThis.DOM, DJ: globalThis.DJ, ORB: globalThis.ORB, WC: globalThis.WC, SSH: globalThis.SSH, CLI: globalThis.CLI, STPA: globalThis.STPA, RIPA: globalThis.RIPA, CDF: globalThis.CDF, TS: globalThis.TS });
+    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS, IR: globalThis.IR, DOM: globalThis.DOM, DJ: globalThis.DJ, ORB: globalThis.ORB, WC: globalThis.WC, SSH: globalThis.SSH, CLI: globalThis.CLI, STPA: globalThis.STPA, RIPA: globalThis.RIPA, CDF: globalThis.CDF, TS: globalThis.TS, TCP: globalThis.TCP });
   loadPoolTopics();
   const ext = loadExternalTopics();
   return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };
