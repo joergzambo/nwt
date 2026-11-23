@@ -167,6 +167,14 @@ R1(config-if)# ip ospf cost 25
  <p class="hint" id="refh"></p>
 </div>
 
+<div class="card">
+ <h3 style="font:400 19px var(--head);margin:0 0 6px">Übung: Referenzbandbreite aus running-configs</h3>
+ <p style="margin:0 0 8px">Mehrere Router mit unterschiedlich schnellen Leitungen. Setze die Referenzbandbreite so, dass alle Geschwindigkeiten unterscheidbar sind – auf allen Routern gleich.</p>
+ <div class="genbar"><label for="orblvl">Stufe</label><select id="orblvl"><option value="L">Leicht (bis Gigabit)</option><option value="M" selected>Mittel (bis 10-Gigabit)</option><option value="S">Schwer (gemischt)</option></select>
+ <button class="btn" id="orbnew" type="button">Neue Aufgabe</button><label for="orbcode">Nummer</label><input id="orbcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="orbload" type="button">Laden</button><span id="orbmsg" class="err"></span></div>
+ <div id="orbout"></div>
+</div>
+
 <h2 class="part" id="area">Backbone Area 0</h2>
 <div class="rules">
  <div class="card"><h3>Was ist eine Area?</h3><ul style="margin:0;padding-left:20px">
@@ -203,6 +211,9 @@ R1(config-router)# passive-interface g0/1</pre>
 <button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
 <div id="gout"></div>
 </main>
+<script>
+/*ORBJS*/
+</script>
 <script>
 /*O2JS*/
 </script>
@@ -475,6 +486,40 @@ gen('M',1+Math.floor(Math.random()*99999));
  var tb='';[4,6,10,20,50,100].forEach(function(k){var a=k*(k-1)/2,b=2*k-3;tb+='<tr><td>'+k+'</td><td>'+a+'</td><td>'+b+'</td><td><b>'+(a-b)+'</b></td></tr>';});$('dtab').innerHTML=tb;
  $('nrange').oninput=function(){n=+this.value;render();};$('n2way').onchange=render;$('dplay').onclick=play;
  render();window.__drs={set:function(k){n=k;$('nrange').value=k;render();},flows:flows};
+})();
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},O=window.ORB;
+if(!O||!$('orbout'))return;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var cache={};
+function mk(code){var m=code.split('-');return O.makeTask(+m[1],m[0]);}
+function slow(t){return t.costs[t.costs.length-1];}
+function cfgBlock(t){return'<div class="cfgs">'+t.routers.map(function(R){return'<div><p class="ph">'+R.name+'</p><pre class="cli">'+esc(O.cfgLines(R).join('\n'))+'</pre></div>';}).join('')+'</div>';}
+function taskHTML(s){
+ var sl=slow(s),id='o'+s.code.replace('-','_');
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>Aufgabe '+s.code+' <span class="tag">'+O.LVNAME[s.level]+'</span></h3>'+cfgBlock(s);
+ h+='<p class="qh">1. Referenzbandbreite (Mbit/s)?</p><input class="one ref" inputmode="numeric" size="8" placeholder="z. B. 10000">';
+ h+='<p class="qh">2. Kosten der langsamsten Leitung ('+sl.bw+' Mbit/s)?</p><input class="one slw" inputmode="numeric" size="6" placeholder="Kosten">';
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){var s=cache[card.dataset.code],sl=slow(s),ok=0;
+ var r=card.querySelector('.ref'),g1=r.value!==''&&+r.value===s.ref;mark(r,r.value===''?null:g1);if(g1)ok++;
+ var c=card.querySelector('.slw'),g2=c.value!==''&&+c.value===sl.cost;mark(c,c.value===''?null:g2);if(g2)ok++;
+ var fb=card.querySelector('.fb'),all=ok===2;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von 2 richtig.';}
+function solHTML(s){var costs=s.costs.map(function(c){return c.bw+' Mbit/s → Kosten '+c.cost;}).join(', ');
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>auto-cost reference-bandwidth '+s.ref+'</b> (unter „router ospf 1", auf JEDEM Router identisch). Schnellste Leitung = '+s.refName+' = '+s.ref+' Mbit/s.</li><li><b>Kosten:</b> '+costs+'</li></ul>';}
+$('orbout').addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(cache[card.dataset.code]);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+function gen(lvl,seed){var s=O.makeTask(seed,lvl);if(!s){$('orbmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('orbmsg').textContent='';cache[s.code]=s;$('orbout').innerHTML=taskHTML(s);$('orbcode').value=s.code;$('orblvl').value=lvl;}
+$('orbnew').onclick=function(){gen($('orblvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('orbcode').value);if(!m){$('orbmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('orbload').onclick=load;$('orbcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
 })();
 </script>
 </body>
