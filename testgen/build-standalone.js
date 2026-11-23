@@ -18,6 +18,7 @@ const engSsh = read('engines/ssh.js');
 const engCli = read('engines/cli.js');
 const engStpa = read('engines/stpatk.js');
 const engRipa = read('engines/ripauth.js');
+const engCdf = read('engines/cdpflood.js');
 const docxBrowser = read('docx-browser.js');
 // topicdefs: module.exports -> window.__TOPICDEFS
 let topicdefs = read('topicdefs.js').replace('module.exports = { build };', 'window.__TOPICDEFS = { build };');
@@ -27,7 +28,7 @@ const glue = `
 <script>
 // ---- Themen zusammenstellen (Generatoren + Fragen-Pool) ----
 var LV=['L','M','S'], LVNAME={L:'Leicht',M:'Mittel',S:'Schwer'};
-var TOPICS = window.__TOPICDEFS.build({NA:window.NA,SN:window.SN,VD:window.VD,EC:window.EC,ACL:window.ACL,FH:window.FH,ZS:window.ZS,IR:window.IR,DOM:window.DOM,DJ:window.DJ,ORB:window.ORB,WC:window.WC,SSH:window.SSH,CLI:window.CLI,STPA:window.STPA,RIPA:window.RIPA});
+var TOPICS = window.__TOPICDEFS.build({NA:window.NA,SN:window.SN,VD:window.VD,EC:window.EC,ACL:window.ACL,FH:window.FH,ZS:window.ZS,IR:window.IR,DOM:window.DOM,DJ:window.DJ,ORB:window.ORB,WC:window.WC,SSH:window.SSH,CLI:window.CLI,STPA:window.STPA,RIPA:window.RIPA,CDF:window.CDF});
 function slug(s){return s.toLowerCase().replace(/[äöü]/g,function(c){return {'ä':'ae','ö':'oe','ü':'ue'}[c];}).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
 (function(){
   var pool = ${pool};
@@ -162,6 +163,7 @@ ${bodyHtml}
 <script>${engCli}</script>
 <script>${engStpa}</script>
 <script>${engRipa}</script>
+<script>${engCdf}</script>
 <script>${topicdefs}</script>
 <script>${docxBrowser}</script>
 ${glue}

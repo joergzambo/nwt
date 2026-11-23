@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "files": [
     "engines/netz.js",
     "engines/sub.js",
@@ -17,6 +17,7 @@
     "engines/cli.js",
     "engines/stpatk.js",
     "engines/ripauth.js",
+    "engines/cdpflood.js",
     "topicdefs.js",
     "pool.json"
   ]
