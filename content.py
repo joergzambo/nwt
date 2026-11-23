@@ -118,6 +118,8 @@ AREAS = [
           'text': 'First Match und implicit deny im Paket-Tester, Wildcard-Rechner, Konfiguration, access-class für VTY, Platzierung nahe am Ziel im Netzplan – mit Übungen und Zufallsgenerator.'},
          {'slug': 'extended-acl', 'title': 'Extended-Access-Listen', 'tool': 'extended-acl',
           'text': 'Protokoll, Quelle, Ziel und Port: Paket-Tester, wichtige Ports, named ACLs mit Sequenznummern, DMZ-Beispiel, Platzierung nahe an der Quelle – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'ssh-radius', 'title': 'SSH, RADIUS und Konsolenschutz', 'tool': 'ssh-radius',
+          'text': 'Warum Telnet ausgedient hat: SSH einrichten, Konsole und VTY absichern, zentrale Anmeldung per RADIUS (AAA). Mit „Finde die Sicherheitslücken"-Generator, Quiz und Übungen.'},
          {'slug': 'arp-spoofing', 'title': 'ARP-Spoofing', 'tool': 'arp-spoofing',
           'text': 'Man-in-the-Middle im LAN mit Ettercap: warum ARP angreifbar ist, im Wireshark erkennen, Schutz mit Dynamic ARP Inspection – mit Übungen und Zufallsgenerator.'},
          {'slug': 'dhcp-starvation', 'title': 'DHCP-Starvation', 'tool': 'dhcp-starvation',

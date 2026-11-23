@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -149,6 +149,16 @@ function build(E) {
             '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
             'Kosten je Router: ' + blank],
           solution: [sol] };
+      }
+    },
+    'ssh-audit': {
+      label: 'Sichere Gerätekonfig: Sicherheitslücken finden (SSH/RADIUS)', levels: LV, points: { L: 3, M: 4, S: 5 }, tag: 'SSH',
+      gen(seed, lvl) {
+        const T = SSH.makeTask(seed, lvl);
+        const lines = ['Prüfe die Konfiguration von ' + T.host + '. Welche Sicherheitsprobleme enthält sie? Nenne jedes Problem.'];
+        T.config.forEach(function (l) { lines.push(l); });
+        lines.push('Gefundene Probleme: ' + blank);
+        return { intro: '', lines: lines, solution: [T.flawTxt.join('; ')] };
       }
     },
     'wildcard': {
