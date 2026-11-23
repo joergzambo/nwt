@@ -152,7 +152,7 @@ function build(E) {
       }
     },
     'ospf-refbw': {
-      label: 'OSPF-Referenzbandbreite setzen (running-config)', levels: LV, points: { L: 3, M: 4, S: 5 },
+      label: 'OSPF-Referenzbandbreite setzen (running-config)', levels: LV, points: { L: 3, M: 4, S: 5 }, tag: 'ORB',
       gen(seed, lvl) {
         const T = ORB.makeTask(seed, lvl);
         const lines = ['Gegeben die running-configs mehrerer Router. Setze die OSPF-Referenzbandbreite so, dass alle Leitungsgeschwindigkeiten korrekt unterschieden werden – auf allen Routern gleich. Gib den vollständigen Befehl an.'];

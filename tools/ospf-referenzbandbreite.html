@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSPF-Referenzbandbreite</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:16px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}
+.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}
+.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.cfgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.cfgs .ph{font:600 14px var(--ui);margin:0 0 2px}
+.cfgs pre{font-size:12.5px}
+.ctab{border-collapse:collapse;font:14px var(--mono);margin-top:8px;min-width:460px}
+.ctab th,.ctab td{border:1px solid #cfd8dc;padding:6px 12px;text-align:center}
+.ctab th{background:var(--soft);font:600 13px var(--ui)}
+.ctab td.c1{color:var(--mute)}
+.ctab tr.tie td{background:#fde7e7}
+.ctab tr.ok1 td{background:#eef7e8}
+.refbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.refbar .seg{display:inline-flex;flex-wrap:wrap;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}
+.refbar .seg button{border:0;border-right:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 12px;font:600 14px var(--ui);cursor:pointer}
+.refbar .seg button:last-child{border-right:0}.refbar .seg button.on{background:var(--ink);color:#fff}
+.note{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.formula{background:var(--soft);border-radius:4px;padding:12px 16px;font-size:17px;margin:10px 0;text-align:center}
+.formula b{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>OSPF-Referenzbandbreite und Kosten</h1>
+<p class="sub">OSPF wählt den Weg mit den geringsten <b>Kosten</b>. Die Kosten eines Interfaces ergeben sich aus einer <b>Referenzbandbreite</b> geteilt durch die Bandbreite der Leitung. Der Standardwert von <b>100&nbsp;Mbit/s</b> ist zu klein für moderne Netze – Gigabit und 10-Gigabit bekommen dann dieselben Kosten. Hier lernst du, die Referenzbandbreite richtig zu setzen.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#grundlagen">Grundlagen</a><a href="#rechner">Kosten-Rechner</a><a href="#cisco">Cisco-Konfiguration</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="grundlagen">Grundlagen</h2>
+<div class="card stack">
+<div class="formula">Kosten = <b>Referenzbandbreite</b> ÷ <b>Interface-Bandbreite</b> &nbsp;(mindestens 1, abgerundet)</div>
+<p>Mit der Standard-Referenzbandbreite von <b>100&nbsp;Mbit/s</b> rechnet OSPF: FastEthernet (100&nbsp;Mbit/s) → Kosten 1. Aber auch Gigabit (1000) und 10-Gigabit (10000) ergeben – auf 1 abgerundet – <b>Kosten 1</b>. OSPF kann die schnellen Leitungen dann nicht mehr unterscheiden und wählt womöglich den langsameren Weg.</p>
+<p>Die Lösung: die Referenzbandbreite hochsetzen – mindestens auf die <b>schnellste Leitung im Netz</b> (in Mbit/s). Wichtig: der Wert muss <b>auf allen Routern gleich</b> sein, sonst rechnen sie unterschiedlich.</p>
+<div class="note"><b>Befehl:</b> <span class="mono">router ospf 1</span> → <span class="mono">auto-cost reference-bandwidth &lt;Mbit/s&gt;</span></div>
+</div>
+
+<h2 class="part" id="rechner">Kosten-Rechner</h2>
+<div class="card stack">
+<p>Wähle die Referenzbandbreite und sieh, welche Kosten die Leitungsgeschwindigkeiten bekommen. <b style="color:#c62828">Rot</b> = zwei Geschwindigkeiten bekommen dieselben Kosten (nicht unterscheidbar).</p>
+<div class="refbar"><span class="lbl">Referenzbandbreite</span><span class="seg" id="refseg">
+<button type="button" data-r="100" class="on">100 Mbit/s (Standard)</button>
+<button type="button" data-r="1000">1000</button>
+<button type="button" data-r="10000">10000</button>
+<button type="button" data-r="40000">40000</button>
+</span></div>
+<div class="scroll"><table class="ctab" id="ctab"></table></div>
+<div class="note" id="rnote"></div>
+</div>
+
+<h2 class="part" id="cisco">Cisco-Konfiguration</h2>
+<div class="card stack">
+<p>So setzt du die Referenzbandbreite passend für ein Netz mit 10-Gigabit-Leitungen – auf <b>jedem</b> Router identisch:</p>
+<pre class="cli">Router(config)# router ospf 1
+Router(config-router)# auto-cost reference-bandwidth 10000
+% OSPF: Reference bandwidth is changed.
+        Please ensure reference bandwidth is consistent across all routers.</pre>
+<p class="mute">Kontrolle: <span class="mono">show ip ospf</span> zeigt „Reference bandwidth unit is 10000 mbps".</p>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (bis Gigabit)</option><option value="M" selected>Mittel (bis 10-Gigabit)</option><option value="S">Schwer (gemischt)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/* OSPF-Referenzbandbreite: zeigt running-configs mehrerer Router; gesucht ist der
+   auto-cost reference-bandwidth-Wert (= schnellste Leitung in Mbps, auf allen Routern gleich).
+   Browser: window.ORB · Node: globalThis.ORB  */
+(function (G) {
+  const LVNAME = { L: 'Leicht', M: 'Mittel', S: 'Schwer' };
+  const LVCODE = { L: 3, M: 4, S: 5 };
+  const TIERS = [
+    { t: 'FastEthernet', bw: 100 },
+    { t: 'GigabitEthernet', bw: 1000 },
+    { t: 'TenGigabitEthernet', bw: 10000 }
+  ];
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const ri = (r, n) => Math.floor(r() * n);
+
+  function build(r, lvl) {
+    const nR = lvl === 'L' ? 2 : 3;
+    // höchste Tier-Stufe im Netz
+    let maxIdx = lvl === 'L' ? 1 : lvl === 'S' ? 2 : (1 + ri(r, 2)); // L:Gi, M:Gi/Te, S:Te
+    const routers = [];
+    let placedMax = false;
+    for (let ridx = 0; ridx < nR; ridx++) {
+      const nIf = 2 + ri(r, 2); // 2-3 Interfaces
+      const ifs = [];
+      for (let k = 0; k < nIf; k++) {
+        let tier = ri(r, maxIdx + 1);
+        ifs.push({ tier: tier });
+      }
+      routers.push({ name: 'R' + (ridx + 1), ifs: ifs });
+    }
+    // sicherstellen, dass die höchste Stufe mindestens einmal vorkommt
+    const hasMax = routers.some(R => R.ifs.some(i => i.tier === maxIdx));
+    if (!hasMax) routers[ri(r, nR)].ifs[0].tier = maxIdx;
+    // mindestens zwei verschiedene Bandbreiten (sonst gibt es nichts zu unterscheiden)
+    const all = routers.flatMap(R => R.ifs);
+    const distinct = new Set(all.map(i => i.tier));
+    if (distinct.size < 2) {
+      // eine (nicht die einzige max-) Leitung auf eine niedrigere Stufe setzen
+      const lower = lvl === 'S' ? 0 : (maxIdx > 0 ? maxIdx - 1 : 0);
+      all[all.length - 1].tier = lower;
+      // falls dadurch die max-Stufe verschwände, sichern
+      if (!all.some(i => i.tier === maxIdx)) all[0].tier = maxIdx;
+    }
+    // IPs + Interface-Namen vergeben
+    routers.forEach((R, ridx) => {
+      R.ifs.forEach((i, k) => {
+        const T = TIERS[i.tier];
+        i.name = T.t + '0/' + k;
+        i.bw = T.bw;
+        i.ip = '10.' + (ridx + 1) + '.' + k + '.1';
+      });
+    });
+    const ref = TIERS[maxIdx].bw;           // schnellste Leitung in Mbps
+    const refName = TIERS[maxIdx].t;
+    // vorkommende Bandbreiten -> Kosten bei ref
+    const bws = [...new Set(routers.flatMap(R => R.ifs.map(i => i.bw)))].sort((a, b) => b - a);
+    const costs = bws.map(bw => ({ bw: bw, cost: Math.max(1, Math.round(ref / bw)) }));
+    return { routers: routers, ref: ref, refName: refName, costs: costs, maxIdx: maxIdx };
+  }
+
+  function cfgLines(R) {
+    const out = ['hostname ' + R.name, '!'];
+    R.ifs.forEach(i => {
+      out.push('interface ' + i.name);
+      out.push(' ip address ' + i.ip + ' 255.255.255.0');
+    });
+    out.push('!');
+    out.push('router ospf 1');
+    out.push(' router-id ' + R.ifs[0].ip);
+    return out;
+  }
+
+  function makeTask(seed, lvl) {
+    if (!LVCODE[lvl] || !(seed >= 1)) return null;
+    const r = mulberry32((seed * 7919 + LVCODE[lvl] * 1000003 + 5171) >>> 0);
+    const s = build(r, lvl);
+    s.level = lvl; s.code = lvl + '-' + seed;
+    return s;
+  }
+  G.ORB = { LVNAME: LVNAME, TIERS: TIERS, makeTask: makeTask, cfgLines: cfgLines, mulberry32: mulberry32 };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},O=window.ORB;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var SPEEDS=[{bw:10,n:'10 Mbit/s'},{bw:100,n:'100 Mbit/s (FastEthernet)'},{bw:1000,n:'1 Gbit/s (GigabitEthernet)'},{bw:10000,n:'10 Gbit/s (TenGig)'},{bw:40000,n:'40 Gbit/s'}];
+
+/* ===== Kosten-Rechner ===== */
+var ref=100;
+function cost(r,bw){return Math.max(1,Math.round(r/bw));}
+function crender(){
+ var rows=SPEEDS.map(function(s){return{s:s,c:cost(ref,s.bw)};});
+ var seen={};rows.forEach(function(x){seen[x.c]=(seen[x.c]||0)+1;});
+ var h='<tr><th>Leitung</th><th>Bandbreite (Mbit/s)</th><th>Kosten</th></tr>';
+ rows.forEach(function(x){var tie=seen[x.c]>1;h+='<tr class="'+(tie?'tie':'ok1')+'"><td>'+esc(x.s.n)+'</td><td class="c1">'+x.s.bw+'</td><td><b>'+x.c+'</b></td></tr>';});
+ $('ctab').innerHTML=h;
+ var ties=Object.keys(seen).filter(function(k){return seen[k]>1;});
+ if(ties.length) $('rnote').innerHTML='Bei Referenz '+ref+' Mbit/s bekommen mehrere Geschwindigkeiten dieselben Kosten – OSPF kann sie nicht unterscheiden. Setze die Referenz auf die schnellste Leitung.';
+ else $('rnote').innerHTML='Bei Referenz '+ref+' Mbit/s hat jede Geschwindigkeit eigene Kosten – gut unterscheidbar. ✓';
+ [].forEach.call(document.querySelectorAll('#refseg button'),function(b){b.classList.toggle('on',+b.dataset.r===ref);});
+}
+[].forEach.call(document.querySelectorAll('#refseg button'),function(b){b.onclick=function(){ref=+b.dataset.r;crender();};});
+crender();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Wie berechnet OSPF die Kosten eines Interfaces?',['Interface-Bandbreite ÷ Referenzbandbreite','Referenzbandbreite ÷ Interface-Bandbreite','Hop Count × 10','Verzögerung + Bandbreite'],1,'Kosten = Referenzbandbreite ÷ Interface-Bandbreite, mindestens 1, abgerundet.'],
+ ['Was ist die Standard-Referenzbandbreite bei Cisco-OSPF?',['10 Mbit/s','100 Mbit/s','1 Gbit/s','10 Gbit/s'],1,'Standard ist 100 Mbit/s – daher bekommen Fast-, Gigabit- und 10-Gig-Leitungen alle Kosten 1.'],
+ ['Warum ist der Standardwert in modernen Netzen ein Problem?',['Er ist zu hoch','Gigabit und schneller bekommen alle Kosten 1 und sind nicht unterscheidbar','Er ändert die MTU','Er deaktiviert OSPF'],1,'Alles ab 100 Mbit/s wird auf Kosten 1 abgerundet.'],
+ ['Worauf setzt man die Referenzbandbreite sinnvollerweise?',['Auf 1','Auf die langsamste Leitung','Mindestens auf die schnellste Leitung im Netz','Immer auf 100'],2,'So bekommt die schnellste Leitung Kosten 1 und alle langsameren höhere Kosten.'],
+ ['Mit welchem Befehl setzt man die Referenzbandbreite?',['bandwidth 10000','auto-cost reference-bandwidth 10000','ospf cost 10000','reference 10000'],1,'Unter „router ospf 1": auto-cost reference-bandwidth <Mbit/s>.'],
+ ['Was ist bei der Referenzbandbreite im Netz unbedingt zu beachten?',['Sie darf nur auf einem Router stehen','Sie muss auf allen Routern gleich sein','Sie gilt nur für Serial-Interfaces','Sie wird automatisch synchronisiert'],1,'Unterschiedliche Referenzwerte führen zu inkonsistenten Kosten und falschen Pfaden.'],
+ ['Referenz 10000 Mbit/s: Welche Kosten hat eine 1-Gbit/s-Leitung?',['1','10','100','1000'],1,'10000 ÷ 1000 = 10.'],
+ ['Referenz 10000 Mbit/s: Welche Kosten hat eine 100-Mbit/s-Leitung?',['1','10','100','1000'],2,'10000 ÷ 100 = 100.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return O.makeTask(+m[1],m[0]);}
+function taskOf(card){var c=card.dataset.code;if(!cache[c])cache[c]=mk(c);return cache[c];}
+function cfgBlock(t){return'<div class="cfgs">'+t.routers.map(function(R){return'<div><p class="ph">'+R.name+'</p><pre class="cli">'+esc(O.cfgLines(R).join('\n'))+'</pre></div>';}).join('')+'</div>';}
+function slow(t){return t.costs[t.costs.length-1];}
+function taskHTML(s,id,label){
+ var sl=slow(s);
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+O.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>';
+ h+='<p>Gegeben die running-configs mehrerer Router. Setze die OSPF-Referenzbandbreite so, dass alle Leitungsgeschwindigkeiten korrekt unterschieden werden – auf allen Routern gleich.</p>';
+ h+=cfgBlock(s);
+ h+='<p class="qh">1. Referenzbandbreite (Mbit/s)?</p><input class="one ref" inputmode="numeric" size="8" placeholder="z. B. 10000">';
+ h+='<p class="qh">2. Kosten der langsamsten Leitung ('+sl.bw+' Mbit/s)?</p><input class="one slow" inputmode="numeric" size="6" placeholder="Kosten">';
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){
+ var s=taskOf(card),sl=slow(s),ok=0;
+ var r=card.querySelector('.ref'),g1=r.value!==''&&+r.value===s.ref;mark(r,r.value===''?null:g1);if(g1)ok++;
+ var c=card.querySelector('.slow'),g2=c.value!==''&&+c.value===sl.cost;mark(c,c.value===''?null:g2);if(g2)ok++;
+ var fb=card.querySelector('.fb'),all=ok===2;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von 2 richtig.';if(all)card.dataset.solved='1';markToc();
+}
+function solHTML(s){
+ var costs=s.costs.map(function(c){return c.bw+' Mbit/s → Kosten '+c.cost;}).join(', ');
+ var h='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">';
+ h+='<li><b>1. auto-cost reference-bandwidth '+s.ref+'</b> (unter „router ospf 1", auf JEDEM Router identisch). Schnellste Leitung = '+s.refName+' = '+s.ref+' Mbit/s.</li>';
+ h+='<li><b>2. Kosten je Geschwindigkeit:</b> '+costs+'</li>';
+ h+='<li><span class="hint">Mit dem Standard 100 Mbit/s bekämen Gigabit und 10-Gigabit beide Kosten 1 – nicht unterscheidbar.</span></li>';
+ return h+'</ul>';
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(taskOf(card));var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+
+var list=["L-1", "L-2", "L-3", "M-1", "M-2", "M-3", "M-4", "S-1", "S-2", "S-3"];
+var host=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=O.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+
+function gen(lvl,seed){var s=O.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie L-12, M-305 oder S-4711 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

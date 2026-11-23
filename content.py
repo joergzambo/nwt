@@ -98,6 +98,8 @@ AREAS = [
           'text': 'Wie Router mit Hello, DBD, LSR, LSU und LSAck ihren Netzplan austauschen – als Animation. DR/BDR-Wahl, Router-ID, Referenzbandbreite, Area 0 – mit Übungen und Zufallsgenerator.'},
          {'slug': 'ospf-3', 'title': 'OSPF 3: Multi-Area-OSPF', 'tool': 'ospf-3',
           'text': 'Mehrere Areas, ABR und Kurzfassungen (Typ-3-LSA): Wer sieht was, O oder O IA, network-Befehle mit Wildcard – mit Übungen und Zufallsgenerator.'},
+         {'slug': 'ospf-referenzbandbreite', 'title': 'OSPF: Referenzbandbreite und Kosten', 'tool': 'ospf-referenzbandbreite',
+          'text': 'Warum der Standard von 100 Mbit/s für Gigabit zu klein ist: Kosten-Rechner, auto-cost reference-bandwidth richtig setzen – aus running-configs mehrerer Router, mit Quiz, Übungen und Zufallsgenerator.'},
      ]},
     {'slug': 'ip-services', 'title': 'IP-Services', 'text': 'Dienste, die ein Netz erst benutzbar machen.',
      'topics': [
