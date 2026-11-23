@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -149,6 +149,20 @@ function build(E) {
             '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
             'Kosten je Router: ' + blank],
           solution: [sol] };
+      }
+    },
+    'wildcard': {
+      label: 'Wildcard-Masken (Rätsel: ungerade/gerade, Hälften, Blöcke …)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'WCM',
+      gen(seed, lvl) {
+        const T = WC.makeTask(seed, lvl);
+        const strip = function (s) { return String(s).replace(/<[^>]+>/g, ''); };
+        if (T.reverse) {
+          return { intro: '', lines: [strip(T.prompt), 'Anzahl Treffer: ' + blank, 'Muster beschreiben: ' + blank],
+            solution: [strip(T.desc)] };
+        }
+        const net = T.octIdx === 3 ? ('Netz: ' + T.net + '/24') : ('Bereich: ' + T.addr.split('.').slice(0, 2).join('.') + '.x.0');
+        return { intro: '', lines: [strip(T.prompt), net, 'Adresse: ' + blank + '    Wildcard-Maske: ' + blank],
+          solution: [T.addr + '  ' + T.wc + '  (' + strip(T.desc) + ')'] };
       }
     },
     'ospf-refbw': {

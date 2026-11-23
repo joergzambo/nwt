@@ -83,9 +83,10 @@ async function init(logfn) {
   loadFresh('engines/domains.js');
   loadFresh('engines/dijk.js');
   loadFresh('engines/ospfref.js');
+  loadFresh('engines/wild.js');
   const defs = loadFresh('topicdefs.js');
   TOPICS = defs.build({ NA: globalThis.NA, SN: globalThis.SN, VD: globalThis.VD,
-    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS, IR: globalThis.IR, DOM: globalThis.DOM, DJ: globalThis.DJ, ORB: globalThis.ORB });
+    EC: globalThis.EC, ACL: globalThis.ACL, FH: globalThis.FH, ZS: globalThis.ZS, IR: globalThis.IR, DOM: globalThis.DOM, DJ: globalThis.DJ, ORB: globalThis.ORB, WC: globalThis.WC });
   loadPoolTopics();
   const ext = loadExternalTopics();
   return { topicsCount: Object.keys(TOPICS).length, external: ext, sync: SYNC_INFO };

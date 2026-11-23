@@ -112,6 +112,8 @@ AREAS = [
      ]},
     {'slug': 'netzwerksicherheit', 'title': 'Netzwerksicherheit', 'text': 'Angriffe im LAN verstehen und abwehren.',
      'topics': [
+         {'slug': 'wildcard-masken', 'title': 'Wildcard-Masken', 'tool': 'wildcard-masken',
+          'text': 'Das Spiegelbild der Subnetzmaske: 0 = muss passen, 1 = egal. Interaktiver Rechner mit 16×16-Treffer-Raster und knifflige Rätsel (nur ungerade Hosts, zweite Hälfte, jedes 4. …) – mit Quiz, Übungen und Zufallsgenerator.'},
          {'slug': 'standard-acl', 'title': 'Standard-Access-Listen', 'tool': 'standard-acl',
           'text': 'First Match und implicit deny im Paket-Tester, Wildcard-Rechner, Konfiguration, access-class für VTY, Platzierung nahe am Ziel im Netzplan – mit Übungen und Zufallsgenerator.'},
          {'slug': 'extended-acl', 'title': 'Extended-Access-Listen', 'tool': 'extended-acl',

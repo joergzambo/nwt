@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wildcard-Masken</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.wcin{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:6px 0}
+.wcin label{display:flex;flex-direction:column;gap:3px;font:600 13px var(--ui)}
+.grid{display:grid;grid-template-columns:repeat(16,1fr);gap:2px;max-width:420px;margin:10px 0}
+.grid .cell{aspect-ratio:1;border-radius:2px;background:#eceff1;font:600 8px var(--mono);display:flex;align-items:center;justify-content:center;color:#b0bec5}
+.grid .cell.on{background:var(--accent,#2e7d32);color:#fff}
+.gleg{display:flex;gap:16px;font:600 13px var(--ui);margin-top:4px}
+.gleg i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.binrow{font:13px var(--mono);margin-top:6px}.binrow b.care{color:#c62828}.binrow b.dc{color:#2e7d32}
+.note{background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px}
+.prompt{font-size:16.5px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Wildcard-Masken</h1>
+<p class="sub">Eine <b>Wildcard-Maske</b> ist das Spiegelbild der Subnetzmaske: <b>0</b> bedeutet „Bit muss passen", <b>1</b> bedeutet „egal". Dadurch kann sie Dinge treffen, die eine Subnetzmaske nicht kann – zum Beispiel nur die <b>ungeraden</b> Hosts. Man braucht sie bei <b>Access-Listen</b> und bei <b>OSPF-network-Befehlen</b>.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#rechner">Rechner & Raster</a><a href="#cisco">Schreibweise</a><a href="#quiz">Teste dich</a><a href="#uebungen">Rätsel-Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="rechner">Rechner mit Treffer-Raster</h2>
+<div class="card stack">
+<p>Gib Adresse und Wildcard ein – das Raster zeigt alle 256 Werte des gemusterten Oktetts. <b style="color:#2e7d32">Grün</b> = getroffen. Probier mal <code>0.0.0.254</code> (ungerade/gerade) oder <code>0.0.0.63</code> (ein Block).</p>
+<div class="wcin">
+ <label>Adresse<input id="cadr" class="one" size="15" value="192.168.1.1"></label>
+ <label>Wildcard<input id="cwc" class="one" size="15" value="0.0.0.254"></label>
+ <button class="btn" id="cgo" type="button">Anzeigen</button>
+ <span class="err" id="cmsg"></span>
+</div>
+<div class="binrow" id="cbin"></div>
+<div class="grid" id="cgrid"></div>
+<div class="gleg"><span><i style="background:#2e7d32"></i>getroffen</span><span><i style="background:#eceff1"></i>nicht getroffen</span></div>
+<div class="note" id="cnote"></div>
+</div>
+
+<h2 class="part" id="cisco">Schreibweise</h2>
+<div class="card stack">
+<p>In Access-Listen und bei OSPF steht die Wildcard <b>hinter</b> der Adresse:</p>
+<pre class="cli">access-list 10 permit 192.168.1.1 0.0.0.254     ! nur ungerade Hosts
+router ospf 1
+ network 10.0.0.0 0.0.255.255 area 0            ! alles 10.0.x.x</pre>
+<p class="mute">Merksatz: Wildcard = <b>255.255.255.255 − Subnetzmaske</b>. Beispiel: /26 → Maske 255.255.255.192 → Wildcard 0.0.0.63.</p>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Rätsel-Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (gerade/ungerade, Hälften, Blöcke)</option><option value="M" selected>Mittel (Blöcke, Teiler, Subnetze, Umkehr)</option><option value="S">Schwer (gemischt, viele Umkehraufgaben)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/*WCJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},W=window.WC;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function parseIp(s){var m=/^\s*(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\s*$/.exec(s);if(!m)return null;var o=[+m[1],+m[2],+m[3],+m[4]];if(o.some(function(x){return x>255;}))return null;return o;}
+function patOct(wc){for(var i=0;i<4;i++)if(wc[i]!==0)return i;return 3;}
+function gridHTML(aOct,wOct){var set={};W.matchOct(aOct,wOct).forEach(function(v){set[v]=1;});var h='';for(var v=0;v<256;v++){h+='<div class="cell'+(set[v]?' on':'')+'" title="'+v+'">'+(v%16===0||set[v]&&v<10?v:'')+'</div>';}return h;}
+function binHTML(aOct,wOct){var ab=W.bin8(aOct),wb=W.bin8(wOct),h='Wildcard-Oktett: ';for(var i=0;i<8;i++){var dc=wb[i]==='1';h+='<b class="'+(dc?'dc':'care')+'">'+wb[i]+'</b>';}h+=' &nbsp; (<b class="care">0</b>=muss passen, <b class="dc">1</b>=egal) &nbsp; Adresse: <span class="mono">'+ab+'</span>';return h;}
+
+/* ===== Rechner ===== */
+function calc(){var a=parseIp($('cadr').value),w=parseIp($('cwc').value);if(!a||!w){$('cmsg').textContent='Bitte gültige Adresse und Wildcard eingeben.';return;}$('cmsg').textContent='';
+ var oi=patOct(w),aO=a[oi],wO=w[oi];$('cgrid').innerHTML=gridHTML(aO,wO);$('cbin').innerHTML=binHTML(aO,wO);
+ var set=W.matchOct(aO,wO),unit=oi===3?'Host-Adressen':(oi===2?'/24-Subnetze':'Werte');
+ $('cnote').innerHTML='Getroffen: <b>'+set.length+'</b> '+unit+' im '+(oi===3?'letzten':oi===2?'dritten':(oi+1)+'.')+' Oktett. '+W.describe(aO,wO,oi,set);}
+$('cgo').onclick=calc;['cadr','cwc'].forEach(function(id){$(id).addEventListener('keydown',function(e){if(e.key==='Enter')calc();});});
+calc();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was bedeutet in einer Wildcard-Maske das Bit 0?',['Das Bit ist egal','Das Bit muss genau passen','Das Bit wird invertiert','Das Bit ist reserviert'],1,'0 = muss passen, 1 = egal. Genau umgekehrt zur Subnetzmaske.'],
+ ['Welche Wildcard trifft nur die ungeraden Hosts?',['0.0.0.1','0.0.0.254','0.0.0.255','0.0.0.128'],1,'254 = 11111110: das letzte Bit muss passen (=1 → ungerade), der Rest ist egal.'],
+ ['Wie lautet die Wildcard zur Subnetzmaske 255.255.255.192 (/26)?',['0.0.0.63','0.0.0.64','0.0.0.192','0.0.0.32'],0,'255−192 = 63. Also 0.0.0.63.'],
+ ['Was trifft 10.0.0.0 mit Wildcard 0.0.255.255?',['Nur 10.0.0.0','Alle 10.0.x.x','Alle 10.x.x.x','Nur 10.0.255.255'],1,'Die beiden letzten Oktette sind egal: alles von 10.0.0.0 bis 10.0.255.255.'],
+ ['Welche Wildcard trifft die ersten 64 Hosts (0–63)?',['0.0.0.63','0.0.0.64','0.0.0.127','0.0.0.31'],0,'64 Werte = 2^6, also 6 „egal"-Bits: 0.0.0.63.'],
+ ['Wildcard 0.0.0.252 bei Adresse …0 – was wird getroffen?',['Jede 2. Adresse','Alle durch 4 teilbaren Adressen','Die ersten 4 Hosts','Alle ungeraden'],1,'252 = 11111100: die untersten 2 Bits müssen 0 sein → Vielfache von 4.'],
+ ['Warum kann eine Subnetzmaske „nur ungerade Hosts" NICHT ausdrücken, eine Wildcard aber schon?',['Subnetzmasken sind kürzer','Subnetzmasken müssen zusammenhängende 1-Bits haben, Wildcards dürfen Lücken lassen','Weil OSPF das verbietet','Das stimmt nicht, beide können es'],1,'Subnetzmasken sind immer ein zusammenhängender Block – Wildcards dürfen beliebige Bits „egal" setzen.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return W.makeTask(+m[1],m[0]);}
+function setEq(a,b){if(a.length!==b.length)return false;var s={};a.forEach(function(x){s[x]=1;});return b.every(function(x){return s[x];});}
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+W.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>';
+ h+='<p class="prompt">'+s.prompt+'</p>';
+ if(s.reverse){
+  h+='<p class="qh">Wie viele '+(s.octIdx===3?'Hosts':'Subnetze')+' werden getroffen?</p><input class="one cnt" inputmode="numeric" size="6" placeholder="Anzahl">';
+ }else{
+  var netTxt=s.octIdx===3?('Netz: '+s.net+'/24'):('Bereich: '+s.addr.split(".").slice(0,2).join(".")+'.x.0');
+  h+='<p class="mute" style="margin:0 0 4px">'+netTxt+'</p>';
+  h+='<p class="qh">Adresse und Wildcard-Maske:</p><div class="wcin"><label>Adresse<input class="one wadr" size="15" placeholder="z. B. '+s.addr+'"></label><label>Wildcard<input class="one wwc" size="15" placeholder="0.0.0.x"></label></div>';
+ }
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){var s=cache[card.dataset.code],target=W.matchOct(s.aOct,s.wOct);
+ if(s.reverse){var c=card.querySelector('.cnt'),g=c.value!==''&&+c.value===s.count;mark(c,c.value===''?null:g);var fb=card.querySelector('.fb');fb.className='fb '+(g?'good':'bad');fb.textContent=g?'Richtig! ✓':'Noch nicht – zähl im Raster nach (Lösung anzeigen).';if(g)card.dataset.solved='1';markToc();return;}
+ var ai=card.querySelector('.wadr'),wi=card.querySelector('.wwc');
+ function ip(s){var m=/^\s*(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\s*$/.exec(s);if(!m)return null;return[+m[1],+m[2],+m[3],+m[4]];}
+ var a=ip(ai.value),w=ip(wi.value),ok=false;
+ if(a&&w){var oi=s.octIdx;ok=setEq(W.matchOct(a[oi],w[oi]),target)&&w[oi]===s.wOct;}
+ mark(ai,ai.value===''?null:ok);mark(wi,wi.value===''?null:ok);
+ var fb=card.querySelector('.fb');fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen hilft.';if(ok)card.dataset.solved='1';markToc();}
+function solHTML(s){
+ return'<h3 style="font:400 20px var(--head);margin:0 0 4px">Lösung</h3><p><b class="mono">'+s.addr+'  '+s.wc+'</b></p><p>'+s.desc+'</p>'+binHTML(s.aOct,s.wOct)+'<div class="grid">'+gridHTML(s.aOct,s.wOct)+'</div>';}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(cache[card.dataset.code]);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+
+var list=/*LIST*/;var host=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Rätsel '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Rätsel '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Rätsel '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';host.appendChild(d);});
+var pages=[].slice.call(host.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Rätsel '+(k+1)+' von '+pages.length;$('ppart').textContent=W.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=W.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Rätsel '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

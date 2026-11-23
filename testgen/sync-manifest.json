@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "files": [
     "engines/netz.js",
     "engines/sub.js",
@@ -12,6 +12,7 @@
     "engines/domains.js",
     "engines/dijk.js",
     "engines/ospfref.js",
+    "engines/wild.js",
     "topicdefs.js",
     "pool.json"
   ]
