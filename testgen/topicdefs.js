@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI, STPA = E.STPA, RIPA = E.RIPA, CDF = E.CDF;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI, STPA = E.STPA, RIPA = E.RIPA, CDF = E.CDF, TS = E.TS;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -178,6 +178,17 @@ function build(E) {
         lines.push('Nachbar R2: ' + (T.mode === 'none' ? 'ebenfalls keine Authentifizierung' : 'key-string ' + T.keyB + ' (Modus ' + T.mode + ')'));
         lines.push('Wie steht es um den Austausch der Routing-Updates? ' + blank);
         return { intro: '', lines: lines, solution: [RIPA.OUT[T.out]] };
+      }
+    },
+    'troubleshooting': {
+      label: 'Troubleshooting: Fehlersuche an Interfaces', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'TRB',
+      gen(seed, lvl) {
+        const T2 = TS.makeTask(seed, lvl); const b = T2.shbr[0];
+        const lines = [T2.symptom,
+          'show ip interface brief:  ' + b.iface + '  ' + b.ip + '  ' + b.status + '  ' + b.proto];
+        T2.shint.split('\n').forEach(function (l) { lines.push(l.trim() ? '  ' + l.trim() : l); });
+        lines.push('Ursache? ' + blank, 'Behebung? ' + blank);
+        return { intro: '', lines: lines, solution: [T2.causeTxt + ' → ' + T2.fixTxt] };
       }
     },
     'cisco-ios': {

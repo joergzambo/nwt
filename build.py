@@ -103,7 +103,7 @@ def page(title, depth, desc, body, active=''):
 
 # Eindeutige Themen-Kürzel für Beispielnummern (z. B. VLN-M-305)
 TAGS = {
-    'cisco-cli': 'CLI', 'zahlensysteme': 'ZAH', 'ip-grundlagen': 'IPG', 'netzadresse': 'NET', 'osi-modell': 'OSI',
+    'cisco-cli': 'CLI', 'troubleshooting': 'TRB', 'zahlensysteme': 'ZAH', 'ip-grundlagen': 'IPG', 'netzadresse': 'NET', 'osi-modell': 'OSI',
     'subnetting': 'SUB', 'supernetting': 'SUP', 'collision-broadcast-domains': 'DOM',
     'ethernet-switching': 'ETH', 'spanning-tree': 'STP', 'vlan': 'VLN', 'etherchannel': 'ECH',
     'cdp': 'CDP', 'layer-3-switching': 'L3S', 'show-ip-route': 'RTB', 'inter-vlan-routing': 'IVR',

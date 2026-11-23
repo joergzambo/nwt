@@ -70,6 +70,8 @@ AREAS = [
           'text': 'Ethernet-Frame, MAC-Adressen und MAC-Learning: Frames senden, ARP mitspielen, Switch-Tabellen beobachten – mit Übungen.'},
          {'slug': 'cisco-cli', 'title': 'Cisco CLI: Modi, Shortcuts und Speicher', 'tool': 'cisco-cli',
           'text': 'User- und Privileged-Mode und die Config-Modi mit klickbarem Modus-Navigator, die wichtigsten PuTTY-Tastenkürzel (Strg+A/E/D …), die Speicher RAM/ROM/NVRAM/Flash und wie ein IOS-Dateiname aufgebaut ist – mit Quiz, Übungen und Zufallsgenerator.'},
+         {'slug': 'troubleshooting', 'title': 'Troubleshooting: show- und debug-Befehle', 'tool': 'troubleshooting',
+          'text': 'Systematische Fehlersuche: Interface-Status-Matrix, Fehlerzähler (CRC, late collisions, drops), die wichtigsten show/debug-Befehle und Bottom-up-Methodik – mit interaktivem Fehlersuche-Simulator, Quiz und Zufallsgenerator.'},
      ]},
     {'slug': 'switching', 'title': 'Switching', 'text': 'Redundanz ohne Schleifen und logische Trennung im LAN.',
      'topics': [
