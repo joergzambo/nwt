@@ -48,6 +48,8 @@ SITE = {
 AREAS = [
     {'slug': 'grundlagen', 'title': 'Grundlagen', 'text': 'Schichtenmodelle, Adressierung und wie Daten im LAN unterwegs sind.',
      'topics': [
+         {'slug': 'cisco-cli', 'title': 'Cisco CLI: Modi, Shortcuts und Speicher', 'tool': 'cisco-cli',
+          'text': 'User- und Privileged-Mode und die Config-Modi mit klickbarem Modus-Navigator, die wichtigsten PuTTY-Tastenkürzel (Strg+A/E/D …), die Speicher RAM/ROM/NVRAM/Flash und wie ein IOS-Dateiname aufgebaut ist – mit Quiz, Übungen und Zufallsgenerator.'},
          {'slug': 'zahlensysteme', 'title': 'Zahlensysteme: Binär, Oktal, Hexadezimal', 'tool': 'zahlensysteme',
           'text': 'Bezahlen mit Zweierscheinen, Umrechner mit Rechenweg, ein eigenes Zahlensystem aus Smileys – und was Base64 und ASCII damit zu tun haben. Mit Übungen und Zufallsgenerator.'},
          {'slug': 'ip-grundlagen', 'title': 'IP-Adresse, Subnetzmaske und Gateway', 'tool': 'ip-grundlagen',

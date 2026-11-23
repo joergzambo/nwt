@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cisco CLI: Modi, Shortcuts, Speicher</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.one{padding:5px 7px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:7px 10px;text-align:left;vertical-align:top}
+.tbl th{background:var(--soft);font:600 14px var(--ui)}
+.tbl code{font-size:13px}
+.scroll{overflow-x:auto}
+.kbd{display:inline-block;border:1.5px solid #90a4ae;border-bottom-width:3px;border-radius:5px;background:#fff;padding:1px 7px;font:600 13px var(--mono);white-space:nowrap}
+.term{background:#1b1f23;color:#d7e0e6;border-radius:8px;padding:14px 16px;font:15px var(--mono);min-height:3em}
+.term .p{color:#8bc34a;font-weight:700}
+.navbtns{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.navbtns button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:5px;padding:7px 11px;font:600 13.5px var(--mono);cursor:pointer}
+.navbtns button:disabled{opacity:.35;cursor:not-allowed}
+.modedesc{background:var(--soft);border-left:4px solid var(--accent);border-radius:4px;padding:8px 12px;font-size:15px;margin-top:8px}
+.ios{display:flex;flex-wrap:wrap;gap:4px;font:600 18px var(--mono);margin:10px 0;align-items:stretch}
+.ios .seg{border-radius:5px;padding:6px 8px;color:#fff;position:relative}
+.ios .seg small{display:block;font:600 10.5px var(--ui);opacity:.95;margin-top:2px}
+.sep{align-self:center;color:#607d8b;font-size:18px}
+.iosleg{font-size:14.5px;margin-top:6px}
+.iosleg li{margin:3px 0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Cisco CLI: Modi, Shortcuts und Speicher</h1>
+<p class="sub">Bevor man konfiguriert, muss man sich auf dem Gerät zurechtfinden: In welchem <b>Modus</b> bin ich? Welche <b>Tastenkürzel</b> sparen Zeit? Wo wird was <b>gespeichert</b>? Und was verrät ein <b>IOS-Dateiname</b>?</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#modi">CLI-Modi</a><a href="#shortcuts">Tastenkürzel</a><a href="#speicher">Speicher</a><a href="#iosname">IOS-Dateiname</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="modi">Die CLI-Modi</h2>
+<div class="card stack">
+<p>Die Cisco-Kommandozeile ist in <b>Modi</b> gegliedert. Der Prompt zeigt immer, wo du gerade bist. Klick dich durch:</p>
+<div class="term" id="prompt"></div>
+<div class="navbtns" id="navbtns"></div>
+<div class="modedesc" id="modedesc"></div>
+<div class="scroll"><table class="tbl" style="margin-top:14px">
+<tr><th>Modus</th><th>Prompt</th><th>Hinein mit</th><th>Wofür</th></tr>
+<tr><td>User-EXEC</td><td><code>Router&gt;</code></td><td>(Login)</td><td>Nur anschauen: <code>ping</code>, einige <code>show</code>. Nichts ändern.</td></tr>
+<tr><td>Privileged-EXEC</td><td><code>Router#</code></td><td><code>enable</code></td><td>Alle <code>show</code>/<code>debug</code>, <code>reload</code>, <code>copy</code>. „Admin-Modus".</td></tr>
+<tr><td>Global-Config</td><td><code>Router(config)#</code></td><td><code>configure terminal</code></td><td>Geräteweite Einstellungen (Hostname, Benutzer …).</td></tr>
+<tr><td>Interface-Config</td><td><code>Router(config-if)#</code></td><td><code>interface Gi0/0</code></td><td>Ein Interface konfigurieren (IP, Beschreibung …).</td></tr>
+<tr><td>Line-Config</td><td><code>Router(config-line)#</code></td><td><code>line vty 0 4</code></td><td>Konsole/VTY: Passwort, Timeout, Transport.</td></tr>
+<tr><td>Router-Config</td><td><code>Router(config-router)#</code></td><td><code>router ospf 1</code></td><td>Routing-Protokoll einstellen.</td></tr>
+</table></div>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px"><code>exit</code> = eine Ebene zurück · <code>end</code> oder <span class="kbd">Strg+Z</span> = direkt zurück zum Privileged-EXEC · <code>disable</code> = zurück zum User-EXEC. Mit <code>do &lt;befehl&gt;</code> kannst du aus dem Config-Modus einen Privileged-Befehl ausführen (z. B. <code>do show ip int brief</code>).</div>
+</div>
+
+<h2 class="part" id="shortcuts">Tastenkürzel (PuTTY / IOS)</h2>
+<div class="card stack">
+<p>Diese Kürzel funktionieren direkt in der IOS-Zeile (auch über PuTTY). Sie sparen enorm Zeit beim Tippen langer Befehle:</p>
+<div class="scroll"><table class="tbl">
+<tr><th>Kürzel</th><th>Wirkung</th></tr>
+<tr><td><span class="kbd">Strg+A</span></td><td>An den <b>Anfang</b> der Zeile springen</td></tr>
+<tr><td><span class="kbd">Strg+E</span></td><td>An das <b>Ende</b> der Zeile springen</td></tr>
+<tr><td><span class="kbd">Strg+D</span></td><td>Zeichen <b>unter dem Cursor</b> löschen</td></tr>
+<tr><td><span class="kbd">Strg+W</span></td><td>Ein <b>Wort</b> links löschen</td></tr>
+<tr><td><span class="kbd">Strg+U</span></td><td>Die <b>ganze Zeile</b> löschen</td></tr>
+<tr><td><span class="kbd">Strg+K</span></td><td>Vom Cursor bis <b>Zeilenende</b> löschen</td></tr>
+<tr><td><span class="kbd">Strg+R</span></td><td>Zeile <b>neu anzeigen</b> (nach einer Logmeldung)</td></tr>
+<tr><td><span class="kbd">Strg+C</span></td><td>Befehl/Konfiguration <b>abbrechen</b></td></tr>
+<tr><td><span class="kbd">Strg+Z</span></td><td>Config beenden → zurück zum Privileged-EXEC</td></tr>
+<tr><td><span class="kbd">Strg+Umschalt+6</span></td><td><b>Break</b>: laufenden Vorgang abbrechen (z. B. hängender <code>ping</code>/<code>traceroute</code> oder DNS-Lookup)</td></tr>
+<tr><td><span class="kbd">Tab</span></td><td>Befehl <b>vervollständigen</b></td></tr>
+<tr><td><span class="kbd">?</span></td><td><b>Hilfe</b>: zeigt mögliche Befehle/Optionen</td></tr>
+<tr><td><span class="kbd">Pfeil ↑</span> / <span class="kbd">Strg+P</span></td><td>Vorherigen Befehl aus dem <b>Verlauf</b></td></tr>
+</table></div>
+</div>
+
+<h2 class="part" id="speicher">Die Speicher eines Cisco-Geräts</h2>
+<div class="card stack">
+<p>Ein Cisco-Gerät hat vier wichtige Speicher. Entscheidend ist: Was überlebt einen Neustart – und was nicht?</p>
+<div class="scroll"><table class="tbl">
+<tr><th>Speicher</th><th>Inhalt</th><th>Nach Neustart?</th><th>Vergleich PC</th></tr>
+<tr><td><b>RAM</b></td><td><b>running-config</b> (aktive Konfiguration), Routing-Tabelle, ARP-Cache, Paketpuffer. Das IOS läuft hier.</td><td style="color:#c62828">weg (flüchtig)</td><td>Arbeitsspeicher</td></tr>
+<tr><td><b>ROM</b></td><td>Bootstrap, POST (Selbsttest), ROMMON (Notfall-Modus). Fest eingebaut.</td><td style="color:#2e7d32">bleibt</td><td>BIOS</td></tr>
+<tr><td><b>NVRAM</b></td><td><b>startup-config</b> (gespeicherte Konfiguration), Configuration Register.</td><td style="color:#2e7d32">bleibt</td><td>kleiner Dauerspeicher</td></tr>
+<tr><td><b>Flash</b></td><td><b>IOS-Image</b> (das Betriebssystem), oft Backup-Configs.</td><td style="color:#2e7d32">bleibt</td><td>Festplatte/SSD</td></tr>
+</table></div>
+<p class="qh">Beim Start lädt das Gerät das <b>IOS aus dem Flash</b> in den RAM und dann die <b>startup-config aus dem NVRAM</b> in den RAM (→ wird zur running-config).</p>
+<pre class="cli">Router# copy running-config startup-config    ! Änderungen sichern (RAM → NVRAM), kurz: write memory
+Router# show running-config                   ! aktive Konfiguration (RAM)
+Router# show startup-config                   ! gespeicherte Konfiguration (NVRAM)
+Router# show flash:                           ! IOS-Image(s) im Flash
+Router# show version                          ! IOS-Version, Uptime, Config-Register</pre>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px"><b>Merke:</b> Wer nur konfiguriert und nicht <code>copy run start</code> macht, verliert alles beim nächsten Stromausfall – die running-config liegt nur im flüchtigen RAM.</div>
+</div>
+
+<h2 class="part" id="iosname">Aufbau eines IOS-Dateinamens</h2>
+<div class="card stack">
+<p>Ein IOS-Dateiname verrät Plattform, Funktionsumfang, Format und Version. Gib einen Namen ein (oder nimm das Beispiel):</p>
+<input id="iosin" class="one" size="46" value="c2900-universalk9-mz.SPA.151-4.M4.bin" style="font-size:14px;max-width:100%">
+<button class="btn" id="iosgo" type="button">Zerlegen</button><span class="err" id="iosmsg"></span>
+<div class="ios" id="iosout"></div>
+<ul class="iosleg" id="iosleg"></ul>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen: IOS-Dateinamen lesen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht</option><option value="M" selected>Mittel</option><option value="S">Schwer</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/*CLIJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},C=window.CLI;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ===== Modus-Navigator ===== */
+var MODE={
+ user:{p:'Router>',d:'<b>User-EXEC.</b> Du darfst nur schauen (eingeschränkte <code>show</code>, <code>ping</code>). Mit <code>enable</code> in den Privileged-Modus.'},
+ priv:{p:'Router#',d:'<b>Privileged-EXEC.</b> Voller Lesezugriff, <code>reload</code>, <code>copy</code>. Mit <code>configure terminal</code> in den Konfigurationsmodus, mit <code>disable</code> zurück.'},
+ config:{p:'Router(config)#',d:'<b>Global-Config.</b> Geräteweite Einstellungen. Weiter in Unter-Modi (<code>interface</code>, <code>line</code>, <code>router</code>). <code>exit</code> zurück, <code>end</code>/Strg+Z zu Privileged.'},
+ 'if':{p:'Router(config-if)#',d:'<b>Interface-Config.</b> Einstellungen für ein Interface (IP, Beschreibung, no shutdown).'},
+ line:{p:'Router(config-line)#',d:'<b>Line-Config.</b> Konsole/VTY: Passwort, exec-timeout, transport input.'},
+ router:{p:'Router(config-router)#',d:'<b>Router-Config.</b> Einstellungen des Routing-Protokolls (network, passive-interface …).'}
+};
+var state='user';
+var CMDS=[
+ {c:'enable',from:['user'],to:'priv'},
+ {c:'disable',from:['priv'],to:'user'},
+ {c:'configure terminal',from:['priv'],to:'config'},
+ {c:'interface Gi0/0',from:['config'],to:'if'},
+ {c:'line vty 0 4',from:['config'],to:'line'},
+ {c:'router ospf 1',from:['config'],to:'router'},
+ {c:'exit',from:['priv','config','if','line','router'],to:'EXIT'},
+ {c:'end  (Strg+Z)',from:['config','if','line','router'],to:'priv'}
+];
+function up(){return state==='priv'?'user':state==='config'?'priv':(state==='if'||state==='line'||state==='router')?'config':'user';}
+function render(){
+ $('prompt').innerHTML='<span class="p">'+esc(MODE[state].p)+'</span> ';
+ $('modedesc').innerHTML=MODE[state].d;
+ $('navbtns').innerHTML=CMDS.map(function(cm){var ok=cm.from.indexOf(state)>=0;return'<button type="button" data-c="'+esc(cm.c)+'"'+(ok?'':' disabled')+'>'+esc(cm.c)+'</button>';}).join('');
+}
+$('navbtns').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(!b||b.disabled)return;var cm=CMDS.filter(function(x){return x.c===b.dataset.c;})[0];state=cm.to==='EXIT'?up():cm.to;render();});
+render();
+
+/* ===== IOS-Dateiname ===== */
+var COL={plat:'#1565c0',feat:'#6a1b9a',fmt:'#2e7d32',sign:'#e65100',ver:'#c62828'};
+function seg(txt,lab,col){return'<div class="seg" style="background:'+col+'">'+esc(txt)+'<small>'+lab+'</small></div>';}
+function decode(){
+ var fn=$('iosin').value.trim(),p=C.parts(fn);
+ if(!p){$('iosmsg').textContent='Konnte den Namen nicht zerlegen – Format z. B. c2900-universalk9-mz.SPA.151-4.M4.bin';$('iosout').innerHTML='';$('iosleg').innerHTML='';return;}
+ $('iosmsg').textContent='';
+ var h=seg(p.plat,'Plattform',COL.plat)+'<span class="sep">-</span>'+seg(p.feat,'Feature-Set',COL.feat)+'<span class="sep">-</span>'+seg(p.fmt,'Format',COL.fmt);
+ if(p.sign)h+='<span class="sep">.</span>'+seg(p.sign,'Signatur',COL.sign);
+ h+='<span class="sep">.</span>'+seg(p.ver,'Version',COL.ver)+'<span class="sep">.bin</span>';
+ $('iosout').innerHTML=h;
+ var mz=/m/i.test(p.fmt)?'<b>m</b> = läuft aus dem <b>RAM</b> (relocatable)':'';
+ var z=/z/i.test(p.fmt)?', <b>z</b> = komprimiert (zipped)':'';
+ var ver=p.ver.replace(/^(\d+)(\d)-(\d+)\.([MEST])(\d+)$/,'$1.$2($3)$4$5');
+ $('iosleg').innerHTML=''
+  +'<li><span style="color:'+COL.plat+'">■</span> <b>'+esc(p.plat)+'</b> – Hardware-Plattform.</li>'
+  +'<li><span style="color:'+COL.feat+'">■</span> <b>'+esc(p.feat)+'</b> – Funktionsumfang; <code>k9</code> = starke Verschlüsselung, <code>npe</code> = ohne Payload-Verschlüsselung.</li>'
+  +'<li><span style="color:'+COL.fmt+'">■</span> <b>'+esc(p.fmt)+'</b> – '+mz+z+'.</li>'
+  +(p.sign?'<li><span style="color:'+COL.sign+'">■</span> <b>'+esc(p.sign)+'</b> – digital signiertes Image (Echtheit geprüft).</li>':'')
+  +'<li><span style="color:'+COL.ver+'">■</span> <b>'+esc(p.ver)+'</b> – Version '+esc(ver)+'.</li>';
+}
+$('iosgo').onclick=decode;$('iosin').addEventListener('keydown',function(e){if(e.key==='Enter')decode();});
+decode();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['In welchem Modus bist du direkt nach dem Befehl enable?',['User-EXEC','Privileged-EXEC','Global-Config','Interface-Config'],1,'enable führt vom User-EXEC (>) in den Privileged-EXEC (#).'],
+ ['Mit welchem Befehl kommst du vom Privileged-EXEC in den Konfigurationsmodus?',['enable','configure terminal','interface','setup'],1,'configure terminal (kurz conf t) öffnet den Global-Config-Modus.'],
+ ['Was macht Strg+A in der IOS-Zeile?',['Alles markieren','An den Zeilenanfang springen','Befehl abbrechen','Autovervollständigen'],1,'Strg+A = Zeilenanfang, Strg+E = Zeilenende.'],
+ ['Welcher Speicher verliert seinen Inhalt beim Neustart?',['NVRAM','Flash','RAM','ROM'],2,'RAM ist flüchtig – dort liegt u. a. die running-config.'],
+ ['Wo liegt die startup-config?',['RAM','ROM','NVRAM','Flash'],2,'Die startup-config liegt im NVRAM und überlebt den Neustart.'],
+ ['Wo liegt das IOS-Image?',['RAM','NVRAM','Flash','ROM'],2,'Das IOS-Image liegt im Flash und wird beim Start in den RAM geladen.'],
+ ['Welcher Befehl sichert die aktive Konfiguration dauerhaft?',['copy startup-config running-config','copy running-config startup-config','write erase','reload'],1,'copy running-config startup-config (RAM → NVRAM), kurz write memory.'],
+ ['Was bedeutet „mz" in c2900-universalk9-mz…?',['Multicast-fähig','Läuft aus dem RAM und ist komprimiert','Mini-Image','Managed Zone'],1,'m = relocatable (läuft aus dem RAM), z = zipped (komprimiert).'],
+ ['Welche IOS-Version steckt in …151-4.M4.bin?',['1.514','15.1(4)M4','151.4','15.14'],1,'151-4.M4 → 15.1(4)M4: Hauptversion 15.1, Rebuild 4, Train M, Maintenance 4.'],
+ ['Womit brichst du einen hängenden traceroute ab?',['Strg+C','Strg+Umschalt+6','Strg+Z','Esc'],1,'Die Break-Sequenz Strg+Umschalt+6 (Ctrl+^) bricht laufende Vorgänge ab.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return C.makeTask(+m[1],m[0]);}
+function norm(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function taskHTML(s,id,label){
+ var h='<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+C.LVNAME[s.level]+'</span><span class="tag">Nr. '+s.code+'</span></h3>';
+ h+='<p>Gegeben der IOS-Dateiname:</p><pre class="cli">'+esc(s.filename)+'</pre>';
+ h+='<p class="qh">1. Vollständige IOS-Version?</p><input class="one ver" size="16" placeholder="z. B. 15.1(4)M4">';
+ h+='<p class="qh">2. Woraus läuft das Image (wegen „mz")?</p><select class="one rf"><option value="">– wählen –</option><option>RAM</option><option>Flash</option><option>NVRAM</option><option>ROM</option></select>';
+ h+='<p class="qh">3. Für welche Plattform ist das Image?</p><select class="one pl"><option value="">– wählen –</option>'+C.PLATS.map(function(p){return'<option value="'+p.code+'">'+esc(p.name)+'</option>';}).join('')+'</select>';
+ return h+'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function mark(el,ok){el.classList.remove('right','wrong');if(ok!==null)el.classList.add(ok?'right':'wrong');}
+function check(card){var s=cache[card.dataset.code],ok=0;
+ var v=card.querySelector('.ver'),g1=v.value!==''&&norm(v.value)===norm(s.human);mark(v,v.value===''?null:g1);if(g1)ok++;
+ var rf=card.querySelector('.rf'),g2=rf.value==='RAM';mark(rf,rf.value===''?null:g2);if(g2)ok++;
+ var pl=card.querySelector('.pl'),g3=pl.value===s.plat.code;mark(pl,pl.value===''?null:g3);if(g3)ok++;
+ var fb=card.querySelector('.fb'),all=ok===3;fb.className='fb '+(all?'good':'bad');fb.textContent=all?'Alles richtig! ✓':ok+' von 3 richtig.';if(all)card.dataset.solved='1';markToc();}
+function solHTML(s){
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist">'
+  +'<li><b>1. Version '+esc(s.human)+'</b> (aus '+esc(s.fileVer)+').</li>'
+  +'<li><b>2. RAM</b> – „m" steht für relocatable: das Image läuft aus dem RAM (wird aus dem Flash dorthin geladen). „z" = komprimiert.</li>'
+  +'<li><b>3. '+esc(s.plat.name)+'</b> ('+esc(s.plat.code)+'), Feature-Set '+esc(s.feat.code)+': '+esc(s.feat.desc)+'.</li></ul>';}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;
+ if(t.dataset.act==='check')check(card);
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(cache[card.dataset.code]);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+
+var list=/*LIST*/;var hostEl=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=C.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=C.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;$('gen').innerHTML=taskHTML(s,'g'+s.code.replace('-','_'),'Aufgabe '+s.code);$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

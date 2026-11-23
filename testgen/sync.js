@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULTS = { repo: 'joergzambo/nwt', branch: 'main', base: 'testgen' };
-const SYNC_FILES = ['engines/netz.js', 'engines/sub.js', 'engines/dtp.js', 'engines/ec.js', 'engines/acl.js', 'engines/fhrp.js', 'engines/zs.js', 'engines/route.js', 'engines/domains.js', 'engines/dijk.js', 'engines/ospfref.js', 'engines/wild.js', 'engines/ssh.js', 'topicdefs.js', 'pool.json'];
+const SYNC_FILES = ['engines/netz.js', 'engines/sub.js', 'engines/dtp.js', 'engines/ec.js', 'engines/acl.js', 'engines/fhrp.js', 'engines/zs.js', 'engines/route.js', 'engines/domains.js', 'engines/dijk.js', 'engines/ospfref.js', 'engines/wild.js', 'engines/ssh.js', 'engines/cli.js', 'topicdefs.js', 'pool.json'];
 
 function baseDir() { return process.pkg ? path.dirname(process.execPath) : __dirname; }
 function cacheDir() { return path.join(baseDir(), 'cache'); }

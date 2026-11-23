@@ -3,7 +3,7 @@
    Beim Ergänzen neuer Themen: hier einen Eintrag hinzufügen, zugehörigen
    Generator in engines/ ablegen, sync-manifest.json Version erhöhen. */
 function build(E) {
-  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH;
+  const NA = E.NA, SN = E.SN, VD = E.VD, EC = E.EC, ACL = E.ACL, FH = E.FH, ZS = E.ZS, IR = E.IR, DOM = E.DOM, DJ = E.DJ, ORB = E.ORB, WC = E.WC, SSH = E.SSH, CLI = E.CLI;
   const LV = ['L', 'M', 'S'];
   const blank = '____________';
   const BASENAME = { 2: 'Binär', 8: 'Oktal', 10: 'Dezimal', 16: 'Hexadezimal' };
@@ -149,6 +149,15 @@ function build(E) {
             '(Netzplan über die Übungsnummer auf nwt.joergzambo.com öffnen und als Screenshot hier einfügen.)',
             'Kosten je Router: ' + blank],
           solution: [sol] };
+      }
+    },
+    'cisco-ios': {
+      label: 'IOS-Dateinamen lesen (Version, Plattform, mz)', levels: LV, points: { L: 2, M: 3, S: 4 }, tag: 'CLI',
+      gen(seed, lvl) {
+        const T = CLI.makeTask(seed, lvl);
+        return { intro: '', lines: ['Gegeben der IOS-Dateiname:  ' + T.filename,
+          'Vollständige IOS-Version: ' + blank, 'Plattform: ' + blank, 'Woraus läuft das Image (wegen „mz")? ' + blank],
+          solution: ['Version ' + T.human + '; Plattform ' + T.plat.name + ' (' + T.plat.code + '); läuft aus dem RAM (m = relocatable, z = komprimiert)'] };
       }
     },
     'ssh-audit': {
