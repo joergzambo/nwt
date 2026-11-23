@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Der IP-Header</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-right:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 14px;font:600 14px var(--ui);cursor:pointer}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--ink);color:#fff}
+.hdr-wrap{overflow-x:auto}
+.ruler{display:grid;grid-template-columns:repeat(32,1fr);min-width:640px;font:600 10px var(--mono);color:var(--mute);margin-bottom:2px}
+.ruler span{text-align:center}
+.hdr{display:grid;grid-template-columns:repeat(32,1fr);gap:3px;min-width:640px}
+.fld{border:none;border-radius:5px;padding:10px 4px;font:600 12.5px var(--ui);color:#1c2b33;cursor:pointer;text-align:center;line-height:1.25;transition:transform .08s}
+.fld small{display:block;font:600 10px var(--mono);opacity:.7}
+.fld:hover{transform:translateY(-2px)}
+.fld.sel{outline:3px solid #1c2b33;outline-offset:-1px}
+.g-ver{background:#bbdefb}.g-len{background:#c8e6c9}.g-qos{background:#fff9c4}.g-frag{background:#ffe0b2}.g-ttl{background:#f8bbd0}.g-proto{background:#d1c4e9}.g-sum{background:#b2dfdb}.g-addr{background:#ffccbc}.g-opt{background:#eceff1}
+.detail{margin-top:12px;background:var(--soft);border-left:5px solid var(--accent);border-radius:4px;padding:12px 16px;min-height:5.5em}
+.detail h3{font:400 20px var(--head);margin:0 0 4px}.detail .bits{font:600 13px var(--mono);color:var(--mute)}
+.detail p{margin:6px 0 0}.detail .ex{margin-top:6px;font-size:14.5px}.detail .ex code{background:#fff;border:1px solid #cfd8dc;border-radius:3px;padding:1px 5px}
+.hint{color:var(--mute);font-size:14px;margin-top:6px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>Der IP-Header</h1>
+<p class="sub">Jedes IP-Paket trägt vor den eigentlichen Daten einen <b>Header</b> mit allen Steuerinformationen: Woher, wohin, wie lange noch gültig, welches Protokoll folgt. Klick die Felder an und lies, was drinsteht.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#diagramm">Header anklicken</a><a href="#vergleich">IPv4 vs. IPv6</a><a href="#quiz">Teste dich</a></nav>
+
+<h2 class="part" id="diagramm">Header anklicken</h2>
+<div class="card stack">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><span style="font:600 14px var(--ui)">Version:</span><span class="seg" id="verseg"><button type="button" data-v="4" class="on">IPv4</button><button type="button" data-v="6">IPv6</button></span><span class="hint" id="sizehint"></span></div>
+<div class="hdr-wrap">
+ <div class="ruler" id="ruler"></div>
+ <div class="hdr" id="hdr"></div>
+</div>
+<div class="detail" id="detail"></div>
+<p class="hint">Jede Zeile im Diagramm ist 32 Bit (4 Byte) breit.</p>
+</div>
+
+<h2 class="part" id="vergleich">IPv4- und IPv6-Header im Vergleich</h2>
+<div class="card stack">
+<ul class="slist" style="list-style:none;padding:0;margin:6px 0">
+<li style="margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px">IPv6 hat einen <b>festen 40-Byte-Header</b> – einfacher und für Router schneller zu verarbeiten als der variable IPv4-Header.</li>
+<li style="margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px">IPv6 hat <b>keine Header-Checksum</b> (spart Neuberechnung an jedem Router) und <b>keine Fragmentierung durch Router</b> (macht nur der Absender).</li>
+<li style="margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px">Statt „Protocol" heißt das Feld bei IPv6 <b>Next Header</b>, statt „TTL" <b>Hop Limit</b> (gleiche Funktion).</li>
+<li style="margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px">Adressen: IPv4 <b>32 Bit</b>, IPv6 <b>128 Bit</b>.</li>
+</ul>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+var V4=[
+ {n:'Version',b:4,g:'ver',d:'Die IP-Version. Bei IPv4 immer der Wert <b>4</b>. So weiß der Empfänger, wie der Rest des Headers aufgebaut ist.',ex:'<code>4</code>'},
+ {n:'IHL',b:4,g:'len',d:'Internet Header Length – die Länge des Headers in 32-Bit-Wörtern. Ohne Optionen ist das <b>5</b> (5 × 4 Byte = 20 Byte).',ex:'<code>5</code> → 20 Byte'},
+ {n:'DSCP / ECN',b:8,g:'qos',d:'Früher „Type of Service". Heute <b>DSCP</b> (6 Bit) für QoS-Priorisierung (z. B. VoIP bevorzugen) und <b>ECN</b> (2 Bit) zur Staumeldung.',ex:'DSCP EF für Sprache'},
+ {n:'Total Length',b:16,g:'len',d:'Gesamtlänge des Pakets (Header + Daten) in Byte. Maximal <b>65535</b>.',ex:'z. B. <code>1500</code>'},
+ {n:'Identification',b:16,g:'frag',d:'Kennung, mit der zusammengehörige <b>Fragmente</b> eines Pakets beim Empfänger wieder zusammengesetzt werden.',ex:'gleiche ID je Fragment'},
+ {n:'Flags',b:3,g:'frag',d:'Steuerbits zur Fragmentierung: Bit 0 reserviert, <b>DF</b> (Don’t Fragment) und <b>MF</b> (More Fragments – es folgen weitere Fragmente).',ex:'DF=1 → nicht fragmentieren'},
+ {n:'Fragment Offset',b:13,g:'frag',d:'Position dieses Fragments im ursprünglichen Paket (in 8-Byte-Einheiten) – für die richtige Reihenfolge beim Zusammensetzen.',ex:'0 beim ersten Fragment'},
+ {n:'Time to Live (TTL)',b:8,g:'ttl',d:'Lebensdauer in <b>Hops</b>. Jeder Router zieht 1 ab; bei <b>0</b> wird das Paket verworfen (verhindert endlose Schleifen). Start oft 64, 128 oder 255.',ex:'<code>64</code> → noch 64 Router'},
+ {n:'Protocol',b:8,g:'proto',d:'Welches Protokoll in den Daten steckt. <b>1</b> = ICMP, <b>6</b> = TCP, <b>17</b> = UDP, <b>89</b> = OSPF.',ex:'<code>6</code> = TCP'},
+ {n:'Header Checksum',b:16,g:'sum',d:'Prüfsumme <b>nur über den Header</b>. Da sich TTL an jedem Router ändert, wird sie <b>bei jedem Hop neu berechnet</b>.',ex:'Integrität des Headers'},
+ {n:'Source Address',b:32,g:'addr',d:'Die <b>Absender-IP</b> (32 Bit).',ex:'<code>192.168.1.10</code>'},
+ {n:'Destination Address',b:32,g:'addr',d:'Die <b>Ziel-IP</b> (32 Bit).',ex:'<code>8.8.8.8</code>'},
+ {n:'Options + Padding',b:32,g:'opt',d:'Selten genutzt (z. B. Record Route). Wenn vorhanden, wird mit Padding auf ein Vielfaches von 32 Bit aufgefüllt. Normalerweise leer.',ex:'meist nicht vorhanden'}
+];
+var V6=[
+ {n:'Version',b:4,g:'ver',d:'Bei IPv6 immer <b>6</b>.',ex:'<code>6</code>'},
+ {n:'Traffic Class',b:8,g:'qos',d:'Entspricht DSCP/ECN bei IPv4 – für QoS-Priorisierung.',ex:'wie DSCP'},
+ {n:'Flow Label',b:20,g:'qos',d:'Kennzeichnet einen <b>Datenstrom</b>, damit Router Pakete derselben Verbindung gleich behandeln (z. B. Echtzeit).',ex:'pro Flow eindeutig'},
+ {n:'Payload Length',b:16,g:'len',d:'Länge der <b>Daten nach dem Header</b> in Byte (der Header selbst ist fix 40 Byte).',ex:'z. B. <code>1460</code>'},
+ {n:'Next Header',b:8,g:'proto',d:'Wie „Protocol" bei IPv4: welches Protokoll folgt (<b>6</b> TCP, <b>17</b> UDP) – oder ein Extension Header.',ex:'<code>6</code> = TCP'},
+ {n:'Hop Limit',b:8,g:'ttl',d:'Wie TTL: Jeder Router zieht 1 ab, bei 0 verworfen.',ex:'<code>64</code>'},
+ {n:'Source Address',b:32,g:'addr',d:'Absender-IPv6-Adresse – insgesamt <b>128 Bit</b> (hier über mehrere 32-Bit-Zeilen).',ex:'<code>2001:db8::1</code>'},
+ {n:'Destination Address',b:32,g:'addr',d:'Ziel-IPv6-Adresse – insgesamt <b>128 Bit</b>.',ex:'<code>2001:db8::2</code>'}
+];
+
+var cur='4',sel=0;
+function fields(){return cur==='4'?V4:V6;}
+function renderRuler(){var h='';for(var i=0;i<32;i+=4)h+='<span style="grid-column:span 4">'+i+'</span>';$('ruler').innerHTML=h;}
+function render(){
+ var F=fields(),h='';
+ F.forEach(function(f,i){
+  var span=f.b;
+  // 128-Bit-Adressen bei IPv6 über 4 Zeilen zeigen
+  var reps=(cur==='6'&&f.g==='addr')?4:1;
+  for(var k=0;k<reps;k++){
+   h+='<button class="fld g-'+f.g+(i===sel?' sel':'')+'" data-i="'+i+'" style="grid-column:span '+span+'">'+esc(f.n)+'<small>'+f.b+' Bit</small></button>';
+  }
+ });
+ $('hdr').innerHTML=h;
+ detail(sel);
+ [].forEach.call(document.querySelectorAll('#verseg button'),function(b){b.classList.toggle('on',b.dataset.v===cur);});
+ $('sizehint').textContent=cur==='4'?'IPv4-Header: 20 Byte (ohne Optionen)':'IPv6-Header: fix 40 Byte';
+}
+function detail(i){var f=fields()[i];$('detail').innerHTML='<h3>'+esc(f.n)+' <span class="bits">('+f.b+' Bit)</span></h3><p>'+f.d+'</p><p class="ex">Beispiel: '+f.ex+'</p>';}
+$('hdr').addEventListener('click',function(e){var b=e.target.closest('.fld');if(!b)return;sel=+b.dataset.i;[].forEach.call(document.querySelectorAll('.fld'),function(x){x.classList.toggle('sel',+x.dataset.i===sel);});detail(sel);});
+[].forEach.call(document.querySelectorAll('#verseg button'),function(b){b.onclick=function(){cur=b.dataset.v;sel=0;render();};});
+renderRuler();render();
+
+/* Quiz */
+var Q=[
+ ['Welches Feld verhindert, dass ein Paket endlos im Kreis läuft?',['Total Length','TTL / Hop Limit','Checksum','Flags'],1,'TTL (IPv4) bzw. Hop Limit (IPv6) wird an jedem Router um 1 verringert; bei 0 wird verworfen.'],
+ ['Was steht im Feld „Protocol" (IPv4)?',['Die Portnummer','Welches Protokoll in den Daten folgt (z. B. 6=TCP)','Die MAC-Adresse','Die Paketlänge'],1,'Protocol gibt den Inhalt an: 1=ICMP, 6=TCP, 17=UDP, 89=OSPF.'],
+ ['Warum wird die Header-Checksum an jedem Router neu berechnet?',['Weil sich die TTL ändert','Weil die IP sich ändert','Weil Daten dazukommen','Sie wird nie neu berechnet'],0,'Die TTL sinkt bei jedem Hop – damit ändert sich der Header und die Prüfsumme muss neu.'],
+ ['Wie groß ist der IPv6-Header?',['20 Byte','variabel','fix 40 Byte','8 Byte'],2,'IPv6 hat einen festen 40-Byte-Header – einfacher für Router.'],
+ ['Welches Feld entspricht bei IPv6 dem „Protocol"-Feld von IPv4?',['Flow Label','Next Header','Traffic Class','Payload Length'],1,'Next Header gibt an, welches Protokoll (oder welcher Extension Header) folgt.'],
+ ['Was bedeutet das DF-Flag?',['Data Frame','Don’t Fragment – Paket darf nicht zerteilt werden','Default','Drop Frame'],1,'DF=1 verbietet die Fragmentierung des Pakets.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+q[0]+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+q[3]+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+})();
+</script>
+</body>
+</html>

@@ -60,6 +60,8 @@ AREAS = [
           'text': 'Schichten, PDUs, Geräte und Protokolle per Drag-and-Drop zuordnen – plus Lückentext-Generator, Eselsbrücken und Kapselung.'},
          {'slug': 'tcp-udp', 'title': 'TCP und UDP (Transportschicht)', 'tool': 'tcp-udp',
           'text': 'Ports und Sockets, der 3-Way-Handshake als Animation, TCP vs. UDP, TCP-Flags und die wichtigsten well-known Ports – mit Quiz, Übungen und Zufallsgenerator.'},
+         {'slug': 'ip-header', 'title': 'Der IP-Header', 'tool': 'ip-header',
+          'text': 'Anklickbares Header-Diagramm: jedes Feld (Version, TTL, Protocol, Checksum, Adressen …) zum Anklicken und Nachlesen – IPv4 und IPv6 im Vergleich, mit Quiz. Theorie-Einheit.'},
          {'slug': 'subnetting', 'title': 'Subnetting und VLSM', 'tool': 'subnetting',
           'text': 'Subnetzmaske, Netz- und Broadcastadresse, gleich große Subnetze und VLSM – mit eigenem Beispiel Schritt für Schritt erklärt.'},
          {'slug': 'supernetting', 'title': 'Supernetting', 'tool': 'supernetting',
