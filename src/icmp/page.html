@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICMP, ping und traceroute</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 20px var(--head);margin:0 0 4px}.explain p{margin:0}
+.hops{font:13px var(--mono);margin-top:6px}
+.hops div{padding:2px 0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>ICMP, ping und traceroute</h1>
+<p class="sub"><b>ICMP</b> ist das Melde- und Diagnoseprotokoll von IP: Es meldet Fehler und beantwortet Testpakete. Zwei Werkzeuge bauen darauf auf: <b>ping</b> prüft die Erreichbarkeit, <b>traceroute</b> deckt den Weg Hop für Hop auf.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#icmp">Was ist ICMP</a><a href="#ping">ping</a><a href="#trace">traceroute</a><a href="#demo">traceroute live</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+
+<h2 class="part" id="icmp">Was ist ICMP?</h2>
+<div class="card stack">
+<p>ICMP (Internet Control Message Protocol, <b>IP-Protokoll 1</b>) transportiert keine Nutzdaten, sondern <b>Status- und Fehlermeldungen</b>. Die wichtigsten Typen:</p>
+<div class="scroll"><table class="tbl">
+<tr><th>Meldung</th><th>Wann</th></tr>
+<tr><td><b>Echo Request / Reply</b></td><td>die Grundlage von <code>ping</code> (Typ 8 / Typ 0)</td></tr>
+<tr><td><b>Time Exceeded</b></td><td>die <b>TTL</b> eines Pakets erreicht 0 – Router verwirft und meldet (Basis von traceroute)</td></tr>
+<tr><td><b>Destination Unreachable</b></td><td>Ziel/Netz/Port nicht erreichbar (z. B. kein Weg, Port zu)</td></tr>
+<tr><td><b>Redirect</b></td><td>„nimm einen besseren Router" – Hinweis auf ein günstigeres Gateway</td></tr>
+</table></div>
+</div>
+
+<h2 class="part" id="ping">ping</h2>
+<div class="card stack">
+<p><code>ping</code> schickt ein <b>Echo Request</b> und wartet auf das <b>Echo Reply</b>. Das zeigt: Ist das Ziel erreichbar, wie lange dauert es (Round-Trip-Time), gehen Pakete verloren?</p>
+<pre class="cli">C:\> ping 8.8.8.8
+Antwort von 8.8.8.8: Bytes=32 Zeit=14ms TTL=117
+Antwort von 8.8.8.8: Bytes=32 Zeit=13ms TTL=117
+Statistik: Gesendet = 4, Empfangen = 4, Verloren = 0 (0% Verlust)</pre>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Keine Antwort heißt nicht immer „down": Manche Geräte/Firewalls <b>blocken ICMP</b>.</p>
+</div>
+
+<h2 class="part" id="trace">traceroute / tracert</h2>
+<div class="card stack">
+<p>traceroute macht sich die <b>TTL</b> zunutze. Jeder Router zieht beim Weiterleiten 1 von der TTL ab; wird sie <b>0</b>, verwirft er das Paket und schickt ein <b>Time Exceeded</b> zurück – samt seiner eigenen Adresse.</p>
+<p>Der Trick: Man schickt Pakete mit <b>wachsender TTL</b>. TTL 1 „stirbt" beim 1. Router (er verrät sich), TTL 2 beim 2., und so weiter – bis das Ziel selbst antwortet. So wird der ganze Pfad sichtbar.</p>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Windows <code>tracert</code> nutzt ICMP Echo, Linux/macOS <code>traceroute</code> oft UDP – beide erkennen die Hops am <b>Time Exceeded</b>.</p>
+</div>
+
+<h2 class="part" id="demo">traceroute Schritt für Schritt</h2>
+<div class="card stack">
+<p>Verfolge, wie der Pfad mit wachsender TTL aufgedeckt wird:</p>
+<div id="trsvg"></div>
+<div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button><span class="stepno" id="no"></span></div>
+<div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p><div class="hops" id="hops"></div></div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var INK='#1c2b33',BL='#1565c0',OR='#e65100',GR='#2e7d32',MU='#90a4ae';
+var PATH=[{t:'PC',ip:'du'},{t:'R1',ip:'10.0.0.1'},{t:'R2',ip:'10.0.1.1'},{t:'R3',ip:'10.0.2.1'},{t:'Ziel',ip:'8.8.8.8'}];
+var xs=[60,190,320,450,560];
+var STEPS=[
+ {ttl:1,die:1,txt:'<b>TTL 1:</b> Das Paket erreicht R1, der zieht 1 ab → TTL 0. R1 verwirft es und meldet <b>Time Exceeded</b> zurück. Erster Hop bekannt.'},
+ {ttl:2,die:2,txt:'<b>TTL 2:</b> Jetzt kommt das Paket bis R2, der verwirft es (TTL 0) und meldet sich. Zweiter Hop bekannt.'},
+ {ttl:3,die:3,txt:'<b>TTL 3:</b> Das Paket stirbt bei R3 – auch dessen Adresse ist nun bekannt.'},
+ {ttl:4,die:4,arrive:true,txt:'<b>TTL 4:</b> Das Paket erreicht das <b>Ziel</b>. Es antwortet selbst (Echo Reply / Port unreachable) – der Pfad ist vollständig.'}];
+var si=0;
+function node(i,state){var x=xs[i],y=70,p=PATH[i];var col=state==='die'?OR:state==='arrive'?GR:state==='known'?INK:MU;
+ return'<rect x="'+(x-34)+'" y="'+(y-20)+'" width="68" height="40" rx="7" fill="#fff" stroke="'+col+'" stroke-width="'+(state==='pass'||state===''?1.4:2.4)+'"/><text x="'+x+'" y="'+(y-2)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="12.5" font-weight="700" fill="'+INK+'">'+esc(p.t)+'</text><text x="'+x+'" y="'+(y+13)+'" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#546e7a">'+esc(p.ip)+'</text>';}
+function draw(idx){var st=STEPS[idx],W=620,H=170,y=70,s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="traceroute TTL '+st.ttl+'">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ for(var i=0;i<4;i++)s+='<line x1="'+(xs[i]+34)+'" y1="'+y+'" x2="'+(xs[i+1]-34)+'" y2="'+y+'" stroke="#e0e6ea" stroke-width="1.5"/>';
+ // Vorwärts-Pfeil bis zum sterbenden Hop
+ var endX=xs[st.die]-34;s+='<line x1="'+(xs[0]+34)+'" y1="'+y+'" x2="'+endX+'" y2="'+y+'" stroke="'+(st.arrive?GR:OR)+'" stroke-width="2.8"/>';
+ s+='<path d="M'+(endX-11)+' '+(y-6)+' L'+endX+' '+y+' L'+(endX-11)+' '+(y+6)+'" fill="'+(st.arrive?GR:OR)+'"/>';
+ s+='<rect x="'+((xs[0]+endX)/2-34)+'" y="'+(y-30)+'" width="68" height="18" rx="9" fill="'+(st.arrive?GR:OR)+'"/><text x="'+((xs[0]+endX)/2)+'" y="'+(y-17)+'" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#fff">TTL '+st.ttl+'</text>';
+ // Rückmeldung (gestrichelt) vom sterbenden Hop zurück
+ s+='<line x1="'+endX+'" y1="'+(y+16)+'" x2="'+(xs[0]+34)+'" y2="'+(y+16)+'" stroke="'+(st.arrive?GR:'#c62828')+'" stroke-width="1.8" stroke-dasharray="5 4"/>';
+ s+='<text x="'+((xs[0]+endX)/2)+'" y="'+(y+34)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="10.5" fill="'+(st.arrive?GR:'#c62828')+'" font-weight="700">'+(st.arrive?'Echo Reply':'Time Exceeded')+'</text>';
+ for(var k=0;k<PATH.length;k++){var state='';if(k<st.die)state='known';else if(k===st.die)state=st.arrive?'arrive':'die';s+=node(k,state);}
+ $('trsvg').innerHTML=s+'</svg>';
+ var hop='';for(var h=1;h<=st.die;h++){var known=h<=st.die;hop+='<div>'+h+'  '+(h<st.die||st.arrive? '<b>'+esc(PATH[h].ip)+'</b> ('+esc(PATH[h].t)+')':'<b>'+esc(PATH[h].ip)+'</b> ('+esc(PATH[h].t)+')')+'</div>';}
+ $('hops').innerHTML=hop;
+ $('ttl').textContent='Schritt '+(idx+1)+' – TTL '+st.ttl;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(idx+1)+' von '+STEPS.length;$('prev').disabled=idx===0;$('next').disabled=idx===STEPS.length-1;
+}
+$('prev').onclick=function(){if(si>0)draw(--si);};$('next').onclick=function(){if(si<STEPS.length-1)draw(++si);};$('rst').onclick=function(){si=0;draw(0);};draw(0);
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Welches Protokoll steckt hinter ping?',['TCP','UDP','ICMP','ARP'],2,'ping nutzt ICMP Echo Request/Reply.'],
+ ['Worauf baut traceroute?',['auf DNS','auf der TTL und Time-Exceeded-Meldungen','auf ARP','auf DHCP'],1,'Mit wachsender TTL meldet sich jeder Router per Time Exceeded.'],
+ ['Was passiert, wenn die TTL 0 erreicht?',['Paket wird schneller','Router verwirft es und meldet Time Exceeded','es wird verschlüsselt','nichts'],1,'Bei TTL 0 verwirft der Router und schickt eine Time-Exceeded-Meldung.'],
+ ['Welche ICMP-Nachricht beantwortet ein ping?',['Time Exceeded','Echo Reply','Redirect','Unreachable'],1,'Auf den Echo Request kommt das Echo Reply zurück.'],
+ ['Was bedeutet 0% Verlust beim ping?',['alle Antworten kamen zurück','das Ziel ist aus','die TTL ist 0','keine Route'],0,'Alle gesendeten Echo Requests wurden beantwortet.'],
+ ['Warum antwortet ein Host manchmal nicht auf ping, ist aber online?',['DNS fehlt','ICMP wird geblockt','falsche IP','TTL zu hoch'],1,'Firewalls/Hosts können ICMP blockieren – kein Reply heißt nicht zwingend offline.'],
+ ['Welche IP-Protokollnummer hat ICMP?',['1','6','17','89'],0,'ICMP ist IP-Protokoll 1 (TCP 6, UDP 17, OSPF 89).'],
+ ['Wie heißt traceroute unter Windows?',['tracepath','tracert','traceroute','pathping'],1,'Unter Windows heißt das Werkzeug tracert.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'ping',p:'Welche ICMP-Nachrichten tauscht ein ping aus?',o:['Time Exceeded / Redirect','Echo Request / Echo Reply','Unreachable / Redirect','SYN / ACK'],a:1,s:'ping = Echo Request hin, Echo Reply zurück.'},
+ {part:'TTL',p:'Ein Router leitet ein Paket weiter. Was macht er mit der TTL?',o:['+1','−1','×2','nichts'],a:1,s:'Jeder Router zieht 1 von der TTL ab; bei 0 wird verworfen.'},
+ {part:'traceroute',p:'Welche TTL hat das erste Paket eines traceroute?',o:['0','1','64','255'],a:1,s:'Es startet mit TTL 1, damit der erste Router sich meldet.'},
+ {part:'Meldung',p:'Welche ICMP-Meldung verrät einen Zwischenrouter?',o:['Echo Reply','Time Exceeded','Redirect','Source Quench'],a:1,s:'Der Router meldet Time Exceeded, wenn die TTL bei ihm 0 wird.'},
+ {part:'Diagnose',p:'ping klappt nicht, der Host ist aber erreichbar. Mögliche Ursache?',o:['ICMP geblockt','Kabel zu lang','falsche MAC','DNS'],a:0,s:'Firewalls/Hosts blockieren oft ICMP – kein Reply trotz Erreichbarkeit.'},
+ {part:'Protokoll',p:'ICMP läuft …',o:['über TCP','direkt über IP (Protokoll 1)','über UDP 53','über Port 80'],a:1,s:'ICMP ist ein eigenes IP-Protokoll (Nr. 1), kein TCP/UDP.'},
+ {part:'ping',p:'„Verloren = 2 (50% Verlust)" bedeutet …',o:['alles ok','die Hälfte der Antworten fehlt','Ziel ist aus','TTL abgelaufen'],a:1,s:'Die Hälfte der Echo Requests blieb unbeantwortet – Paketverlust.'},
+ {part:'Ende',p:'Woran erkennt traceroute, dass es am Ziel ist?',o:['am Time Exceeded','das Ziel antwortet selbst (Echo Reply/Unreachable)','an der TTL 0','gar nicht'],a:1,s:'Am Ziel kommt keine Time-Exceeded-, sondern die Antwort des Ziels selbst.'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>

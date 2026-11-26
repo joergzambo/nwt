@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ARP – wie es funktioniert</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 20px var(--head);margin:0 0 4px}.explain p{margin:0}
+.badge{display:inline-block;font:600 12px var(--mono);padding:2px 8px;border-radius:4px;background:#e1ecfb;color:#1565c0}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>ARP – wie es funktioniert</h1>
+<p class="sub">Ein Rechner kennt die <b>IP-Adresse</b> des Ziels, zum Versenden eines Ethernet-Frames braucht er aber die <b>MAC-Adresse</b>. Das <b>Address Resolution Protocol</b> löst im lokalen Netz IP → MAC auf – per Broadcast-Frage und Unicast-Antwort.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#wozu">Wozu</a><a href="#ablauf">Ablauf</a><a href="#cache">ARP-Cache</a><a href="#remote">Anderes Netz</a><a href="#mehr">Mehr</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+
+<h2 class="part" id="wozu">Warum ARP?</h2>
+<div class="card stack">
+<p>Auf <b>Layer 3</b> adressiert man mit IP, auf <b>Layer 2</b> (Ethernet) mit MAC. Ein Frame im LAN braucht eine Ziel-MAC. Kennt der Sender nur die Ziel-IP, muss er die passende MAC erst <b>herausfinden</b> – genau das macht ARP.</p>
+<ul class="slist">
+<li>ARP arbeitet nur <b>innerhalb desselben Subnetzes</b> (Broadcast-Domäne).</li>
+<li>Gefundene Zuordnungen landen im <b>ARP-Cache</b>, damit nicht jedes Mal gefragt werden muss.</li>
+</ul>
+</div>
+
+<h2 class="part" id="ablauf">Der Ablauf</h2>
+<div class="card stack">
+<p>PC-A (192.168.1.10) will etwas an PC-B (192.168.1.5) senden, kennt aber dessen MAC nicht:</p>
+<div id="arpsvg"></div>
+<div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button><span class="stepno" id="no"></span></div>
+<div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="cache">Der ARP-Cache</h2>
+<div class="card stack">
+<p>Jedes Gerät merkt sich gelernte Zuordnungen eine Weile (Alterung), damit es nicht ständig neu fragen muss:</p>
+<pre class="cli">C:\> arp -a
+  Internetadresse   Physische Adresse     Typ
+  192.168.1.1       00-1a-2b-00-00-01     dynamisch
+  192.168.1.5       aa-bb-cc-dd-ee-ff     dynamisch</pre>
+</div>
+
+<h2 class="part" id="remote">Ziel in einem anderen Netz</h2>
+<div class="card stack">
+<p>Liegt das Ziel in einem <b>anderen Subnetz</b>, hilft ARP für die Ziel-IP nicht – die ist nicht im lokalen Netz erreichbar. Stattdessen fragt der PC per ARP nach der <b>MAC des Standard-Gateways</b> und schickt den Frame dorthin. Der Router übernimmt dann die Weiterleitung.</p>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px"><b>Merke:</b> Ziel im <b>eigenen</b> Netz → ARP nach der <b>Ziel-MAC</b>. Ziel in einem <b>anderen</b> Netz → ARP nach der <b>Gateway-MAC</b>.</div>
+</div>
+
+<h2 class="part" id="mehr">Gratuitous ARP &amp; IPv6</h2>
+<div class="card stack">
+<ul class="slist">
+<li><b>Gratuitous ARP</b> – ein Gerät schickt unaufgefordert ein ARP zur eigenen IP: zum Prüfen auf IP-Konflikte und um Nachbarn zu aktualisieren (z. B. nach einem Failover).</li>
+<li><b>IPv6</b> kennt kein ARP – dieselbe Aufgabe übernimmt das <b>Neighbor Discovery Protocol (NDP)</b> per ICMPv6 (Neighbor Solicitation / Advertisement).</li>
+</ul>
+<div class="note" style="background:#fdecea;border:1px solid #f5b5b0;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:4px">Weil ARP ungeprüft ist, lässt es sich fälschen (<b>ARP-Spoofing</b>) – siehe die gleichnamige Einheit in der Netzwerksicherheit und die Abwehr mit <b>Dynamic ARP Inspection</b>.</div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var INK='#1c2b33',BL='#1565c0',GR='#2e7d32',OR='#e65100';
+var N={a:{x:80,y:60,t:'PC-A',s:'.10'},sw:{x:300,y:150,t:'Switch',s:''},b:{x:520,y:60,t:'PC-B',s:'.5'},c:{x:520,y:240,t:'PC-C',s:'.7'}};
+var STEPS=[
+ {t:'1 – ARP-Request (Broadcast)',txt:'PC-A kennt die MAC von .5 nicht. Es sendet einen <b>ARP-Request als Broadcast</b> (Ziel-MAC ff:ff:ff:ff:ff:ff): „Wer hat 192.168.1.5? Sag es .10." Der Switch <b>flutet</b> ihn an alle.',arr:[['a','sw',OR],['sw','b',OR],['sw','c',OR]],lab:'Wer hat .5?  (Broadcast)'},
+ {t:'2 – Nur PC-B fühlt sich angesprochen',txt:'Alle im Netz erhalten die Frage. <b>PC-C verwirft</b> sie (nicht seine IP). <b>PC-B</b> erkennt seine eigene IP und antwortet.',arr:[],lab:''},
+ {t:'3 – ARP-Reply (Unicast)',txt:'PC-B schickt einen <b>ARP-Reply als Unicast</b> direkt an PC-A: „192.168.1.5 ist bei aa:bb:cc:dd:ee:ff."',arr:[['b','sw',GR],['sw','a',GR]],lab:'.5 = aa:bb:cc… (Unicast)'},
+ {t:'4 – Eintrag im Cache, Frame geht raus',txt:'PC-A trägt die MAC in seinen <b>ARP-Cache</b> ein und sendet jetzt den eigentlichen Frame gezielt an PC-B. Künftig fragt es nicht mehr.',arr:[['a','sw',BL],['sw','b',BL]],lab:'Datenframe → PC-B'}];
+var si=0;
+function node(k,active){var o=N[k];var col=active?INK:'#90a4ae';return'<rect x="'+(o.x-44)+'" y="'+(o.y-20)+'" width="88" height="40" rx="7" fill="#fff" stroke="'+col+'" stroke-width="'+(active?2.4:1.6)+'"/><text x="'+o.x+'" y="'+(o.y+1)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="13" font-weight="700" fill="'+INK+'">'+esc(o.t)+'</text>'+(o.s?'<text x="'+o.x+'" y="'+(o.y+15)+'" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#546e7a">'+esc(o.s)+'</text>':'');}
+function arrow(from,to,col){var f=N[from],t=N[to];var ang=Math.atan2(t.y-f.y,t.x-f.x);var ox=Math.cos(ang),oy=Math.sin(ang);var x1=f.x+ox*48,y1=f.y+oy*24,x2=t.x-ox*48,y2=t.y-oy*24;
+ return'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="2.6"/><path d="M'+(x2-Math.cos(ang-0.4)*11)+' '+(y2-Math.sin(ang-0.4)*11)+' L'+x2+' '+y2+' L'+(x2-Math.cos(ang+0.4)*11)+' '+(y2-Math.sin(ang+0.4)*11)+'" fill="'+col+'"/>';}
+function draw(i){var st=STEPS[i],W=600,H=300,s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(st.t)+'">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ ['a','b','c'].forEach(function(k){s+='<line x1="'+N[k].x+'" y1="'+N[k].y+'" x2="'+N.sw.x+'" y2="'+N.sw.y+'" stroke="#e0e6ea" stroke-width="1.5"/>';});
+ var act={};st.arr.forEach(function(a){act[a[0]]=1;act[a[1]]=1;});
+ ['a','sw','b','c'].forEach(function(k){s+=node(k,!!act[k]||(i===1&&k==='b'));});
+ st.arr.forEach(function(a){s+=arrow(a[0],a[1],a[2]);});
+ if(st.lab)s+='<rect x="210" y="8" width="'+(st.lab.length*6.6+16)+'" height="20" rx="10" fill="'+(st.arr[0]?st.arr[0][2]:'#607d8b')+'"/><text x="'+(218+st.lab.length*3.3)+'" y="22" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#fff">'+esc(st.lab)+'</text>';
+ if(i===1)s+='<text x="520" y="285" text-anchor="middle" font-family="Open Sans,Arial" font-size="11" fill="#c62828" font-weight="700">PC-C verwirft</text>';
+ $('arpsvg').innerHTML=s+'</svg>';
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(i+1)+' von '+STEPS.length;$('prev').disabled=i===0;$('next').disabled=i===STEPS.length-1;
+}
+$('prev').onclick=function(){if(si>0)draw(--si);};$('next').onclick=function(){if(si<STEPS.length-1)draw(++si);};$('rst').onclick=function(){si=0;draw(0);};draw(0);
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was löst ARP auf?',['Name → IP','IP → MAC','MAC → Port','IP → Name'],1,'ARP ermittelt zu einer bekannten IP die zugehörige MAC-Adresse.'],
+ ['Wie wird der ARP-Request verschickt?',['Unicast','Broadcast','Multicast','gar nicht'],1,'Der Request geht als Broadcast (ff:ff:ff:ff:ff:ff) an alle im Segment.'],
+ ['Wie kommt der ARP-Reply zurück?',['Broadcast','Unicast an den Frager','Multicast','über den Router'],1,'Die Antwort geht als Unicast direkt an den Anfrager.'],
+ ['In welchem Bereich arbeitet ARP?',['im ganzen Internet','nur im lokalen Subnetz','nur über Router','global'],1,'ARP funktioniert nur innerhalb derselben Broadcast-Domäne/Subnetz.'],
+ ['Ziel liegt in einem anderen Netz. Nach welcher MAC fragt der PC?',['nach der Ziel-MAC','nach der MAC des Gateways','nach der Switch-MAC','nach keiner'],1,'Für ein fremdes Netz fragt der PC nach der MAC des Standard-Gateways.'],
+ ['Wo landet eine gelernte Zuordnung?',['in der Routingtabelle','im ARP-Cache','in der MAC-Tabelle des PCs','im NVRAM'],1,'Gelernte IP-MAC-Paare stehen im ARP-Cache (arp -a).'],
+ ['Was ersetzt ARP bei IPv6?',['DNS','NDP (Neighbor Discovery)','DHCP','STP'],1,'IPv6 nutzt NDP per ICMPv6 statt ARP.'],
+ ['Warum ist ARP angreifbar?',['es ist verschlüsselt','Antworten werden ungeprüft übernommen','es nutzt TCP','es läuft über Port 53'],1,'ARP hat keine Prüfung – gefälschte Replies werden geglaubt (ARP-Spoofing).']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'Grund',p:'Warum braucht ein PC ARP?',o:['um eine IP zu bekommen','um zur Ziel-IP die MAC zu finden','um Namen aufzulösen','um zu routen'],a:1,s:'Für den Ethernet-Frame fehlt die Ziel-MAC – ARP ermittelt sie zur bekannten IP.'},
+ {part:'Request',p:'Welche Ziel-MAC trägt der ARP-Request?',o:['die des Ziels','ff:ff:ff:ff:ff:ff (Broadcast)','die des Gateways','00:00:00:00:00:00'],a:1,s:'Der Request geht als Broadcast an alle.'},
+ {part:'Reply',p:'Wer antwortet auf den Request?',o:['alle Geräte','nur das Gerät mit der gesuchten IP','der Switch','der Router'],a:1,s:'Nur das Gerät mit der angefragten IP sendet den Reply (unicast).'},
+ {part:'Remote',p:'PC will zu 8.8.8.8 (anderes Netz). Nach welcher MAC fragt ARP?',o:['8.8.8.8','dem Standard-Gateway','dem DNS-Server','keiner'],a:1,s:'Für ein fremdes Netz fragt der PC nach der Gateway-MAC.'},
+ {part:'Cache',p:'Womit zeigst du den ARP-Cache unter Windows?',o:['ipconfig','arp -a','ping','route print'],a:1,s:'arp -a listet die gelernten IP-MAC-Zuordnungen.'},
+ {part:'Scope',p:'Bis wohin reicht ein ARP-Broadcast?',o:['bis zum nächsten Router','ins ganze Internet','nur zum Switch','zu einem Host'],a:0,s:'Broadcasts bleiben in der Broadcast-Domäne – der Router leitet sie nicht weiter.'},
+ {part:'IPv6',p:'Was übernimmt bei IPv6 die ARP-Aufgabe?',o:['DHCPv6','NDP','DNS','STP'],a:1,s:'NDP (Neighbor Discovery) per ICMPv6 ersetzt ARP.'},
+ {part:'Sicherheit',p:'Gefälschte ARP-Antworten nennt man …',o:['ARP-Spoofing','MAC-Flooding','DNS-Spoofing','Rogue-DHCP'],a:0,s:'ARP-Spoofing – Abwehr u. a. mit Dynamic ARP Inspection.'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>
