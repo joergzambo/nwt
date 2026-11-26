@@ -19,18 +19,38 @@ function para(text, opt){
   return '<w:p><w:pPr><w:spacing w:after="'+after+'" w:line="240" w:lineRule="auto"/>'+(opt.pageBreak?'<w:pageBreakBefore/>':'')+pr+'</w:pPr>'
     + '<w:r>'+pr+'<w:t xml:space="preserve">'+esc(text)+'</w:t></w:r></w:p>';
 }
+// Inline-Bild (PNG) als eigener Absatz. w,h in px (96 dpi) -> EMU.
+function imgDrawing(rid, w, h, id, name){
+  const cx = Math.round(w*9525), cy = Math.round(h*9525);
+  return '<w:p><w:pPr><w:spacing w:after="80" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:drawing>'
+    + '<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0">'
+    + '<wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:effectExtent l="0" t="0" r="0" b="0"/>'
+    + '<wp:docPr id="'+id+'" name="'+name+'"/>'
+    + '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'
+    + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+    + '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+    + '<pic:nvPicPr><pic:cNvPr id="'+id+'" name="'+name+'"/><pic:cNvPicPr/></pic:nvPicPr>'
+    + '<pic:blipFill><a:blip r:embed="'+rid+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+    + '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm>'
+    + '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'
+    + '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+}
 function cellContent(ex, color){
   let out = '';
   if(ex.intro) out += para(ex.intro,{color:color,italic:true,after:120});
   (ex.lines||[]).forEach(function(ln){
     if(typeof ln==='string') out += para(ln,{color:color,after:160});
-    else out += para(ln.text,{color:color,after:ln.after==null?160:ln.after,bold:ln.bold});
+    else if(ln.drawing) out += ln.drawing;
+    else out += para(ln.text,{color:color,after:ln.after==null?160:ln.after,bold:ln.bold,sz:ln.sz,pageBreak:ln.pageBreak});
   });
   return out;
 }
 
 function buildRow(rowTpl, num, points, contentXml){
   let row = rowTpl;
+  // Zeile nie über Seitengrenze trennen -> passt sie unten nicht, rutscht sie ganz auf die nächste Seite
+  if(/<w:trPr>/.test(row)){ if(!/<w:cantSplit\/>/.test(row)) row = row.replace('<w:trPr>','<w:trPr><w:cantSplit/>'); }
+  else row = row.replace('<w:tc>','<w:trPr><w:cantSplit/></w:trPr><w:tc>');
   // große Nummer (Run mit sz 96)
   row = row.replace(/(<w:sz w:val="96"\/>[\s\S]*?<w:t[^>]*>)\d(<\/w:t>)/, (m,a,b)=>a+num+b);
   // doppelte "Punkte"-Absätze entfernen (manche Zeilen haben mehrere)
@@ -83,6 +103,14 @@ async function buildTest(opts){
   let doc = await zip.file('word/document.xml').async('string');
   const footerBase = await zip.file('word/footer1.xml').async('string');
 
+  // Bilder einsammeln und als Inline-Grafik in die Zeilen setzen (vor dem Tabellenfüllen)
+  const images = []; let imgN = 0;
+  (opts.groups||[]).forEach(function(g){ (g.examples||[]).forEach(function(ex){ (ex.lines||[]).forEach(function(ln){
+    if(ln && ln.img){ imgN++; const rid='rIdImg'+imgN, media='media/img'+imgN+'.png';
+      images.push({rid:rid, media:media, path:ln.img.path});
+      ln.drawing = imgDrawing(rid, ln.img.w||520, ln.img.h||182, 100+imgN, 'Topologie '+imgN); }
+  }); }); });
+
   // Tabellen füllen
   const tbls = [...doc.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)];
   const t0 = fillTable(tbls[0][0], opts.groups[0].examples, OR);
@@ -99,19 +127,21 @@ async function buildTest(opts){
     });
   }
 
-  // Body neu zusammensetzen: [vor table0][t0][sect g1][t1][sect g2][sol][final sect sol/g2]
+  // Seitenumbruch-Absatz: erzwingt neue Seite (liegt im folgenden Abschnitt -> dessen Fußzeile)
+  const pb = '<w:p><w:pPr><w:pageBreakBefore/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:p>';
+
+  // Body neu zusammensetzen: [vor table0][t0][sect g1][pb][t1][sect g2]( [pb][sol][final sect sol] )
   const pre = doc.slice(0, tbls[0].index);
-  const body = pre + t0 + sectBreakPara('rId901') + t1
-             + (hasSol ? sectBreakPara('rId902') + sol + sectPr('rId903')
-                       : '<w:p><w:pPr>'+sectPr('rId902')+'</w:pPr></w:p>'.replace('rId902','rId902'));
-  // Achtung: ohne Lösung endet Gruppe 2 im Body-sectPr -> g2-Fußzeile
-  doc = body + '</w:body></w:document>';
-  // Falls keine Lösung: finalen sectPr auf g2 setzen (rId902)
-  if(!hasSol){
-    doc = pre + t0 + sectBreakPara('rId901') + t1 + sectPr('rId902') + '</w:body></w:document>';
+  if(hasSol){
+    doc = pre + t0 + sectBreakPara('rId901') + pb + t1 + sectBreakPara('rId902') + pb + sol + sectPr('rId903') + '</w:body></w:document>';
+  } else {
+    doc = pre + t0 + sectBreakPara('rId901') + pb + t1 + sectPr('rId902') + '</w:body></w:document>';
   }
 
   zip.file('word/document.xml', doc);
+
+  // Bild-Dateien einbetten
+  images.forEach(function(im){ zip.file('word/'+im.media, fs.readFileSync(im.path)); });
 
   // Fußzeilen anlegen
   zip.file('word/footer_g1.xml', makeFooter(footerBase,'gruppe','1'));
@@ -121,7 +151,9 @@ async function buildTest(opts){
   // Relationships
   let rels = await zip.file('word/_rels/document.xml.rels').async('string');
   const addRel = (id,target)=>'<Relationship Id="'+id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="'+target+'"/>';
-  let extra = addRel('rId901','footer_g1.xml')+addRel('rId902','footer_g2.xml')+(hasSol?addRel('rId903','footer_sol.xml'):'');
+  const addImgRel = (id,target)=>'<Relationship Id="'+id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="'+target+'"/>';
+  let extra = addRel('rId901','footer_g1.xml')+addRel('rId902','footer_g2.xml')+(hasSol?addRel('rId903','footer_sol.xml'):'')
+            + images.map(function(im){return addImgRel(im.rid, im.media);}).join('');
   rels = rels.replace('</Relationships>', extra+'</Relationships>');
   zip.file('word/_rels/document.xml.rels', rels);
 
@@ -129,6 +161,7 @@ async function buildTest(opts){
   let ct = await zip.file('[Content_Types].xml').async('string');
   const ov = (p)=>'<Override PartName="/word/'+p+'" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>';
   let ovs = ov('footer_g1.xml')+ov('footer_g2.xml')+(hasSol?ov('footer_sol.xml'):'');
+  if(images.length && !/Extension="png"/.test(ct)) ovs += '<Default Extension="png" ContentType="image/png"/>';
   ct = ct.replace('</Types>', ovs+'</Types>');
   zip.file('[Content_Types].xml', ct);
 
