@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPv6-Adressierung</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.one{padding:7px 9px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16.5px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.conv{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 10px}
+.conv input{flex:1 1 320px;padding:9px 11px;border:1.5px solid #90a4ae;border-radius:4px;font:600 15px var(--mono)}
+.cout{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px;margin-top:4px}
+.cout .k{color:var(--mute);font:600 13.5px var(--ui)}
+.cout .v{font:600 14.5px var(--mono);word-break:break-all}
+.grp{display:inline-block}
+.z0{color:var(--bad)}
+.badge{display:inline-block;font:600 12.5px var(--ui);padding:2px 9px;border-radius:999px;background:#e1ecfb;color:#1565c0}
+.hex{font-family:var(--mono)}
+.eui{font:600 14px var(--mono);background:var(--soft);border-radius:4px;padding:10px 12px;margin-top:8px;line-height:2}
+.eui b{background:#fff;border:1px solid #cfd8dc;border-radius:3px;padding:1px 4px}
+.eui .ins{background:#e3f4e6;border-color:#a5d6a7}.eui .flip{background:#fff8e1;border-color:#ffe082}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>IPv6-Adressierung</h1>
+<p class="sub">IPv6 nutzt <b>128 Bit</b> statt 32 – genug Adressen für praktisch alles. Geschrieben wird in <b>acht Gruppen</b> zu je vier Hexziffern. Hier lernst du die Kurzschreibweise, die Adresstypen und wie aus einer MAC per <b>EUI-64</b> eine Interface-ID wird.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#aufbau">Aufbau</a><a href="#kurz">Kurzschreibweise</a><a href="#konverter">Live-Konverter</a><a href="#typen">Adresstypen</a><a href="#eui">EUI-64</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="aufbau">Aufbau einer IPv6-Adresse</h2>
+<div class="card stack">
+<p>128 Bit = <b>8 Gruppen</b> (Hextets) zu je <b>16 Bit</b>, geschrieben als vier Hexziffern, getrennt durch Doppelpunkte:</p>
+<p class="prompt hex">2001:0db8:0000:0000:0000:ff00:0042:8329</p>
+<ul class="slist">
+<li>Die ersten <b>64 Bit</b> sind üblicherweise der <b>Netz-/Präfixteil</b>, die letzten <b>64 Bit</b> die <b>Interface-ID</b> (der Host).</li>
+<li>Ein normales LAN-Präfix ist ein <b>/64</b>. Das Standort-Präfix vom Provider ist oft ein <b>/48</b> oder <b>/56</b>.</li>
+<li>Hex ist nicht case-sensitiv – üblich (RFC 5952) sind <b>Kleinbuchstaben</b>.</li>
+</ul>
+</div>
+
+<h2 class="part" id="kurz">Kurzschreibweise (RFC 5952)</h2>
+<div class="card stack">
+<p>Zwei Regeln machen Adressen kürzer:</p>
+<ol style="margin:4px 0 8px 20px">
+<li><b>Führende Nullen</b> in jeder Gruppe weglassen: <code class="hex">0db8 → db8</code>, <code class="hex">0000 → 0</code>.</li>
+<li>Die <b>längste zusammenhängende Folge</b> aus <code>0000</code>-Gruppen durch <b>::</b> ersetzen – aber nur <b>einmal</b> pro Adresse.</li>
+</ol>
+<div class="scroll"><table class="tbl">
+<tr><th>Voll</th><th>Kurz</th></tr>
+<tr><td class="hex">2001:0db8:0000:0000:0000:ff00:0042:8329</td><td class="hex">2001:db8::ff00:42:8329</td></tr>
+<tr><td class="hex">fe80:0000:0000:0000:0204:61ff:fe9d:f156</td><td class="hex">fe80::204:61ff:fe9d:f156</td></tr>
+<tr><td class="hex">0000:0000:0000:0000:0000:0000:0000:0001</td><td class="hex">::1</td></tr>
+</table></div>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px"><b>Vorsicht:</b> Bei zwei gleich langen Nullfolgen wird nur die <b>linke</b> ersetzt. <code>::</code> darf nur <b>einmal</b> vorkommen, sonst wäre die Länge nicht mehr eindeutig.</div>
+</div>
+
+<h2 class="part" id="konverter">Live-Konverter</h2>
+<div class="card stack">
+<p>Tippe eine IPv6-Adresse (voll oder kurz) – du siehst beide Schreibweisen und den Typ:</p>
+<div class="conv"><input id="cin" value="2001:db8::ff00:42:8329" spellcheck="false" autocomplete="off" aria-label="IPv6-Adresse"></div>
+<div class="cout" id="cout"></div>
+</div>
+
+<h2 class="part" id="typen">Adresstypen erkennen</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl">
+<tr><th>Typ</th><th>Präfix</th><th>Wofür</th></tr>
+<tr><td><b>Global Unicast</b></td><td class="hex">2000::/3</td><td>öffentlich routbar (wie eine öffentliche IPv4)</td></tr>
+<tr><td><b>Link-Local</b></td><td class="hex">fe80::/10</td><td>nur im selben Segment, automatisch auf jedem Interface</td></tr>
+<tr><td><b>Unique Local (ULA)</b></td><td class="hex">fc00::/7</td><td>privat/intern (wie RFC-1918 bei IPv4), meist <code>fd..</code></td></tr>
+<tr><td><b>Multicast</b></td><td class="hex">ff00::/8</td><td>an eine Gruppe (z. B. <code>ff02::1</code> alle Knoten)</td></tr>
+<tr><td><b>Loopback</b></td><td class="hex">::1</td><td>der eigene Rechner (wie 127.0.0.1)</td></tr>
+<tr><td><b>Unspezifiziert</b></td><td class="hex">::</td><td>„noch keine Adresse" (z. B. beim Start)</td></tr>
+</table></div>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Trick: Erste Hexziffern anschauen – <code>2</code>/<code>3</code> → Global Unicast, <code>fe8</code> → Link-Local, <code>fd</code> → ULA, <code>ff</code> → Multicast.</p>
+</div>
+
+<h2 class="part" id="eui">EUI-64: von der MAC zur Interface-ID</h2>
+<div class="card stack">
+<p>Ein Host kann sich die unteren 64 Bit selbst aus seiner <b>48-Bit-MAC</b> bilden – in drei Schritten:</p>
+<ol style="margin:4px 0 8px 20px">
+<li>MAC in der Mitte teilen und <b>fffe</b> einschieben (48 → 64 Bit).</li>
+<li>Im ersten Byte das <b>7. Bit</b> (U/L-Bit) umdrehen.</li>
+<li>Vorne das <b>/64-Präfix</b> davorsetzen.</li>
+</ol>
+<div class="eui" id="euidemo"></div>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Umdrehen des U/L-Bits heißt praktisch: zur ersten Hex-Stelle-Paar-Zahl <code>XOR 02</code> rechnen (z. B. <code>00→02</code>, <code>50→52</code>, <code>a4→a6</code>).</p>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (komprimieren, Typ)</option><option value="M" selected>Mittel (expandieren, Präfix)</option><option value="S">Schwer (EUI-64, Präfix)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/* IPv6-Adressierung: Komprimieren/Expandieren, Adresstyp, EUI-64, Präfix.
+   Browser: window.IP6 · Node: globalThis.IP6  */
+(function (G) {
+  var LVNAME = { L: 'Leicht', M: 'Mittel', S: 'Schwer' };
+  var LVCODE = { L: 3, M: 4, S: 5 };
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function ri(r, n) { return Math.floor(r() * n); }
+  function pick(r, a) { return a[ri(r, a.length)]; }
+  function hex(n) { return n.toString(16); }
+  function h4(r) { return ri(r, 65536); }           // ein Hextet 0..ffff
+  function pad4(x) { return ('0000' + x.toString(16)).slice(-4); }
+
+  /* Expandieren: beliebige IPv6-Schreibweise -> 8 volle Gruppen (Kleinbuchstaben) */
+  function expand(a) {
+    a = a.trim().toLowerCase();
+    var dc = a.indexOf('::');
+    var left, right;
+    if (dc >= 0) {
+      var parts = a.split('::');
+      left = parts[0] ? parts[0].split(':') : [];
+      right = parts[1] ? parts[1].split(':') : [];
+    } else { left = a.split(':'); right = []; }
+    var miss = 8 - (left.length + right.length);
+    var mid = []; for (var i = 0; i < (dc >= 0 ? miss : 0); i++) mid.push('0');
+    var g = left.concat(mid).concat(right);
+    return g.map(function (x) { return ('0000' + x).slice(-4); }).join(':');
+  }
+
+  /* Komprimieren nach RFC 5952: führende Nullen weg, längste Nullfolge (>=2) -> :: (links bei Gleichstand) */
+  function compress(full) {
+    var g = expand(full).split(':').map(function (x) { return x.replace(/^0+/, '') || '0'; });
+    var best = -1, bestLen = 0, cs = -1, cl = 0;
+    for (var i = 0; i < 8; i++) {
+      if (g[i] === '0') { if (cs < 0) { cs = i; cl = 1; } else cl++; if (cl > bestLen) { bestLen = cl; best = cs; } }
+      else { cs = -1; cl = 0; }
+    }
+    if (bestLen < 2) return g.join(':');
+    return g.slice(0, best).join(':') + '::' + g.slice(best + bestLen).join(':');
+  }
+
+  /* Adresstyp aus den ersten Bits */
+  function typeOf(addr) {
+    var f = expand(addr).split(':');
+    var hx = f.map(function (x) { return parseInt(x, 16); });
+    var allZero = hx.every(function (v) { return v === 0; });
+    if (allZero) return { key: 'unspec', name: 'Nicht spezifiziert (::)' };
+    if (hx.slice(0, 7).every(function (v) { return v === 0; }) && hx[7] === 1) return { key: 'loop', name: 'Loopback (::1)' };
+    var b0 = hx[0];
+    if ((b0 & 0xff00) === 0xff00) return { key: 'mcast', name: 'Multicast (ff00::/8)' };
+    if ((b0 & 0xffc0) === 0xfe80) return { key: 'll', name: 'Link-Local (fe80::/10)' };
+    if ((b0 & 0xfe00) === 0xfc00) return { key: 'ula', name: 'Unique Local (fc00::/7)' };
+    if ((b0 & 0xe000) === 0x2000) return { key: 'gua', name: 'Global Unicast (2000::/3)' };
+    return { key: 'other', name: 'Anderer/reservierter Bereich' };
+  }
+  var TYPES = [
+    { key: 'gua', name: 'Global Unicast (2000::/3)' },
+    { key: 'll', name: 'Link-Local (fe80::/10)' },
+    { key: 'ula', name: 'Unique Local (fc00::/7)' },
+    { key: 'mcast', name: 'Multicast (ff00::/8)' },
+    { key: 'loop', name: 'Loopback (::1)' }
+  ];
+
+  /* EUI-64: MAC (12 Hex) -> Interface-ID (64 Bit, 4 Hextets) */
+  function eui64(mac) {
+    var m = mac.replace(/[^0-9a-f]/gi, '').toLowerCase();         // 12 Hexziffern
+    var b0 = parseInt(m.slice(0, 2), 16) ^ 0x02;                   // U/L-Bit umdrehen
+    var mid = m.slice(0, 6) + 'fffe' + m.slice(6);                 // fffe einschieben
+    var full = pad4(b0).slice(2) + mid.slice(2);                   // erstes Byte ersetzen -> 16 Hexziffern
+    return full.replace(/(.{4})/g, '$1:').replace(/:$/, '');       // 4 Hextets "aabb:ccff:fedd:eeff"
+  }
+  function randMac(r) {
+    var b = []; for (var i = 0; i < 6; i++) b.push(('0' + ri(r, 256).toString(16)).slice(-2));
+    return b[0] + b[1] + '.' + b[2] + b[3] + '.' + b[4] + b[5];    // Cisco-Schreibweise aabb.ccdd.eeff
+  }
+
+  /* Netzpräfix: Adresse auf /prefix -> Hostbits auf 0, komprimiert */
+  function netPrefix(addr, plen) {
+    var f = expand(addr).split(':').map(function (x) { return parseInt(x, 16); });
+    for (var i = 0; i < 8; i++) {
+      var hi = i * 16;
+      if (hi >= plen) { f[i] = 0; continue; }
+      var within = plen - hi; if (within < 16) { var mask = (0xffff << (16 - within)) & 0xffff; f[i] = f[i] & mask; }
+    }
+    return compress(f.map(pad4).join(':'));
+  }
+
+  /* ---- Adressgeneratoren je Typ (ergeben "interessante" Nullfolgen) ---- */
+  function genGUA(r) {
+    // 2001:db8:...  mit ein paar Nullgruppen
+    var g = ['2001', '0db8', pad4(h4(r)), '0000', '0000', pad4(h4(r) & 0x00ff), '0000', pad4(1 + ri(r, 0xfffe))];
+    if (r() < 0.5) g[2] = '0000';
+    return g.join(':');
+  }
+  function genLL(r) { return ['fe80', '0000', '0000', '0000', pad4(h4(r)), pad4(h4(r)), '0000', pad4(1 + ri(r, 0xfffe))].join(':'); }
+  function genULA(r) { return ['fd' + ('0' + ri(r, 256).toString(16)).slice(-2), pad4(h4(r)), '0000', '0000', '0000', '0000', '0000', pad4(1 + ri(r, 0xfffe))].join(':'); }
+  function genMC(r) { return ['ff02', '0000', '0000', '0000', '0000', '0000', '0000', pad4(pick(r, [1, 2, 5, 0xfb, 0x101]))].join(':'); }
+  function anyAddr(r) { return pick(r, [genGUA, genLL, genULA, genMC])(r); }
+
+  function build(r, lvl) {
+    var kinds = lvl === 'L' ? ['compress', 'type'] : lvl === 'M' ? ['compress', 'expand', 'type', 'prefix'] : ['expand', 'eui64', 'prefix', 'type'];
+    var kind = pick(r, kinds);
+    if (kind === 'compress') { var full = anyAddr(r); return { kind: 'compress', given: full, ans: compress(full) }; }
+    if (kind === 'expand') { var full2 = anyAddr(r); return { kind: 'expand', given: compress(full2), ans: expand(full2) }; }
+    if (kind === 'type') { var a = (lvl === 'L' ? pick(r, [genGUA, genLL, genMC]) : anyAddr)(r); return { kind: 'type', given: compress(a), ans: typeOf(a).key, ansName: typeOf(a).name }; }
+    if (kind === 'prefix') { var a2 = genGUA(r), p = pick(r, [48, 64, 56]); return { kind: 'prefix', given: compress(a2), plen: p, ans: netPrefix(a2, p) }; }
+    // eui64
+    var mac = randMac(r), pre = pick(r, ['2001:db8:acad:1::/64', '2001:db8:0:a::/64', 'fe80::/64']);
+    var iid = eui64(mac);
+    var full3 = expand(pre.split('/')[0]).split(':').slice(0, 4).concat(iid.split(':')).join(':');
+    return { kind: 'eui64', mac: mac, prefix: pre, iid: iid, ans: compress(full3) };
+  }
+
+  function makeTask(seed, lvl) {
+    if (!LVCODE[lvl] || !(seed >= 1)) return null;
+    var r = mulberry32((seed * 7919 + LVCODE[lvl] * 1000003 + 6011) >>> 0);
+    var s = build(r, lvl); s.level = lvl; s.code = lvl + '-' + seed; return s;
+  }
+
+  G.IP6 = { LVNAME: LVNAME, TYPES: TYPES, expand: expand, compress: compress, typeOf: typeOf, eui64: eui64, netPrefix: netPrefix, makeTask: makeTask, mulberry32: mulberry32 };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},T=window.IP6;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function norm(s){return String(s).trim().toLowerCase().replace(/\s+/g,'').replace(/\/.*/,'');}
+function pad(s){return norm(s).split(':').map(function(x){return x==='' ?x:('0000'+x).slice(-4);}).join(':');}
+function sameAddr(a,b){try{return T.expand(norm(a))===T.expand(norm(b));}catch(e){return false;}}
+
+/* ===== Live-Konverter ===== */
+function conv(){
+ var raw=$('cin').value.trim();var out=$('cout');
+ if(!raw){out.innerHTML='';return;}
+ var full,comp,ty;
+ try{full=T.expand(raw.toLowerCase());comp=T.compress(raw.toLowerCase());ty=T.typeOf(raw.toLowerCase());}
+ catch(e){out.innerHTML='<div class="k">Hinweis</div><div class="v" style="color:var(--bad)">keine gültige IPv6-Adresse</div>';return;}
+ if(full.split(':').length!==8){out.innerHTML='<div class="k">Hinweis</div><div class="v" style="color:var(--bad)">keine gültige IPv6-Adresse</div>';return;}
+ var fullHtml=full.split(':').map(function(g){return g==='0000'?'<span class="grp z0">'+g+'</span>':'<span class="grp">'+g+'</span>';}).join(':');
+ out.innerHTML='<div class="k">Vollständig</div><div class="v hex">'+fullHtml+'</div>'
+  +'<div class="k">Komprimiert</div><div class="v hex">'+esc(comp)+'</div>'
+  +'<div class="k">Typ</div><div class="v"><span class="badge">'+esc(ty.name)+'</span></div>';
+}
+$('cin').addEventListener('input',conv);conv();
+
+/* ===== EUI-64-Demo ===== */
+(function(){var mac='50:3e:aa:01:bc:9d',iid=T.eui64(mac);
+ $('euidemo').innerHTML='MAC: <b>'+mac+'</b><br>1) teilen + fffe: <b>503e:aa</b><b class="ins">ff:fe</b><b>01:bc9d</b><br>2) U/L-Bit im ersten Byte umdrehen: <b class="flip">50→52</b><br>Interface-ID: <b>'+iid+'</b><br>mit Präfix 2001:db8:acad:1::/64 → <b>'+T.compress('2001:db8:acad:1:'+iid)+'</b>';})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Wie viele Bit hat eine IPv6-Adresse?',['32','64','128','256'],2,'128 Bit = 8 Gruppen zu je 16 Bit.'],
+ ['Komprimiere 2001:0db8:0000:0000:0000:0000:0000:0001',['2001:db8:::1','2001:db8::1','2001:0db8::0:1','21:db8::1'],1,'Längste Nullfolge → ::, führende Nullen weg: 2001:db8::1.'],
+ ['Welches Präfix haben Link-Local-Adressen?',['2000::/3','fe80::/10','fc00::/7','ff00::/8'],1,'Link-Local = fe80::/10, nur im lokalen Segment gültig.'],
+ ['Was bedeutet ::1 ?',['Multicast','Loopback (eigener Rechner)','Gateway','Broadcast'],1,'::1 ist die Loopback-Adresse – entspricht 127.0.0.1 bei IPv4.'],
+ ['Wie oft darf :: in einer Adresse vorkommen?',['Beliebig','Genau einmal','Zweimal','Gar nicht'],1,'Nur einmal – sonst wäre die Zahl der ausgelassenen Nullgruppen nicht eindeutig.'],
+ ['Was wird bei EUI-64 in die Mitte der MAC eingeschoben?',['ffff','fffe','fe80','00ff'],1,'fffe wird eingeschoben (48 → 64 Bit), dann das U/L-Bit gedreht.'],
+ ['Welcher Typ ist fd12:3456:789a::1 ?',['Global Unicast','Link-Local','Unique Local (ULA)','Multicast'],2,'fc00::/7 (praktisch fd..) ist Unique Local – privat/intern.'],
+ ['Wie groß ist ein typisches LAN-Präfix?',['/24','/48','/64','/128'],2,'Ein /64 ist das Standard-Präfix pro Segment; die letzten 64 Bit sind die Interface-ID.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return T.makeTask(+m[1],m[0]);}
+var KNAME={compress:'Komprimieren',expand:'Expandieren',type:'Adresstyp',prefix:'Netzpräfix',eui64:'EUI-64'};
+function taskBody(s,id){
+ if(s.kind==='compress')return'<p class="prompt">Komprimiere nach RFC 5952:</p><p class="hex" style="word-break:break-all"><b>'+esc(s.given)+'</b></p><input class="one ans" style="width:100%;margin-top:6px" placeholder="z. B. 2001:db8::1" autocomplete="off" spellcheck="false">';
+ if(s.kind==='expand')return'<p class="prompt">Schreibe vollständig (8 Gruppen, keine ::):</p><p class="hex"><b>'+esc(s.given)+'</b></p><input class="one ans" style="width:100%;margin-top:6px" placeholder="xxxx:xxxx:…:xxxx" autocomplete="off" spellcheck="false">';
+ if(s.kind==='type')return'<p class="prompt">Welcher Adresstyp ist das?</p><p class="hex"><b>'+esc(s.given)+'</b></p><select class="one sel"><option value="">– wählen –</option>'+T.TYPES.map(function(t){return'<option value="'+t.key+'">'+esc(t.name)+'</option>';}).join('')+'<option value="ula">Unique Local (fc00::/7)</option></select>';
+ if(s.kind==='prefix')return'<p class="prompt">Wie lautet das Netzpräfix (Hostbits auf 0) für <b>/'+s.plen+'</b>?</p><p class="hex"><b>'+esc(s.given)+'/'+s.plen+'</b></p><input class="one ans" style="width:100%;margin-top:6px" placeholder="komprimiert" autocomplete="off" spellcheck="false">';
+ return'<p class="prompt">Bilde per EUI-64 die vollständige Adresse:</p><p>MAC <b class="hex">'+esc(s.mac)+'</b> · Präfix <b class="hex">'+esc(s.prefix)+'</b></p><input class="one ans" style="width:100%;margin-top:6px" placeholder="komprimiert" autocomplete="off" spellcheck="false">';
+}
+function taskHTML(s,id,label){
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+T.LVNAME[s.level]+'</span><span class="tag">'+esc(KNAME[s.kind])+'</span><span class="tag">Nr. '+s.code+'</span></h3>'
+ +taskBody(s,id)
+ +'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function grade(s,card){
+ if(s.kind==='type'){var sel=card.querySelector('.sel');var ok=sel.value===s.ans;sel.classList.remove('right','wrong');if(sel.value)sel.classList.add(ok?'right':'wrong');return {ok:ok,empty:!sel.value};}
+ var inp=card.querySelector('.ans');var val=inp.value.trim();if(!val)return{ok:false,empty:true};
+ var ok;
+ if(s.kind==='expand') ok = pad(val)===s.ans;
+ else if(s.kind==='compress') ok = (T.compress(norm(val))===s.ans)&&(s.ans.indexOf('::')<0||val.indexOf('::')>=0);
+ else ok = sameAddr(val,s.ans);
+ inp.classList.remove('right','wrong');inp.classList.add(ok?'right':'wrong');return{ok:ok,empty:false};
+}
+function solHTML(s){
+ var a;
+ if(s.kind==='type')a=s.ansName||(T.TYPES.filter(function(t){return t.key===s.ans;})[0]||{name:s.ans}).name;
+ else a=s.ans;
+ var extra='';
+ if(s.kind==='eui64')extra=' (fffe einschieben, U/L-Bit drehen, Präfix davor)';
+ if(s.kind==='prefix')extra=' (alle Bits ab /'+s.plen+' auf 0)';
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li class="hex"><b>'+esc(a)+'</b>'+extra+'</li></ul>';
+}
+function wire(card){
+ card.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();card.querySelector('[data-act="check"]').click();}});
+}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;var s=cache[card.dataset.code];
+ if(t.dataset.act==='check'){var g=grade(s,card);var fb=card.querySelector('.fb');if(g.empty){fb.className='fb';fb.textContent='Bitte etwas eingeben.';return;}fb.className='fb '+(g.ok?'good':'bad');fb.textContent=g.ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(g.ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(s);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=["L-1", "L-2", "L-3", "M-1", "M-2", "M-3", "M-4", "S-1", "S-2", "S-3"];var hostEl=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';hostEl.appendChild(d);wire(d);});
+var pages=[].slice.call(hostEl.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=T.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=T.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;var id='g'+s.code.replace('-','_');$('gen').innerHTML=taskHTML(s,id,'Aufgabe '+s.code);wire($(id));$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

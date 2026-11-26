@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAC-Flooding (CAM-Overflow) mit macof</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.scroll{overflow-x:auto}
+.warn{background:#fdecea;border:1.5px solid #c62828;border-radius:6px;padding:10px 14px;font-size:15px;margin:10px 0;color:#7f1d1d}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.kbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-right:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:6px 12px;font:600 14px var(--ui);cursor:pointer}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--ink);color:#fff}
+.camtbl{background:#1b1f23;color:#d7e0e6;border-radius:8px;padding:12px 14px;font:12.5px var(--mono);max-height:260px;overflow:auto;white-space:pre}
+.meter{height:18px;border-radius:9px;background:#e0e0e0;overflow:hidden;margin-top:8px}
+.meter > div{height:100%;transition:width .4s}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>MAC-Flooding (CAM-Overflow) mit macof</h1>
+<p class="sub">Ein Switch merkt sich in der <b>CAM-Tabelle</b>, welche MAC an welchem Port hängt. Mit <b>macof</b> schickt ein Angreifer <b>tausende gefälschte Quell-MACs</b> – die Tabelle läuft über, der Switch <b>flutet dann jeden Frame an alle Ports</b> und wird so zum Hub: Der Angreifer liest den Verkehr mit.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#angriff">Der Angriff</a><a href="#demo">CAM-Overflow ausprobieren</a><a href="#macof">macof</a><a href="#schutz">Schutz</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+<div class="warn">⚠️ <b>Nur im eigenen Labornetz.</b> MAC-Flooding stört den Switch-Betrieb und das Mitlesen fremden Verkehrs ist verboten.</div>
+
+<h2 class="part" id="angriff">Wie der Angriff funktioniert</h2>
+<div class="card stack">
+<p>Normalbetrieb: Der Switch lernt pro Frame die <b>Quell-MAC</b> und merkt sie samt Port. Kennt er die Ziel-MAC, schickt er den Frame <b>gezielt</b> an den richtigen Port.</p>
+<p>Beim Angriff sendet <b>macof</b> pausenlos Frames mit <b>zufälligen Quell-MACs</b>. Die CAM-Tabelle (begrenzt groß) ist in Sekunden voll. Jetzt kann der Switch neue Ziele nicht mehr zuordnen und tut, was ein Switch bei <b>unbekannter Ziel-MAC</b> immer tut: Er <b>flutet den Frame an alle Ports</b> (unknown unicast flooding). Damit sieht der Angreifer den Verkehr aller – der Switch verhält sich wie ein Hub.</p>
+</div>
+
+<h2 class="part" id="demo">CAM-Overflow ausprobieren</h2>
+<div class="card stack">
+<div class="kbar"><span style="font:600 14px var(--ui)">Angriff</span><span class="seg" id="atkseg"><button type="button" data-a="off" class="on">aus</button><button type="button" data-a="on">macof flutet die CAM-Tabelle</button></span></div>
+<div class="camtbl" id="camtbl"></div>
+<div class="meter"><div id="mbar"></div></div>
+<div class="note" id="note" style="background:var(--soft);border-left:4px solid var(--accent);border-radius:4px;padding:8px 12px;font-size:15px;margin-top:8px"></div>
+</div>
+
+<h2 class="part" id="macof">Mit macof</h2>
+<div class="card stack">
+<pre class="cli"><span class="c"># macof gehört zur dsniff-Sammlung</span>
+# macof -i eth0                 <span class="c"># flutet über eth0 zufällige MACs</span>
+# macof -i eth0 -n 100000       <span class="c"># 100000 Frames</span>
+
+<span class="c"># Kontrolle am Switch:</span>
+SW1# show mac address-table count   <span class="c"># Tabelle am Limit</span>
+SW1# show mac address-table         <span class="c"># voll mit Zufalls-MACs</span></pre>
+</div>
+
+<h2 class="part" id="schutz">Schutz: Port Security</h2>
+<div class="card stack">
+<p>Die Gegenmaßnahme ist <b>Port Security</b>: Jeder Access-Port darf nur <b>wenige MACs</b> lernen. macof bringt dann sofort zu viele MACs an einem Port – der Port greift ein (z. B. shutdown), und die CAM-Tabelle läuft nicht über.</p>
+<pre class="cli">SW1(config)# interface fa0/1
+SW1(config-if)# switchport mode access
+SW1(config-if)# switchport port-security
+SW1(config-if)# switchport port-security maximum 2
+SW1(config-if)# switchport port-security violation shutdown</pre>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px">Siehe eigene Einheit <b>Port Security</b>. Zusätzlich hilft es, ungenutzte Ports abzuschalten und nicht benötigte Zugänge in ein „Parkplatz"-VLAN zu legen.</div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ===== CAM-Overflow-Demo ===== */
+var timer=0;
+function rnd(){var h='0123456789abcdef',s='';for(var i=0;i<12;i++){s+=h[Math.floor(Math.random()*16)];if(i%2===1&&i<11)s+=':';}return s;}
+function render(count){
+ var out='SW1# show mac address-table\n Vlan    Mac Address       Type       Ports\n----    -----------       ----       -----\n';
+ out+='  1     00:1a:2b:3c:4d:5e  DYNAMIC    Fa0/2\n  1     00:1a:2b:3c:4d:aa  DYNAMIC    Fa0/3\n';
+ var show=Math.min(count,50);
+ for(var i=0;i<show;i++)out+='  1     '+rnd()+'  DYNAMIC    Fa0/1\n';
+ if(count>50)out+='  … +'+(count-50)+' weitere Zufalls-MACs (Port Fa0/1)\n';
+ $('camtbl').textContent=out;
+ var pct=Math.min(100,Math.round(count/80));
+ var bar=$('mbar');bar.style.width=pct+'%';bar.style.background=pct>80?'#c62828':pct>40?'#e65100':'#2e7d32';
+ $('note').innerHTML=count===0?'Normalbetrieb: zwei gelernte MACs. Frames gehen gezielt an den richtigen Port.':(pct>=100?'<b style="color:#c62828">CAM-Tabelle voll!</b> Der Switch flutet jetzt jeden Frame an <b>alle Ports</b> – der Angreifer liest alles mit.':'macof flutet: <b style="color:#e65100">'+count+'</b> Einträge und steigend – die Tabelle füllt sich.');
+}
+function stop(){clearInterval(timer);timer=0;}
+function run(){stop();var count=0;render(count);timer=setInterval(function(){count+=90+Math.floor(Math.random()*120);if(count>8000){count=8000;render(count);stop();return;}render(count);},300);}
+[].forEach.call(document.querySelectorAll('#atkseg button'),function(b){b.onclick=function(){[].forEach.call(document.querySelectorAll('#atkseg button'),function(x){x.classList.toggle('on',x===b);});if(b.dataset.a==='on')run();else{stop();render(0);}};});
+render(0);
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was füllt macof?',['die Routingtabelle','die CAM/MAC-Tabelle des Switches','den DHCP-Pool','die ARP-Tabelle des PCs'],1,'macof überflutet die CAM-Tabelle mit zufälligen Quell-MACs.'],
+ ['Was macht der Switch bei voller CAM-Tabelle?',['er stürzt sofort ab','er flutet Frames an alle Ports','er blockt alles','er routet'],1,'Bei unbekannter Ziel-MAC flutet der Switch – voll heißt: fast alles wird geflutet.'],
+ ['Warum ist das für den Angreifer nützlich?',['er bekommt eine IP','er liest fremden Verkehr mit','er wird Root Bridge','er ändert VLANs'],1,'Der Switch verhält sich wie ein Hub – der Angreifer snifft den Verkehr aller.'],
+ ['Wie heißt dieses Verhalten?',['Broadcast-Storm','unknown unicast flooding','Split Horizon','Poison Reverse'],1,'Unbekannte Ziel-MACs werden an alle Ports geflutet (unknown unicast flooding).'],
+ ['Beste Gegenmaßnahme?',['DHCP Snooping','Port Security','DAI','OSPF'],1,'Port Security begrenzt die MACs pro Port – macof löst sofort eine Verletzung aus.'],
+ ['Welches Tool führt den Angriff aus?',['macof','nslookup','traceroute','ping'],0,'macof (aus der dsniff-Sammlung) erzeugt die MAC-Flut.'],
+ ['Was begrenzt Port Security konkret?',['Bandbreite','Zahl erlaubter MACs pro Port','VLAN-Anzahl','Routen'],1,'Port Security limitiert, wie viele MAC-Adressen ein Port lernen darf.'],
+ ['Wie prüfst du am Switch, ob die Tabelle voll ist?',['show ip route','show mac address-table count','show version','show cdp'],1,'show mac address-table count zeigt die Zahl der Einträge / das Limit.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'Ziel',p:'Was ist das Ziel von MAC-Flooding?',o:['Passwörter knacken','den Switch zum Fluten zwingen (mitlesen)','VLANs löschen','IP vergeben'],a:1,s:'Durch den CAM-Overflow flutet der Switch – der Angreifer liest den Verkehr mit.'},
+ {part:'Mechanik',p:'Welche MAC fälscht macof in den Frames?',o:['die Ziel-MAC','die Quell-MAC','die Gateway-MAC','keine'],a:1,s:'Zufällige Quell-MACs füllen die CAM-Tabelle (jede neue Quelle = neuer Eintrag).'},
+ {part:'Folge',p:'Die CAM-Tabelle ist voll. Ein Frame an eine unbekannte MAC wird …',o:['verworfen','an alle Ports geflutet','geroutet','zwischengespeichert'],a:1,s:'Unbekannte Ziel-MAC → Fluten an alle Ports (so snifft der Angreifer).'},
+ {part:'Schutz',p:'Welche Funktion stoppt den Angriff an der Zugangsschicht?',o:['Port Security','STP','NAT','ACL für IPs'],a:0,s:'Port Security begrenzt die MACs pro Port und löst bei macof sofort aus.'},
+ {part:'Config',p:'Welcher Befehl begrenzt die MACs an einem Port?',o:['switchport port-security maximum 2','spanning-tree portfast','no cdp enable','ip verify source'],a:0,s:'maximum N legt fest, wie viele MACs der Port lernen darf.'},
+ {part:'Diagnose',p:'Womit siehst du die Zahl der MAC-Einträge?',o:['show ip route','show mac address-table count','show vlan','show interfaces trunk'],a:1,s:'show mac address-table count zeigt Belegung und Limit der Tabelle.'},
+ {part:'Abgrenzung',p:'MAC-Flooding zielt auf …',o:['die CAM-Tabelle (Layer 2)','das Routing (Layer 3)','DNS','HTTP'],a:0,s:'Es ist ein Layer-2-Angriff auf die MAC-/CAM-Tabelle des Switches.'},
+ {part:'Verhalten',p:'Wie nennt man einen gefluteten Switch umgangssprachlich?',o:['Router','Hub','Firewall','Bridge-Loop'],a:1,s:'Er verhält sich wie ein Hub – jeder Frame geht an alle.'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>

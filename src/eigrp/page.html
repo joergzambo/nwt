@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EIGRP</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.one{padding:7px 9px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14.5px var(--mono)}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.formula{background:var(--soft);border-radius:4px;padding:12px 14px;font:600 15px var(--mono);text-align:center;margin:8px 0}
+.calc{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:8px 0}
+.calc label{display:flex;flex-direction:column;gap:3px;font:600 13px var(--ui)}
+.calc input{padding:7px 9px;border:1.5px solid #90a4ae;border-radius:4px;font:600 14px var(--mono);width:140px}
+.cres{font:700 18px var(--mono);margin-top:8px;color:var(--ink)}
+.cres small{font:600 13px var(--ui);color:var(--mute);display:block}
+.hl{color:#1565c0}.hl2{color:#e65100}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>EIGRP</h1>
+<p class="sub"><b>EIGRP</b> (Enhanced Interior Gateway Routing Protocol) ist ein fortgeschrittenes Distanzvektor-Protokoll von Cisco. Es wählt den besten Weg mit dem Algorithmus <b>DUAL</b> anhand von <b>Bandbreite und Delay</b> und hält einen fertigen Ersatzweg (<b>Feasible Successor</b>) bereit.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#ueber">Überblick</a><a href="#metrik">Metrik</a><a href="#rechner">Metrik-Rechner</a><a href="#dual">DUAL &amp; Successor</a><a href="#konfig">Konfiguration</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a><a href="#generator">🎲 Zufallsgenerator</a></nav>
+
+<h2 class="part" id="ueber">Überblick</h2>
+<div class="card stack">
+<ul class="slist">
+<li>Administrative Distanz: <b>90</b> (intern), 170 (extern) – damit vertrauenswürdiger als OSPF (110) und RIP (120).</li>
+<li>Findet Nachbarn über <b>Hello-Pakete</b> (Multicast 224.0.0.10) und tauscht nur <b>Änderungen</b> aus (kein periodisches Fluten wie RIP).</li>
+<li>Rechnet den besten Weg mit <b>DUAL</b> – inklusive sofort einsatzbereitem Ersatzweg → sehr schnelle Konvergenz.</li>
+<li>Unterstützt <b>VLSM/CIDR</b>, mehrere Protokolle und Ungleichkostenlastverteilung (variance).</li>
+</ul>
+</div>
+
+<h2 class="part" id="metrik">Die Metrik</h2>
+<div class="card stack">
+<p>Mit den Standard-K-Werten (K1=K3=1) zählen nur <b>kleinste Bandbreite</b> auf dem Pfad und die <b>Summe der Delays</b>:</p>
+<div class="formula">Metrik = 256 × ( <span class="hl">10<sup>7</sup> / min. Bandbreite[kbps]</span> + <span class="hl2">Σ Delay[µs] / 10</span> )</div>
+<div class="scroll"><table class="tbl">
+<tr><th>Interface</th><th>Bandbreite</th><th>Delay (Default)</th></tr>
+<tr><td>GigabitEthernet</td><td><code>1000000</code> kbps</td><td><code>10</code> µs</td></tr>
+<tr><td>FastEthernet</td><td><code>100000</code> kbps</td><td><code>100</code> µs</td></tr>
+<tr><td>Ethernet</td><td><code>10000</code> kbps</td><td><code>1000</code> µs</td></tr>
+<tr><td>Serial T1</td><td><code>1544</code> kbps</td><td><code>20000</code> µs</td></tr>
+</table></div>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Beispiel FastEthernet: 256 × (10<sup>7</sup>/100000 + 100/10) = 256 × (100 + 10) = <b>28160</b>.</p>
+</div>
+
+<h2 class="part" id="rechner">Metrik-Rechner</h2>
+<div class="card stack">
+<p>Trag die kleinste Bandbreite (kbps) und das gesamte Delay (µs) ein:</p>
+<div class="calc">
+ <label>min. Bandbreite (kbps)<input id="cbw" inputmode="numeric" value="1544"></label>
+ <label>Σ Delay (µs)<input id="cdl" inputmode="numeric" value="20010"></label>
+ <button class="btn" id="cgo" type="button">Berechnen</button>
+</div>
+<div class="cres" id="cout"></div>
+</div>
+
+<h2 class="part" id="dual">DUAL: Successor und Feasible Successor</h2>
+<div class="card stack">
+<div id="dualsvg"></div>
+<ul class="slist">
+<li><b>Feasible Distance (FD)</b> – die <b>beste eigene Metrik</b> zum Ziel.</li>
+<li><b>Reported Distance (RD)</b> – die Metrik, die der <b>Nachbar</b> zum Ziel meldet.</li>
+<li><b>Successor</b> – der Nachbar mit der <b>kleinsten FD</b> (kommt in die Routingtabelle).</li>
+<li><b>Feasible Successor</b> – ein Ersatz-Nachbar, der die <b>Feasibility Condition</b> erfüllt: <b>RD &lt; FD</b> des Successors. Er liegt garantiert schleifenfrei und ist sofort einsetzbar.</li>
+</ul>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px"><b>Feasibility Condition:</b> Nur wenn die gemeldete Distanz des Nachbarn <b>kleiner</b> ist als die eigene FD, ist er ein Feasible Successor – sonst könnte eine Schleife entstehen.</div>
+</div>
+
+<h2 class="part" id="konfig">Konfiguration</h2>
+<div class="card stack">
+<pre class="cli">Router(config)# router eigrp 100          <span class="c">! AS-Nummer, muss bei allen gleich sein</span>
+Router(config-router)# network 10.0.0.0 0.0.0.255
+Router(config-router)# network 192.168.1.0
+Router(config-router)# no auto-summary     <span class="c">! klassenlose Netze nicht zusammenfassen</span>
+Router(config-router)# eigrp router-id 1.1.1.1</pre>
+<p class="qh">Prüfen:</p>
+<pre class="cli">Router# show ip eigrp neighbors
+Router# show ip eigrp topology      <span class="c">! FD, RD, Successor, Feasible Successor</span>
+Router# show ip route eigrp         <span class="c">! D = EIGRP</span></pre>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<h2 class="part" id="generator">🎲 Zufallsgenerator</h2>
+<div class="genbar"><label for="glvl">Stufe</label><select id="glvl"><option value="L">Leicht (Feasibility, 1 Link)</option><option value="M" selected>Mittel (Metrik 2 Links)</option><option value="S">Schwer (Metrik, Successor)</option></select>
+<button class="btn" id="gnew" type="button">Neue Aufgabe</button><label for="gcode">Nummer</label><input id="gcode" size="8" placeholder="M-123" autocomplete="off"><button class="btn ghost" id="gload" type="button">Laden</button><span id="gmsg" class="err"></span></div>
+<div id="gen"></div>
+
+<script>
+/*EIGJS*/
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);},T=window.EIG;
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+
+/* ===== Metrik-Rechner ===== */
+function calc(){var bw=parseInt(($('cbw').value||'').replace(/\D/g,''),10),dl=parseInt(($('cdl').value||'').replace(/\D/g,''),10);
+ if(!(bw>0)||!(dl>=0)){$('cout').textContent='Bitte gültige Zahlen eingeben.';return;}
+ var bwt=Math.floor(10000000/bw),dlt=Math.floor(dl/10),m=256*(bwt+dlt);
+ $('cout').innerHTML='Metrik = '+fmt(m)+'<small>256 × ('+fmt(bwt)+' + '+fmt(dlt)+') = 256 × '+fmt(bwt+dlt)+'</small>';}
+$('cgo').onclick=calc;$('cbw').addEventListener('keydown',function(e){if(e.key==='Enter')calc();});$('cdl').addEventListener('keydown',function(e){if(e.key==='Enter')calc();});calc();
+
+/* ===== DUAL-Topologie (echte Grafik) ===== */
+(function(){var W=620,H=210,F='font-family="Open Sans,Arial"';
+ function rect(x,y,t,sub,col){return'<rect x="'+x+'" y="'+y+'" width="96" height="54" rx="8" fill="#fff" stroke="'+col+'" stroke-width="2"/><text x="'+(x+48)+'" y="'+(y+24)+'" text-anchor="middle" '+F+' font-size="15" font-weight="700" fill="#1c2b33">'+t+'</text><text x="'+(x+48)+'" y="'+(y+42)+'" text-anchor="middle" '+F+' font-size="11.5" fill="#546e7a">'+sub+'</text>';}
+ var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="EIGRP Successor und Feasible Successor">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ // R1 links, Ziel rechts, zwei Wege über R2 (Successor) und R3 (FS)
+ s+=rect(20,80,'R1','',  '#1c2b33');
+ s+=rect(260,20,'R2','RD 1000','#2e7d32');
+ s+=rect(260,140,'R3','RD 2500','#e65100');
+ s+='<rect x="500" y="80" width="100" height="54" rx="8" fill="#eef6e6" stroke="#61a229" stroke-width="2"/><text x="550" y="112" text-anchor="middle" '+F+' font-size="13" font-weight="700" fill="#3d6e14">Ziel-Netz</text>';
+ // Linien
+ s+='<line x1="116" y1="100" x2="260" y2="47" stroke="#2e7d32" stroke-width="3"/>';
+ s+='<line x1="116" y1="112" x2="260" y2="167" stroke="#e65100" stroke-width="2.5" stroke-dasharray="6 4"/>';
+ s+='<line x1="356" y1="47" x2="500" y2="100" stroke="#2e7d32" stroke-width="3"/>';
+ s+='<line x1="356" y1="167" x2="500" y2="112" stroke="#e65100" stroke-width="2.5" stroke-dasharray="6 4"/>';
+ s+='<text x="120" y="36" '+F+' font-size="11.5" fill="#2e7d32" font-weight="700">Successor · FD 3000</text>';
+ s+='<text x="120" y="202" '+F+' font-size="11.5" fill="#e65100" font-weight="700">Feasible Successor</text>';
+ $('dualsvg').innerHTML=s+'</svg>';})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Welchen Algorithmus nutzt EIGRP?',['Dijkstra (SPF)','DUAL','Bellman-Ford pur','Floyd'],1,'EIGRP nutzt DUAL (Diffusing Update Algorithm) für schnelle, schleifenfreie Konvergenz.'],
+ ['Welche administrative Distanz hat EIGRP (intern)?',['90','100','110','120'],0,'Internes EIGRP = AD 90, extern 170.'],
+ ['Welche Größen bestimmen die Standardmetrik?',['Hops','Bandbreite + Delay','nur Bandbreite','Bitfehlerrate'],1,'Mit K1=K3=1 zählen kleinste Bandbreite und Summe der Delays.'],
+ ['Was ist der Successor?',['der Nachbar mit kleinster FD','der langsamste Weg','der Backup','das Zielnetz'],0,'Der Successor hat die kleinste Feasible Distance und kommt in die Routingtabelle.'],
+ ['Feasibility Condition für einen Feasible Successor?',['RD > FD','RD < FD (des Successors)','RD = FD','Hops < 15'],1,'Ein Feasible Successor erfüllt RD < FD – dann ist er garantiert schleifenfrei.'],
+ ['Worüber findet EIGRP Nachbarn?',['LSA','Hello-Pakete (224.0.0.10)','Broadcast alle 30 s','ARP'],1,'Hello-Pakete per Multicast 224.0.0.10 bauen die Nachbarschaft auf.'],
+ ['Wie kennzeichnet show ip route eine EIGRP-Route?',['O','R','D','E'],2,'EIGRP-Routen stehen mit „D" in der Routingtabelle (O=OSPF, R=RIP).'],
+ ['Metrik einer einzelnen FastEthernet-Strecke?',['28160','2560','256','128256'],0,'256 × (10^7/100000 + 100/10) = 256 × 110 = 28160.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen + Generator ===== */
+var cache={};
+function mk(code){var m=code.split('-');return T.makeTask(+m[1],m[0]);}
+function taskBody(s,id){
+ if(s.kind==='metric'){
+  return'<p class="prompt">Pfad über: <b>'+s.links.map(esc).join(' → ')+'</b><br>kleinste Bandbreite: <b>'+fmt(s.minBW)+' kbps</b> · Σ Delay: <b>'+fmt(s.delay)+' µs</b>.<br>Berechne die EIGRP-Metrik.</p><input class="one ans" inputmode="numeric" style="width:200px" placeholder="Metrik" autocomplete="off">';
+ }
+ if(s.kind==='feasible'){
+  return'<p class="prompt">Successor-FD = <b>'+fmt(s.fd)+'</b>. Ein Nachbar meldet RD = <b>'+fmt(s.rd)+'</b>.<br>Ist dieser Nachbar ein <b>Feasible Successor</b>?</p><div class="opts col"><label><input type="radio" name="'+id+'-a" value="ja"> Ja</label><label><input type="radio" name="'+id+'-a" value="nein"> Nein</label></div>';
+ }
+ var rows=s.paths.map(function(p){return'<tr><td><b>'+p.id+'</b></td><td>'+fmt(p.fd)+'</td><td>'+fmt(p.rd)+'</td></tr>';}).join('');
+ return'<p class="prompt">Drei Wege zum Ziel. Welcher wird <b>Successor</b> (kleinste FD)?</p><div class="scroll"><table class="tbl"><tr><th>Weg</th><th>FD</th><th>RD</th></tr>'+rows+'</table></div><div class="opts col" style="margin-top:8px">'+s.paths.map(function(p){return'<label><input type="radio" name="'+id+'-a" value="'+p.id+'"> Weg '+p.id+'</label>';}).join('')+'</div>';
+}
+function taskHTML(s,id,label){
+ var kn=s.kind==='metric'?'Metrik':s.kind==='feasible'?'Feasibility':'Successor';
+ return'<div class="card task" id="'+id+'" data-code="'+s.code+'"><h3>'+label+' <span class="tag">'+T.LVNAME[s.level]+'</span><span class="tag">'+kn+'</span><span class="tag">Nr. '+s.code+'</span></h3>'
+ +taskBody(s,id)
+ +'<div class="acts"><button class="btn" type="button" data-act="check">Prüfen</button><button class="btn ghost" type="button" data-act="sol">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div></div>';
+}
+function grade(s,card){
+ if(s.kind==='metric'){var inp=card.querySelector('.ans');var v=parseInt((inp.value||'').replace(/\D/g,''),10);if(!(v>=0)||inp.value.trim()==='')return{empty:true};var ok=v===s.ans;inp.classList.remove('right','wrong');inp.classList.add(ok?'right':'wrong');return{ok:ok,empty:false};}
+ var c=card.querySelector('input[name="'+card.id+'-a"]:checked');if(!c)return{empty:true};var ok2=c.value===s.ans;card.querySelectorAll('input[name="'+card.id+'-a"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok2?'right':'wrong');});return{ok:ok2,empty:false};
+}
+function solHTML(s){
+ if(s.kind==='metric')return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li>256 × ('+fmt(Math.floor(10000000/s.minBW))+' + '+fmt(Math.floor(s.delay/10))+') = <b>'+fmt(s.ans)+'</b></li></ul>';
+ if(s.kind==='feasible')return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(s.ans)+'</b> – RD '+fmt(s.rd)+(s.rd<s.fd?' < ':' ≥ ')+'FD '+fmt(s.fd)+(s.rd<s.fd?' → Feasibility erfüllt.':' → nicht erfüllt.')+'</li></ul>';
+ return'<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li>Successor: <b>Weg '+esc(s.ans)+'</b> (kleinste FD).'+(s.fs&&s.fs.length?' Feasible Successor: '+s.fs.map(function(x){return'Weg '+x;}).join(', ')+'.':' Kein Feasible Successor.')+'</li></ul>';
+}
+function wire(card){card.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();card.querySelector('[data-act="check"]').click();}});}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-act]');if(!t)return;var card=t.closest('.task');if(!card)return;var s=cache[card.dataset.code];
+ if(t.dataset.act==='check'){var g=grade(s,card);var fb=card.querySelector('.fb');if(g.empty){fb.className='fb';fb.textContent='Bitte antworten.';return;}fb.className='fb '+(g.ok?'good':'bad');fb.textContent=g.ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(g.ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='sol'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML=solHTML(s);var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}});
+var list=/*LIST*/;var hostEl=$('tasks'),cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+list.forEach(function(code,k){var s=mk(code);cache[code]=s;var d=document.createElement('div');d.className='page';d.hidden=k!==0;
+ d.innerHTML=taskHTML(s,'t'+(k+1),'Aufgabe '+(k+1))+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<list.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<a class="btn" href="#generator" style="text-decoration:none">🎲 Weiter mit dem Zufallsgenerator</a>')+'</div>';hostEl.appendChild(d);wire(d);});
+var pages=[].slice.call(hostEl.children);
+list.forEach(function(c,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=T.LVNAME[list[k][0]];$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+function gen(lvl,seed){var s=T.makeTask(seed,lvl);if(!s){$('gmsg').textContent='Zu dieser Nummer gibt es keine Aufgabe.';return;}$('gmsg').textContent='';cache[s.code]=s;var id='g'+s.code.replace('-','_');$('gen').innerHTML=taskHTML(s,id,'Aufgabe '+s.code);wire($(id));$('gcode').value=s.code;$('glvl').value=lvl;}
+$('gnew').onclick=function(){gen($('glvl').value,1+Math.floor(Math.random()*99999));};
+function load(){var m=/^\s*([LMS])\s*-?\s*(\d{1,6})\s*$/i.exec($('gcode').value);if(!m){$('gmsg').textContent='Bitte eine Nummer wie M-305 eingeben.';return;}gen(m[1].toUpperCase(),+m[2]);}
+$('gload').onclick=load;$('gcode').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+gen('M',1+Math.floor(Math.random()*99999));
+})();
+</script>
+</body>
+</html>

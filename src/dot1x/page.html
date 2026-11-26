@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>802.1X-Portauthentifizierung</title>
+<style>
+/*BASECSS*/
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 20px var(--head);margin:0 0 4px}.explain p{margin:0}
+.pstate{display:inline-block;font:700 14px var(--ui);padding:4px 14px;border-radius:999px;margin-top:8px}
+.pstate.no{background:#fde3e3;color:var(--bad)}.pstate.yes{background:#e3f4e6;color:var(--ok)}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>802.1X-Portauthentifizierung</h1>
+<p class="sub"><b>802.1X</b> sperrt einen Switchport, bis sich das Gerät <b>authentifiziert</b> hat. Erst nach erfolgreicher Anmeldung bei einem <b>RADIUS-Server</b> wird der Port freigeschaltet. So kommt niemand allein durchs Einstecken eines Kabels ins Netz.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#rollen">Die drei Rollen</a><a href="#ablauf">Ablauf</a><a href="#states">Portzustände</a><a href="#konfig">Konfiguration</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+
+<h2 class="part" id="rollen">Die drei Rollen</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl">
+<tr><th>Rolle</th><th>Wer</th><th>Aufgabe</th></tr>
+<tr><td><b>Supplicant</b></td><td>das Endgerät (PC) mit 802.1X-Software</td><td>meldet sich mit Zugangsdaten/Zertifikat an</td></tr>
+<tr><td><b>Authenticator</b></td><td>Switch oder Access Point</td><td>sperrt den Port, reicht die Anmeldung weiter</td></tr>
+<tr><td><b>Authentication Server</b></td><td>RADIUS-Server (z. B. ISE, FreeRADIUS)</td><td>prüft die Zugangsdaten und entscheidet</td></tr>
+</table></div>
+<p class="hint" style="color:var(--mute);font-size:14px;margin-top:6px">Zwischen Supplicant und Authenticator läuft <b>EAP over LAN (EAPOL)</b>, zwischen Authenticator und Server <b>RADIUS</b>.</p>
+</div>
+
+<h2 class="part" id="ablauf">Der Ablauf</h2>
+<div class="card stack">
+<p>Vor der Anmeldung ist der Port <b>gesperrt</b> – nur EAPOL darf durch. Schritt für Schritt:</p>
+<div id="dxsvg"></div>
+<div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button><span class="stepno" id="no"></span></div>
+<div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p><div id="ps"></div></div>
+</div>
+
+<h2 class="part" id="states">Portzustände</h2>
+<div class="card stack">
+<ul class="slist">
+<li><b>unauthorized</b> – Standard vor der Anmeldung: Es geht <b>nur EAPOL</b> durch, kein normaler Datenverkehr.</li>
+<li><b>authorized</b> – nach erfolgreicher Authentifizierung: der Port ist <b>voll freigeschaltet</b>.</li>
+<li>Scheitert die Anmeldung, bleibt der Port gesperrt (optional: Gast-VLAN oder Auth-Fail-VLAN).</li>
+</ul>
+</div>
+
+<h2 class="part" id="konfig">Konfiguration</h2>
+<div class="card stack">
+<pre class="cli"><span class="c">! AAA und RADIUS</span>
+SW1(config)# aaa new-model
+SW1(config)# radius server RAD1
+SW1(config-radius-server)# address ipv4 192.168.1.10 auth-port 1812
+SW1(config-radius-server)# key GEHEIM
+SW1(config)# aaa authentication dot1x default group radius
+SW1(config)# dot1x system-auth-control    <span class="c">! 802.1X global ein</span>
+
+<span class="c">! am Port</span>
+SW1(config)# interface fa0/1
+SW1(config-if)# switchport mode access
+SW1(config-if)# authentication port-control auto
+SW1(config-if)# dot1x pae authenticator</pre>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var INK='#1c2b33',BL='#1565c0',GR='#2e7d32',OR='#e65100';
+var N={pc:{x:80,y:90,t:'Supplicant',s:'PC'},sw:{x:300,y:90,t:'Authenticator',s:'Switch'},rad:{x:520,y:90,t:'Auth-Server',s:'RADIUS'}};
+var STEPS=[
+ {t:'0 – Port gesperrt',txt:'Vor der Anmeldung ist der Port <b>unauthorized</b>: Es darf <b>nur EAPOL</b> durch, sonst nichts.',a:null,auth:false},
+ {t:'1 – EAPOL-Start',txt:'Der <b>Supplicant</b> meldet sich: EAPOL-Start an den Switch.',a:['pc','sw',BL,'EAPOL-Start'],auth:false},
+ {t:'2 – Identität anfragen',txt:'Der <b>Authenticator</b> fragt die Identität an: EAP-Request Identity.',a:['sw','pc',OR,'EAP-Request Identity'],auth:false},
+ {t:'3 – Weiterleitung an RADIUS',txt:'Der Supplicant antwortet mit seiner Identität; der Switch verpackt sie in <b>RADIUS Access-Request</b> an den Server.',a:['sw','rad',BL,'RADIUS Access-Request'],auth:false},
+ {t:'4 – Prüfung',txt:'Der <b>RADIUS-Server</b> prüft die Zugangsdaten (ggf. mit Challenge/Response).',a:['rad','sw',OR,'Challenge / Prüfung'],auth:false},
+ {t:'5 – Access-Accept',txt:'Die Daten stimmen: Der Server schickt <b>Access-Accept</b> an den Switch.',a:['rad','sw',GR,'RADIUS Access-Accept'],auth:false},
+ {t:'6 – Port freigeschaltet',txt:'Der Switch schaltet den Port <b>authorized</b> – der PC hat jetzt vollen Netzzugang.',a:['sw','pc',GR,'EAP-Success'],auth:true}];
+var si=0;
+function node(k,active){var o=N[k];var col=active?INK:'#90a4ae';return'<rect x="'+(o.x-56)+'" y="'+(o.y-26)+'" width="112" height="52" rx="8" fill="#fff" stroke="'+col+'" stroke-width="'+(active?2.4:1.6)+'"/><text x="'+o.x+'" y="'+(o.y-3)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="13" font-weight="700" fill="'+INK+'">'+esc(o.t)+'</text><text x="'+o.x+'" y="'+(o.y+15)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="11.5" fill="#546e7a">'+esc(o.s)+'</text>';}
+function draw(i){var st=STEPS[i],W=600,H=180,s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(st.t)+'">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ s+='<line x1="'+(N.pc.x+56)+'" y1="'+N.pc.y+'" x2="'+(N.sw.x-56)+'" y2="'+N.sw.y+'" stroke="#e0e6ea" stroke-width="1.5"/>';
+ s+='<line x1="'+(N.sw.x+56)+'" y1="'+N.sw.y+'" x2="'+(N.rad.x-56)+'" y2="'+N.rad.y+'" stroke="#e0e6ea" stroke-width="1.5"/>';
+ s+='<text x="190" y="140" text-anchor="middle" font-family="Open Sans,Arial" font-size="11" fill="#90a4ae">EAPOL</text>';
+ s+='<text x="410" y="140" text-anchor="middle" font-family="Open Sans,Arial" font-size="11" fill="#90a4ae">RADIUS</text>';
+ ['pc','sw','rad'].forEach(function(k){s+=node(k,st.a&&(k===st.a[0]||k===st.a[1]));});
+ if(st.a){var from=N[st.a[0]],to=N[st.a[1]],col=st.a[2],lab=st.a[3];var dir=to.x>from.x?1:-1;var y=from.y;var x1=from.x+dir*56,x2=to.x-dir*56;
+  s+='<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="'+col+'" stroke-width="2.8"/>';
+  s+='<path d="M'+(x2-dir*11)+' '+(y-6)+' L'+x2+' '+y+' L'+(x2-dir*11)+' '+(y+6)+'" fill="'+col+'"/>';
+  var mx=(x1+x2)/2;s+='<rect x="'+(mx-lab.length*3.3-8)+'" y="'+(y-30)+'" width="'+(lab.length*6.6+16)+'" height="18" rx="9" fill="'+col+'"/><text x="'+mx+'" y="'+(y-17)+'" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="700" fill="#fff">'+esc(lab)+'</text>';}
+ $('dxsvg').innerHTML=s+'</svg>';
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('ps').innerHTML='<span class="pstate '+(st.auth?'yes':'no')+'">Port: '+(st.auth?'authorized ✓':'unauthorized')+'</span>';
+ $('no').textContent='Schritt '+i+' von '+(STEPS.length-1);$('prev').disabled=i===0;$('next').disabled=i===STEPS.length-1;
+}
+$('prev').onclick=function(){if(si>0)draw(--si);};$('next').onclick=function(){if(si<STEPS.length-1)draw(++si);};$('rst').onclick=function(){si=0;draw(0);};draw(0);
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Was macht 802.1X?',['verschlüsselt WLAN','sperrt einen Port bis zur Authentifizierung','vergibt IPs','routet'],1,'802.1X gibt den Port erst nach erfolgreicher Anmeldung frei.'],
+ ['Welche Rolle hat der PC?',['Authenticator','Supplicant','Auth-Server','Gateway'],1,'Der PC ist der Supplicant, der sich anmeldet.'],
+ ['Welche Rolle hat der Switch?',['Supplicant','Authenticator','RADIUS-Server','DNS'],1,'Der Switch ist der Authenticator – er sperrt den Port und reicht weiter.'],
+ ['Wer entscheidet über Erfolg/Misserfolg?',['der Switch','der PC','der RADIUS-Server','das Gateway'],2,'Der Authentication Server (RADIUS) prüft die Daten und entscheidet.'],
+ ['Welches Protokoll läuft zwischen PC und Switch?',['RADIUS','EAP over LAN (EAPOL)','HTTPS','SNMP'],1,'Zwischen Supplicant und Authenticator läuft EAPOL.'],
+ ['Welches Protokoll zwischen Switch und Server?',['EAPOL','RADIUS','DHCP','ARP'],1,'Zwischen Authenticator und Auth-Server läuft RADIUS.'],
+ ['Was ist auf einem unauthorized Port erlaubt?',['alles','nur EAPOL','nur HTTP','nichts, auch kein EAPOL'],1,'Vor der Anmeldung darf nur EAPOL durch.'],
+ ['Welche RADIUS-Nachricht schaltet den Port frei?',['Access-Reject','Access-Accept','Access-Request','Accounting'],1,'Access-Accept signalisiert Erfolg – der Switch setzt den Port auf authorized.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'Rollen',p:'Ein PC mit 802.1X-Software ist der …',o:['Authenticator','Supplicant','Auth-Server','Router'],a:1,s:'Das anmeldende Endgerät ist der Supplicant.'},
+ {part:'Rollen',p:'Welches Gerät sperrt den Port?',o:['der PC','der Switch (Authenticator)','der RADIUS-Server','das Gateway'],a:1,s:'Der Authenticator (Switch/AP) hält den Port gesperrt.'},
+ {part:'Protokoll',p:'Zwischen Supplicant und Authenticator läuft …',o:['RADIUS','EAPOL','TACACS','DNS'],a:1,s:'EAP over LAN (EAPOL) verbindet Supplicant und Authenticator.'},
+ {part:'Protokoll',p:'Zwischen Authenticator und Server läuft …',o:['EAPOL','RADIUS','HTTP','SNMP'],a:1,s:'RADIUS trägt die Anmeldung zum Auth-Server.'},
+ {part:'Zustand',p:'Ein nicht authentifizierter Port ist …',o:['authorized','unauthorized','trunk','err-disabled'],a:1,s:'Vor der Anmeldung ist der Port unauthorized – nur EAPOL erlaubt.'},
+ {part:'Ergebnis',p:'Nach Access-Accept wird der Port …',o:['gesperrt','authorized (voll frei)','shutdown','trunk'],a:1,s:'Bei Erfolg schaltet der Switch den Port auf authorized.'},
+ {part:'Config',p:'Welcher Befehl aktiviert 802.1X global?',o:['aaa new-model','dot1x system-auth-control','switchport mode access','ip routing'],a:1,s:'dot1x system-auth-control schaltet 802.1X geräteweit ein (zusätzlich zu aaa new-model).'},
+ {part:'Scheitern',p:'Die Anmeldung schlägt fehl. Was passiert mit dem Port?',o:['er wird frei','er bleibt gesperrt (ggf. Gast-VLAN)','er wird Trunk','Reload'],a:1,s:'Ohne Access-Accept bleibt der Port gesperrt; optional gibt es ein Gast-/Auth-Fail-VLAN.'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>

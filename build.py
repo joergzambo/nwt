@@ -103,11 +103,11 @@ def page(title, depth, desc, body, active=''):
 
 # Eindeutige Themen-Kürzel für Beispielnummern (z. B. VLN-M-305)
 TAGS = {
-    'cisco-cli': 'CLI', 'troubleshooting': 'TRB', 'zahlensysteme': 'ZAH', 'ip-grundlagen': 'IPG', 'netzadresse': 'NET', 'osi-modell': 'OSI', 'tcp-udp': 'TUP',
+    'cisco-cli': 'CLI', 'troubleshooting': 'TRB', 'zahlensysteme': 'ZAH', 'ip-grundlagen': 'IPG', 'ipv6-adressierung': 'IP6', 'port-security': 'PSE', 'netzadresse': 'NET', 'osi-modell': 'OSI', 'tcp-udp': 'TUP',
     'subnetting': 'SUB', 'supernetting': 'SUP', 'collision-broadcast-domains': 'DOM',
     'ethernet-switching': 'ETH', 'spanning-tree': 'STP', 'vlan': 'VLN', 'etherchannel': 'ECH',
     'cdp': 'CDP', 'layer-3-switching': 'L3S', 'show-ip-route': 'RTB', 'inter-vlan-routing': 'IVR',
-    'statisches-routing': 'STR', 'rip': 'RIP', 'routing-schleifen': 'LOP', 'ospf-1': 'OS1',
+    'statisches-routing': 'STR', 'rip': 'RIP', 'routing-schleifen': 'LOP', 'eigrp': 'EIG', 'ospf-1': 'OS1',
     'ospf-2': 'OS2', 'ospf-3': 'OS3', 'pat': 'PAT', 'static-nat': 'SNA', 'dhcp': 'DHC',
     'hsrp-vrrp': 'HSR', 'vtp-dtp': 'VDP', 'vtp-dtp-hijacking': 'VLH', 'wildcard-masken': 'WCM', 'standard-acl': 'SAC', 'extended-acl': 'EAC', 'ssh-radius': 'SSH', 'arp-spoofing': 'ARP',
     'dhcp-starvation': 'STV', 'hsrp-hijacking': 'HIJ', 'rogue-dhcp': 'ROG', 'cdp-flooding': 'CDF', 'stp-angriff': 'STA', 'rip-authentifizierung': 'RPA',
@@ -124,7 +124,7 @@ def has_generator(tool):
 
 
 # Seiten mit Netzplänen bekommen die Zoom-Leiste (static/zoom.js)
-ZOOM_TOOLS = {'spanning-tree', 'vlan', 'inter-vlan-routing', 'collision-broadcast-domains', 'statisches-routing', 'rip', 'ethernet-switching', 'dhcp', 'routing-schleifen', 'layer-3-switching', 'cdp', 'ospf-1', 'ospf-2', 'ospf-3', 'dhcp-starvation', 'rogue-dhcp', 'arp-spoofing', 'hsrp-hijacking', 'vtp-dtp-hijacking', 'show-ip-route', 'pat', 'static-nat', 'netzadresse', 'ip-grundlagen', 'zahlensysteme', 'hsrp-vrrp', 'etherchannel', 'standard-acl', 'extended-acl'}
+ZOOM_TOOLS = {'spanning-tree', 'vlan', 'inter-vlan-routing', 'collision-broadcast-domains', 'statisches-routing', 'rip', 'ethernet-switching', 'dhcp', 'routing-schleifen', 'layer-3-switching', 'cdp', 'ospf-1', 'ospf-2', 'ospf-3', 'eigrp', 'dhcp-starvation', 'rogue-dhcp', 'arp-spoofing', 'hsrp-hijacking', 'vtp-dtp-hijacking', 'show-ip-route', 'pat', 'static-nat', 'netzadresse', 'ip-grundlagen', 'zahlensysteme', 'hsrp-vrrp', 'etherchannel', 'standard-acl', 'extended-acl'}
 
 
 def build_tool(area, topic, depth):

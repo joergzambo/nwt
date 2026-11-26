@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DHCP Snooping und Dynamic ARP Inspection</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.chip{display:inline-block;font:600 12px var(--ui);padding:2px 9px;border-radius:999px}
+.chip.t{background:#e3f4e6;color:var(--ok)}.chip.u{background:#fde3e3;color:var(--bad)}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>DHCP Snooping und Dynamic ARP Inspection</h1>
+<p class="sub">Zwei zusammengehörige Schutzfunktionen an der Zugangsschicht: <b>DHCP Snooping</b> stoppt gefälschte DHCP-Server (Rogue-DHCP) und baust eine <b>Binding-Tabelle</b> auf. <b>Dynamic ARP Inspection</b> nutzt diese Tabelle, um <b>ARP-Spoofing</b> zu verhindern.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#snoop">DHCP Snooping</a><a href="#ports">Trusted &amp; Untrusted</a><a href="#binding">Binding-Tabelle</a><a href="#dai">Dynamic ARP Inspection</a><a href="#konfig">Konfiguration</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+
+<h2 class="part" id="snoop">DHCP Snooping</h2>
+<div class="card stack">
+<p>Ein <b>Rogue-DHCP-Server</b> (vom Angreifer) könnte Clients eine falsche IP, ein falsches Gateway oder einen falschen DNS zuteilen und so den Verkehr umleiten. DHCP Snooping lässt <b>DHCP-Server-Antworten</b> (OFFER, ACK) nur von <b>vertrauenswürdigen Ports</b> durch – alle anderen werden verworfen.</p>
+<ul class="slist">
+<li>Der Switch beobachtet den DHCP-Verkehr und merkt sich, <b>wer welche IP</b> bekommen hat.</li>
+<li>Server-Antworten von <b>untrusted</b> Ports → <b>verworfen</b> (dort hängen nur Clients).</li>
+</ul>
+</div>
+
+<h2 class="part" id="ports">Trusted und Untrusted Ports</h2>
+<div class="card stack">
+<div id="snoopsvg"></div>
+<ul class="slist">
+<li><span class="chip t">trusted</span> Ports zu legitimen DHCP-Servern und zwischen Switches (Uplinks/Trunks) – hier sind Server-Antworten erlaubt.</li>
+<li><span class="chip u">untrusted</span> Ports zu Endgeräten (Standard) – hier dürfen nur DHCP-<b>Anfragen</b> der Clients kommen, keine Server-Antworten.</li>
+</ul>
+</div>
+
+<h2 class="part" id="binding">Die DHCP-Binding-Tabelle</h2>
+<div class="card stack">
+<p>Aus dem beobachteten DHCP-Verkehr entsteht eine Tabelle, die <b>MAC, IP, VLAN, Port und Lease</b> verbindet – die Grundlage für DAI und IP Source Guard:</p>
+<div class="scroll"><table class="tbl">
+<tr><th>MAC-Adresse</th><th>IP-Adresse</th><th>Lease (s)</th><th>VLAN</th><th>Interface</th></tr>
+<tr><td><code>00:1a:2b:3c:4d:5e</code></td><td><code>192.168.10.21</code></td><td>86400</td><td>10</td><td>Fa0/2</td></tr>
+<tr><td><code>00:1a:2b:3c:4d:aa</code></td><td><code>192.168.10.22</code></td><td>86400</td><td>10</td><td>Fa0/3</td></tr>
+</table></div>
+<pre class="cli">SW1# show ip dhcp snooping binding</pre>
+</div>
+
+<h2 class="part" id="dai">Dynamic ARP Inspection (DAI)</h2>
+<div class="card stack">
+<p>Bei <b>ARP-Spoofing</b> behauptet ein Angreifer per gefälschter ARP, die IP des Gateways zu besitzen, und fängt so den Verkehr ab. <b>DAI</b> prüft jedes ARP-Paket auf <b>untrusted</b> Ports gegen die <b>Binding-Tabelle</b>: Passt die IP-zu-MAC-Zuordnung nicht, wird das ARP-Paket <b>verworfen</b>.</p>
+<ul class="slist">
+<li>DAI baut auf der DHCP-Snooping-Binding-Tabelle auf – <b>ohne DHCP Snooping kein DAI</b>.</li>
+<li>Uplinks/Server sind auch hier <b>trusted</b> (werden nicht geprüft), Access-Ports <b>untrusted</b>.</li>
+<li>Verwandt: <b>IP Source Guard</b> filtert zusätzlich IP-Pakete gegen die Binding-Tabelle (gegen IP-Spoofing).</li>
+</ul>
+</div>
+
+<h2 class="part" id="konfig">Konfiguration</h2>
+<div class="card stack">
+<pre class="cli"><span class="c">! DHCP Snooping</span>
+SW1(config)# ip dhcp snooping
+SW1(config)# ip dhcp snooping vlan 10
+SW1(config)# interface gi0/1          <span class="c">! Uplink zum DHCP-Server</span>
+SW1(config-if)# ip dhcp snooping trust
+SW1(config-if)# interface range fa0/1 - 24
+SW1(config-if)# ip dhcp snooping limit rate 10
+
+<span class="c">! Dynamic ARP Inspection</span>
+SW1(config)# ip arp inspection vlan 10
+SW1(config)# interface gi0/1
+SW1(config-if)# ip arp inspection trust</pre>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px">Faustregel: <b>Alles Richtung Endgerät ist untrusted</b> (Standard), nur Uplinks und der echte DHCP-Server sind <code>trust</code>.</div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ===== Trusted/Untrusted-Topologie ===== */
+(function(){var F='font-family="Open Sans,Arial"',W=620,H=250;var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="DHCP Snooping: trusted und untrusted Ports">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ // Switch Mitte
+ s+='<rect x="250" y="100" width="120" height="50" rx="8" fill="#fff" stroke="#1c2b33" stroke-width="2"/><text x="310" y="130" text-anchor="middle" '+F+' font-size="15" font-weight="700" fill="#1c2b33">Switch</text>';
+ // DHCP-Server oben (trusted)
+ s+='<rect x="250" y="16" width="120" height="40" rx="8" fill="#eef6e6" stroke="#61a229" stroke-width="2"/><text x="310" y="40" text-anchor="middle" '+F+' font-size="13" font-weight="700" fill="#3d6e14">DHCP-Server</text>';
+ s+='<line x1="310" y1="56" x2="310" y2="100" stroke="#2e7d32" stroke-width="3"/><text x="318" y="82" '+F+' font-size="11.5" fill="#2e7d32" font-weight="700">trusted</text>';
+ // Client links unten (untrusted ok)
+ s+='<rect x="40" y="195" width="110" height="40" rx="8" fill="#fff" stroke="#1565c0" stroke-width="1.8"/><text x="95" y="219" text-anchor="middle" '+F+' font-size="13" font-weight="700" fill="#1c2b33">Client</text>';
+ s+='<line x1="150" y1="210" x2="255" y2="148" stroke="#90a4ae" stroke-width="2"/><text x="150" y="190" '+F+' font-size="11.5" fill="#c62828" font-weight="700">untrusted</text>';
+ // Angreifer rechts unten (rogue DHCP blocked)
+ s+='<rect x="470" y="195" width="130" height="40" rx="8" fill="#fff" stroke="#c62828" stroke-width="1.8"/><text x="535" y="214" text-anchor="middle" '+F+' font-size="12.5" font-weight="700" fill="#c62828">Rogue-DHCP</text><text x="535" y="228" text-anchor="middle" '+F+' font-size="10.5" fill="#546e7a">(Angreifer)</text>';
+ s+='<line x1="470" y1="210" x2="365" y2="148" stroke="#90a4ae" stroke-width="2"/><text x="420" y="190" '+F+' font-size="11.5" fill="#c62828" font-weight="700">untrusted</text>';
+ // X auf Rogue-Antwort
+ s+='<text x="412" y="172" '+F+' font-size="18" font-weight="700" fill="#c62828">✕</text><text x="300" y="235" text-anchor="middle" '+F+' font-size="11.5" fill="#546e7a">Server-Antworten vom untrusted-Port werden verworfen</text>';
+ $('snoopsvg').innerHTML=s+'</svg>';})();
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Wogegen schützt DHCP Snooping?',['ARP-Spoofing direkt','Rogue-DHCP-Server','MAC-Flooding','Routing-Loops'],1,'Es verhindert, dass gefälschte DHCP-Server Clients falsche Einstellungen zuteilen.'],
+ ['Wo dürfen DHCP-Server-Antworten herkommen?',['von jedem Port','nur von trusted Ports','nur von untrusted Ports','von keinem'],1,'Server-Antworten (OFFER/ACK) sind nur auf trusted Ports erlaubt.'],
+ ['Wie ist ein Access-Port standardmäßig?',['trusted','untrusted','trunk','gesperrt'],1,'Access-Ports zu Endgeräten sind untrusted – dort kommen nur Client-Anfragen.'],
+ ['Was entsteht beim DHCP Snooping?',['eine Routingtabelle','die Binding-Tabelle (MAC/IP/Port)','eine ACL','ein VLAN'],1,'Die Binding-Tabelle verknüpft MAC, IP, VLAN, Port und Lease.'],
+ ['Worauf baut Dynamic ARP Inspection auf?',['auf STP','auf der DHCP-Snooping-Binding-Tabelle','auf NAT','auf OSPF'],1,'DAI prüft ARP gegen die Binding-Tabelle – ohne DHCP Snooping kein DAI.'],
+ ['Was macht DAI mit einem gefälschten ARP auf einem untrusted Port?',['es loggt nur','es verwirft es','es routet es','es vertraut ihm'],1,'Passt die IP-zu-MAC-Zuordnung nicht zur Binding-Tabelle, wird das ARP verworfen.'],
+ ['Welcher Angriff wird durch DAI verhindert?',['ARP-Spoofing','DNS-Spoofing','MAC-Flooding','CDP-Flooding'],0,'DAI stoppt ARP-Spoofing, indem es falsche IP-MAC-Zuordnungen blockiert.'],
+ ['Welche Ports macht man trust?',['alle','Uplinks und den echten DHCP-Server','alle Access-Ports','keine'],1,'Nur Uplinks/Trunks und der legitime DHCP-Server sind trusted.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'Rollen',p:'An welchen Port gehört <code>ip dhcp snooping trust</code>?',o:['an den Client-Port','an den Uplink zum DHCP-Server','an jeden Port','an keinen'],a:1,s:'Nur der Uplink/Server-Port ist trusted; Client-Ports bleiben untrusted.'},
+ {part:'Schutz',p:'Ein Angreifer stellt an einem Access-Port einen DHCP-Server auf. Was passiert?',o:['Clients bekommen seine IPs','seine Server-Antworten werden verworfen','der Switch stürzt ab','nichts'],a:1,s:'DHCP-Server-Antworten vom untrusted Port werden von DHCP Snooping verworfen.'},
+ {part:'DAI',p:'Woher weiß DAI, welche IP zu welcher MAC gehört?',o:['aus dem ARP-Cache','aus der DHCP-Snooping-Binding-Tabelle','aus OSPF','aus der CAM-Tabelle'],a:1,s:'DAI vergleicht ARP-Pakete mit der Binding-Tabelle.'},
+ {part:'Abhängigkeit',p:'Du aktivierst DAI, aber kein DHCP Snooping. Problem?',o:['läuft trotzdem','DAI hat keine Binding-Tabelle','DAI routet','nichts'],a:1,s:'Ohne DHCP Snooping gibt es keine Binding-Tabelle – DAI braucht sie.'},
+ {part:'Angriff',p:'Welchen Angriff stoppt DAI?',o:['MAC-Flooding','ARP-Spoofing','DNS-Flooding','STP-Angriff'],a:1,s:'DAI blockiert gefälschte ARP-Antworten (ARP-Spoofing).'},
+ {part:'Config',p:'Welcher Befehl aktiviert DAI für VLAN 10?',o:['ip dhcp snooping vlan 10','ip arp inspection vlan 10','ip verify source','switchport'],a:1,s:'ip arp inspection vlan 10 schaltet DAI für das VLAN ein.'},
+ {part:'Ergänzung',p:'Was filtert zusätzlich IP-Pakete gegen die Binding-Tabelle?',o:['IP Source Guard','Port Security','STP','NAT'],a:0,s:'IP Source Guard prüft IP-Pakete gegen die Binding-Tabelle (gegen IP-Spoofing).'},
+ {part:'Diagnose',p:'Womit siehst du die gelernten Zuordnungen?',o:['show ip route','show ip dhcp snooping binding','show vlan','show cdp'],a:1,s:'show ip dhcp snooping binding zeigt die Binding-Tabelle.'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>

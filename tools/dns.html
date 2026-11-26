@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNS – Namensauflösung</title>
+<style>
+
+:root{
+  /* AECP-Stil: weiß, schwarz, Belgrano/Bitter/Open Sans; VLAN-Farben tragen Bedeutung */
+  --ink:#1c2b33; --mute:#546e7a; --line:#e3e1e8; --soft:#f3f5f7; --ok:#2e7d32; --bad:#c62828; --warn:#e65100; --accent:#61a229;
+  --head:"Belgrano",Georgia,serif; --ui:"Bitter",Georgia,serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 var(--body)}
+.vmain{max-width:980px;margin:0 auto;padding:24px 20px 60px}
+.vmain h1{font:400 clamp(30px,4.5vw,42px)/1.15 var(--head);letter-spacing:.5px;margin:.3em 0 .2em;text-wrap:balance}
+.vmain h2{font:400 26px/1.2 var(--head);letter-spacing:.5px;margin:0 0 .4em;text-wrap:balance}
+.sub{color:var(--mute);max-width:72ch;margin:0 0 14px}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.jumps a{font:600 15px var(--ui);letter-spacing:.4px;color:#fff;background:var(--ink);padding:8px 14px;border-radius:4px;text-decoration:none}
+.jumps a:hover{background:#000}
+.part{border-top:3px solid var(--ink);margin-top:40px;padding-top:12px}
+.card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:18px 20px;margin:14px 0}
+svg{width:100%;height:auto;display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:4px}
+button,select,input{font:600 15px var(--ui);letter-spacing:.3px}
+.btn{padding:9px 16px;border-radius:4px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+.btn:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Schritt-Animation */
+.sbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.sbgrid{grid-template-columns:1fr}}
+.cfg{background:var(--soft);border-radius:4px;padding:10px 14px;font-size:14px}
+.cfg h3{font:600 15px var(--ui);margin:0 0 6px}
+.cfg label{margin-right:12px;white-space:nowrap}
+.cfg select{font:500 14px var(--body);padding:2px 4px}
+.hint{font-size:14px;color:var(--mute);margin:8px 0 0}
+.result{margin-top:10px;font-size:15px;min-height:1.6em}
+.frames{margin-top:12px;font:13px var(--mono)}
+.frame{display:flex;flex-wrap:wrap;margin:6px 0;align-items:stretch}
+.frame span{border:1.5px solid var(--ink);border-right:0;padding:5px 8px;background:#fff;white-space:nowrap}
+.frame span:last-child{border-right:1.5px solid var(--ink)}
+.frame .ftag{background:#fff8e1;font-weight:700}
+.frame .ftag.none{background:var(--soft);color:var(--mute);border-style:dashed;font-weight:400}
+.frame b{font-family:var(--body)}
+.flab{font:600 14px var(--ui);margin-top:8px}
+
+/* Regelwerk */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rules{grid-template-columns:1fr}}
+.rules .card{margin:0}
+.rules h3{font:400 19px var(--head);margin:0 0 6px}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin:3px 0}
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+.check{background:#fff8e1;border:1px solid #ffe082}
+
+/* Übungen */
+.pager{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:14px 0}
+.pinfo{text-align:center;line-height:1.3}
+.pinfo span{display:block;font-size:13px;color:var(--mute)}
+.toc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px}
+.toc button{min-width:36px;padding:4px 0;border:1px solid #cfd8dc;background:#fff;color:var(--ink);border-radius:4px;cursor:pointer;font-size:13px}
+.toc button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toc button.ok{background:#e3f4e6;border-color:#a5d6a7}
+.toc button.on.ok{background:var(--ok);border-color:var(--ok)}
+.task h3{font:400 22px var(--head);margin:0 0 4px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{font:400 12px var(--head);text-transform:uppercase;letter-spacing:1.5px;color:#3d6e14;background:#eef6e6;padding:2px 8px;border-radius:2px}
+.trunks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
+.trunks pre{margin:0}
+.q{margin-top:16px;padding-top:12px;border-top:1px dashed #cfd8dc}
+.q p{margin:0 0 6px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:6px 10px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #cfd8dc;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:15px;background:#fff}
+.opts label.right{border-color:var(--ok);background:#e3f4e6}
+.opts label.wrong{border-color:var(--bad);background:#fde3e3}
+.opts label.missed{border-color:var(--ok);border-style:dashed}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.fb{font-weight:600}
+.fb.good{color:var(--ok)} .fb.bad{color:var(--bad)}
+.sol{display:none;margin-top:14px;border-top:2px solid var(--ink);padding-top:12px}
+.sol.open{display:block}
+.sol ul{list-style:none;padding:0;margin:10px 0}
+.sol li{margin:4px 0;padding-left:4px}
+.ans{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;margin:8px 0}
+.navrow{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.genbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.genbar select,.genbar input{padding:8px;border:1.5px solid #90a4ae;border-radius:4px;font-family:var(--body);font-weight:500}
+.err{color:var(--bad)}
+@media print{.jumps,.pager,.acts,.navrow,.genbar,#sandbox,#generator{display:none!important}.task{display:block!important;break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.qh{font:600 16px var(--ui);margin:14px 0 4px}
+.right{border-color:var(--ok)!important;background:#e3f4e6!important}.wrong{border-color:var(--bad)!important;background:#fde3e3!important}
+.slist{list-style:none;padding:0;margin:6px 0}.slist li{margin:5px 0;padding:6px 10px;background:var(--soft);border-radius:4px;font-size:15px}
+.quiz .q .ex{display:none;margin-top:6px;font-size:15px;background:var(--soft);border-left:4px solid var(--accent);padding:6px 10px}.quiz .q .ex.open{display:block}
+.opts.col{flex-direction:column;align-items:flex-start}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.tbl th,.tbl td{border:1px solid #cfd8dc;padding:6px 9px;text-align:left}.tbl th{background:var(--soft);font:600 13.5px var(--ui)}
+.tbl code{font-family:var(--mono)}
+.scroll{overflow-x:auto}
+.prompt{font-size:16px;background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:4px;margin:4px 0 8px}
+.cli{background:#1c2b33;color:#e6edf2;border-radius:4px;padding:10px 12px;margin:8px 0 0;font:13px var(--mono);line-height:1.55;overflow-x:auto}
+.cli .c{color:#90a4ae}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.stepno{font:600 15px var(--ui);margin-left:auto;color:var(--mute)}
+.explain{background:var(--soft);border-radius:4px;padding:12px 16px;margin-top:10px;font-size:16px;min-height:4.5em}
+.explain h3{font:400 20px var(--head);margin:0 0 4px}.explain p{margin:0}
+.hier{display:flex;flex-direction:column;align-items:center;gap:4px;font:600 14px var(--mono);margin:8px 0}
+.hier span{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:5px 12px}
+.hier .arr{color:var(--mute);font-size:13px}
+</style>
+</head>
+<body>
+<main class="vmain">
+<h1>DNS – die Namensauflösung</h1>
+<p class="sub">Menschen merken sich Namen, Router brauchen IP-Adressen. Das <b>Domain Name System</b> übersetzt zwischen beiden – verteilt über eine weltweite Hierarchie aus Root-, TLD- und autoritativen Servern.</p>
+<nav class="jumps" aria-label="Abschnitte"><a href="#wozu">Wozu</a><a href="#hierarchie">Hierarchie</a><a href="#ablauf">Ablauf</a><a href="#records">Record-Typen</a><a href="#cisco">DNS am Gerät</a><a href="#quiz">Teste dich</a><a href="#uebungen">Übungen</a></nav>
+
+<h2 class="part" id="wozu">Wozu DNS?</h2>
+<div class="card stack">
+<p>Statt <code>93.184.216.34</code> tippst du <code>www.example.com</code>. DNS schlägt den passenden Eintrag nach – wie ein <b>Telefonbuch für das Internet</b>. Vorteile: Namen sind merkbar, und die IP dahinter kann sich ändern, ohne dass du etwas merkst.</p>
+<ul class="slist">
+<li>DNS läuft über <b>UDP Port 53</b> (bei großen Antworten/Zonentransfers auch TCP 53).</li>
+<li>Antworten werden <b>zwischengespeichert</b> (Cache) – gesteuert über die <b>TTL</b> jedes Eintrags.</li>
+<li>Die Namen sind <b>hierarchisch</b> aufgebaut und von rechts nach links gegliedert.</li>
+</ul>
+</div>
+
+<h2 class="part" id="hierarchie">Die Hierarchie</h2>
+<div class="card stack">
+<p>Ein Name wird von <b>rechts</b> (allgemein) nach <b>links</b> (konkret) aufgelöst:</p>
+<div class="hier">
+<span>. (Root)</span><span class="arr">▾</span>
+<span>.com (TLD)</span><span class="arr">▾</span>
+<span>example.com (autoritativ)</span><span class="arr">▾</span>
+<span>www.example.com (Host)</span>
+</div>
+<p class="hint" style="color:var(--mute);font-size:14px">Jede Ebene kennt nur die nächste: Der Root-Server weiß, wer <code>.com</code> verwaltet; der <code>.com</code>-Server weiß, wer <code>example.com</code> verwaltet.</p>
+</div>
+
+<h2 class="part" id="ablauf">Der Auflösungs-Ablauf</h2>
+<div class="card stack">
+<p>Dein PC stellt eine <b>rekursive</b> Anfrage an den Resolver. Der fragt dann <b>iterativ</b> die Hierarchie ab:</p>
+<div id="dnssvg"></div>
+<div class="stepbar"><button class="btn ghost" id="prev" type="button">‹ Zurück</button><button class="btn" id="next" type="button">Weiter ›</button><button class="btn ghost" id="rst" type="button">⟲ Von vorne</button><span class="stepno" id="no"></span></div>
+<div class="explain" aria-live="polite"><h3 id="ttl"></h3><p id="txt"></p></div>
+</div>
+
+<h2 class="part" id="records">Die wichtigsten Record-Typen</h2>
+<div class="card stack">
+<div class="scroll"><table class="tbl">
+<tr><th>Typ</th><th>Bedeutung</th><th>Beispiel</th></tr>
+<tr><td><code>A</code></td><td>Name → IPv4-Adresse</td><td>example.com → 93.184.216.34</td></tr>
+<tr><td><code>AAAA</code></td><td>Name → IPv6-Adresse</td><td>example.com → 2606:2800:220::1</td></tr>
+<tr><td><code>CNAME</code></td><td>Alias auf einen anderen Namen</td><td>www → example.com</td></tr>
+<tr><td><code>MX</code></td><td>Mailserver der Domain (mit Priorität)</td><td>10 mail.example.com</td></tr>
+<tr><td><code>NS</code></td><td>zuständiger Nameserver der Zone</td><td>ns1.example.com</td></tr>
+<tr><td><code>PTR</code></td><td>IP → Name (Reverse-Lookup)</td><td>34…in-addr.arpa → example.com</td></tr>
+<tr><td><code>TXT</code></td><td>freier Text (z. B. SPF, Verifizierung)</td><td>"v=spf1 …"</td></tr>
+<tr><td><code>SOA</code></td><td>Start of Authority (Zonen-Eckdaten)</td><td>Seriennummer, TTLs …</td></tr>
+</table></div>
+</div>
+
+<h2 class="part" id="cisco">DNS am Gerät</h2>
+<div class="card stack">
+<pre class="cli"><span class="c">! Router als DNS-Client</span>
+Router(config)# ip name-server 8.8.8.8 1.1.1.1
+Router(config)# ip domain-lookup
+Router(config)# ip domain-name example.com
+
+<span class="c">! am PC testen</span>
+C:\> nslookup www.example.com
+C:\> ipconfig /displaydns</pre>
+<div class="note" style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:8px 12px;font-size:14.5px;margin-top:8px">Tippt man am Router einen falschen Befehl, versucht er ihn per DNS aufzulösen und „hängt" kurz. In Übungslaboren schaltet man das oft mit <code>no ip domain-lookup</code> ab.</div>
+</div>
+
+<h2 class="part" id="quiz">Teste dich</h2>
+<div class="card quiz" id="qz"></div>
+
+<h2 class="part" id="uebungen">Übungen</h2>
+<div class="pager"><button class="btn ghost" id="pprev" type="button">‹ Zurück</button><div class="pinfo"><b id="pnum"></b><span id="ppart"></span></div><button class="btn" id="pnext" type="button">Weiter ›</button><div class="toc" id="ptoc"></div></div>
+<div id="tasks"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var INK='#1c2b33',GR='#2e7d32',BL='#1565c0',OR='#e65100',MU='#90a4ae';
+
+/* ===== Ablauf-Stepper (echte Grafik) ===== */
+var NODES={pc:{x:66,y:150,t:'PC'},res:{x:250,y:150,t:'Resolver'},root:{x:480,y:40,t:'Root .'},tld:{x:480,y:130,t:'TLD .com'},auth:{x:480,y:220,t:'example.com'}};
+var STEPS=[
+ {t:'1 – Rekursive Anfrage',txt:'Der <b>PC</b> fragt seinen <b>Resolver</b>: „Welche IP hat www.example.com?" – rekursiv, d. h. er erwartet die fertige Antwort.',a:['pc','res',BL,'www.example.com?']},
+ {t:'2 – Root-Server',txt:'Der Resolver kennt die <b>Root-Server</b>. Antwort: „Ich nicht, aber frag den <b>.com</b>-Server (NS-Verweis)."',a:['res','root',OR,'wer kennt .com?']},
+ {t:'3 – TLD-Server (.com)',txt:'Der Resolver fragt den <b>.com</b>-Server. Antwort: „Frag den autoritativen Server von <b>example.com</b>."',a:['res','tld',OR,'wer kennt example.com?']},
+ {t:'4 – Autoritativer Server',txt:'Der Resolver fragt den <b>autoritativen Server</b> von example.com. Antwort: „<b>A 93.184.216.34</b>".',a:['res','auth',OR,'www.example.com?']},
+ {t:'5 – Antwort an den PC',txt:'Der Resolver gibt die IP an den PC zurück und <b>speichert sie im Cache</b> (für die Dauer der TTL).',a:['res','pc',GR,'93.184.216.34']}];
+var si=0;
+function node(n,active){var N=NODES[n];var col=active?INK:MU;return'<rect x="'+(N.x-46)+'" y="'+(N.y-20)+'" width="92" height="40" rx="7" fill="#fff" stroke="'+col+'" stroke-width="'+(active?2.4:1.6)+'"/><text x="'+N.x+'" y="'+(N.y+5)+'" text-anchor="middle" font-family="Open Sans,Arial" font-size="13" font-weight="700" fill="'+INK+'">'+esc(N.t)+'</text>';}
+function draw(i){var st=STEPS[i],from=NODES[st.a[0]],to=NODES[st.a[1]],col=st.a[2],lab=st.a[3];
+ var W=560,H=270,s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(st.t)+'">';
+ s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#fbfcfd"/>';
+ // statische Hilfslinien Resolver->Server
+ ['root','tld','auth'].forEach(function(k){var N=NODES[k];s+='<line x1="'+(NODES.res.x+46)+'" y1="'+NODES.res.y+'" x2="'+(N.x-46)+'" y2="'+N.y+'" stroke="#e0e6ea" stroke-width="1.5"/>';});
+ s+='<line x1="'+(NODES.pc.x+46)+'" y1="'+NODES.pc.y+'" x2="'+(NODES.res.x-46)+'" y2="'+NODES.res.y+'" stroke="#e0e6ea" stroke-width="1.5"/>';
+ // Knoten zuerst, Pfeil + Label kommen darüber (Label nie von Kästen verdeckt)
+ Object.keys(NODES).forEach(function(k){s+=node(k,k===st.a[0]||k===st.a[1]);});
+ var x1=from.x,y1=from.y,x2=to.x,y2=to.y;var ang=Math.atan2(y2-y1,x2-x1);var ox=Math.cos(ang)*48,oy=Math.sin(ang)*48;
+ s+='<line x1="'+(x1+ox)+'" y1="'+(y1+oy)+'" x2="'+(x2-ox)+'" y2="'+(y2-oy)+'" stroke="'+col+'" stroke-width="2.8"/>';
+ var hx=x2-ox,hy=y2-oy;s+='<path d="M'+(hx-Math.cos(ang-0.4)*12)+' '+(hy-Math.sin(ang-0.4)*12)+' L'+hx+' '+hy+' L'+(hx-Math.cos(ang+0.4)*12)+' '+(hy-Math.sin(ang+0.4)*12)+'" fill="'+col+'"/>';
+ var vert=Math.abs(y2-y1)>20;var mx=(x1+x2)/2,my=vert?(y1+y2)/2:(y1-16);
+ s+='<rect x="'+(mx-lab.length*3.4-8)+'" y="'+(my-13)+'" width="'+(lab.length*6.8+16)+'" height="18" rx="9" fill="'+col+'"/><text x="'+mx+'" y="'+(my)+'" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#fff">'+esc(lab)+'</text>';
+ $('dnssvg').innerHTML=s+'</svg>';
+ $('ttl').textContent=st.t;$('txt').innerHTML=st.txt;$('no').textContent='Schritt '+(i+1)+' von '+STEPS.length;$('prev').disabled=i===0;$('next').disabled=i===STEPS.length-1;
+}
+$('prev').onclick=function(){if(si>0)draw(--si);};$('next').onclick=function(){if(si<STEPS.length-1)draw(++si);};$('rst').onclick=function(){si=0;draw(0);};draw(0);
+
+/* ===== Quiz ===== */
+var Q=[
+ ['Über welchen Port/Transport läuft DNS üblicherweise?',['TCP 80','UDP 53','TCP 25','UDP 123'],1,'DNS nutzt meist UDP Port 53; für große Antworten/Zonentransfers auch TCP 53.'],
+ ['Welcher Record übersetzt einen Namen in eine IPv4-Adresse?',['AAAA','CNAME','A','MX'],2,'Der A-Record zeigt auf eine IPv4-Adresse, AAAA auf IPv6.'],
+ ['Was macht ein CNAME?',['Mailserver angeben','Alias auf einen anderen Namen','IP→Name','Zone definieren'],1,'CNAME ist ein Alias, der auf einen anderen (kanonischen) Namen zeigt.'],
+ ['Welche Anfrage stellt der PC an seinen Resolver?',['iterativ','rekursiv','autoritativ','reverse'],1,'Der PC fragt rekursiv – er will die fertige Antwort. Der Resolver fragt dann iterativ weiter.'],
+ ['Welcher Server kennt die endgültige Antwort für example.com?',['Root','TLD .com','autoritativer Server','Resolver-Cache'],2,'Der autoritative Server der Zone example.com liefert die verbindliche Antwort.'],
+ ['Welcher Record findet den Mailserver einer Domain?',['NS','MX','PTR','TXT'],1,'MX-Records verweisen auf die Mailserver (mit Priorität).'],
+ ['Wie lange darf eine Antwort gecacht werden?',['für immer','bis zum Reboot','für die Dauer der TTL','1 Sekunde'],2,'Die TTL des Records legt fest, wie lange die Antwort zwischengespeichert werden darf.'],
+ ['Ein Reverse-Lookup (IP→Name) nutzt welchen Record?',['A','PTR','SOA','CNAME'],1,'PTR-Records lösen eine IP zurück in einen Namen auf.']];
+$('qz').innerHTML=Q.map(function(q,n){return'<div class="q" data-n="'+n+'"><p>'+(n+1)+'. '+esc(q[0])+'</p><div class="opts col">'+q[1].map(function(o,j){return'<label><input type="radio" name="q'+n+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="ex">'+esc(q[3])+'</div></div>';}).join('')+
+ '<div class="acts"><button class="btn" type="button" id="qcheck">Prüfen</button><span class="fb" id="qfb" aria-live="polite"></span></div>';
+$('qcheck').onclick=function(){var ok=0;Q.forEach(function(q,n){var box=document.querySelector('.q[data-n="'+n+'"]'),c=box.querySelector('input:checked');box.querySelectorAll('label').forEach(function(l){var v=+l.querySelector('input').value;l.classList.remove('right','wrong','missed');if(c&&+c.value===v)l.classList.add(v===q[2]?'right':'wrong');else if(v===q[2]&&c)l.classList.add('missed');});if(c){box.querySelector('.ex').classList.add('open');if(+c.value===q[2])ok++;}});
+ var fb=$('qfb');fb.className='fb '+(ok===Q.length?'good':'bad');fb.textContent=ok+' von '+Q.length+' richtig'+(ok===Q.length?' ✓':'.');};
+
+/* ===== Übungen (kuratiert) ===== */
+var EX=[
+ {part:'Record',p:'Du willst, dass <b>example.com</b> auf eine IPv6-Adresse zeigt. Welcher Record?',o:['A','AAAA','CNAME','MX'],a:1,s:'AAAA bildet einen Namen auf eine IPv6-Adresse ab.'},
+ {part:'Ablauf',p:'Dein Resolver hat die Antwort nicht im Cache. Wen fragt er <b>zuerst</b>?',o:['den autoritativen Server','einen Root-Server','den TLD-Server direkt','den PC'],a:1,s:'Ohne Cache beginnt der Resolver bei einem Root-Server und arbeitet sich iterativ nach unten.'},
+ {part:'Record',p:'E-Mails an die Domain sollen an mail.example.com gehen. Welcher Record?',o:['NS','MX','PTR','A'],a:1,s:'MX legt den Mailserver der Domain fest.'},
+ {part:'Transport',p:'Eine normale kleine DNS-Anfrage nutzt …',o:['TCP 53','UDP 53','UDP 67','TCP 80'],a:1,s:'UDP 53 – schnell und verbindungslos; TCP 53 nur bei großen Antworten/Zonentransfer.'},
+ {part:'Begriff',p:'Was bedeutet „autoritativ"?',o:['schnellster Server','Server mit der verbindlichen Zonen-Antwort','nur Cache','Root-Server'],a:1,s:'Der autoritative Server verwaltet die Zone und gibt die verbindliche Antwort.'},
+ {part:'Config',p:'Im Labor „hängt" der Router bei Tippfehlern wegen DNS. Welcher Befehl hilft?',o:['no ip routing','no ip domain-lookup','no cdp run','shutdown'],a:1,s:'no ip domain-lookup schaltet die DNS-Auflösung ab – kein Warten mehr bei Vertippern.'},
+ {part:'Cache',p:'Was steuert, wie lange ein Eintrag gecacht wird?',o:['die Priorität','die TTL','der Record-Typ','die IP'],a:1,s:'Die TTL (Time To Live) jedes Records bestimmt die Cache-Dauer.'},
+ {part:'Reverse',p:'Zu einer IP soll der Name ermittelt werden. Welcher Record?',o:['A','CNAME','PTR','TXT'],a:2,s:'PTR-Records lösen IP → Name auf (Reverse-Lookup).'}];
+var cp=0,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function exHTML(e,k){return'<div class="card task" data-k="'+k+'"><h3>Aufgabe '+(k+1)+' <span class="tag">'+esc(e.part)+'</span></h3><p class="prompt">'+e.p+'</p><div class="opts col">'+e.o.map(function(o,j){return'<label><input type="radio" name="ex'+k+'" value="'+j+'"> '+esc(o)+'</label>';}).join('')+'</div><div class="acts"><button class="btn" type="button" data-act="c">Prüfen</button><button class="btn ghost" type="button" data-act="s">Lösung anzeigen</button><span class="fb" aria-live="polite"></span></div><div class="sol"></div>';}
+var hostEl=$('tasks');
+EX.forEach(function(e,k){var d=document.createElement('div');d.className='page';d.hidden=k!==0;d.innerHTML=exHTML(e,k)+'<div class="navrow">'+(k>0?'<button class="btn ghost" type="button" data-go="'+(k-1)+'">‹ Aufgabe '+k+'</button>':'<span></span>')+(k<EX.length-1?'<button class="btn" type="button" data-go="'+(k+1)+'">Aufgabe '+(k+2)+' ›</button>':'<span></span>')+'</div>';hostEl.appendChild(d);});
+var pages=[].slice.call(hostEl.children);
+EX.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.textContent=k+1;b.dataset.go=k;$('ptoc').appendChild(b);});
+function markToc(){[].forEach.call($('ptoc').children,function(b,k){b.classList.toggle('on',k===cp);b.classList.toggle('ok',pages[k].querySelector('.task').dataset.solved==='1');});}
+function show(k,scroll){k=Math.max(0,Math.min(pages.length-1,k));cp=k;pages.forEach(function(p,j){p.hidden=j!==k;});$('pnum').textContent='Aufgabe '+(k+1)+' von '+pages.length;$('ppart').textContent=EX[k].part;$('pprev').disabled=k===0;$('pnext').disabled=k===pages.length-1;markToc();if(scroll){var top=$('uebungen').getBoundingClientRect().top+window.pageYOffset;if(window.pageYOffset>top)window.scrollTo({top:top,behavior:reduce?'auto':'smooth'});}}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-act]');if(t){var card=t.closest('.task'),k=+card.dataset.k,e=EX[k];
+ if(t.dataset.act==='c'){var c=card.querySelector('input[name="ex'+k+'"]:checked'),fb=card.querySelector('.fb');if(!c){fb.className='fb';fb.textContent='Bitte wählen.';return;}var ok=+c.value===e.a;card.querySelectorAll('input[name="ex'+k+'"]').forEach(function(rb){rb.parentNode.classList.remove('right','wrong');if(rb.checked)rb.parentNode.classList.add(ok?'right':'wrong');});fb.className='fb '+(ok?'good':'bad');fb.textContent=ok?'Richtig! ✓':'Noch nicht – Lösung anzeigen.';if(ok){card.dataset.solved='1';markToc();}}
+ if(t.dataset.act==='s'){var so=card.querySelector('.sol');if(!so.innerHTML)so.innerHTML='<h3 style="font:400 20px var(--head);margin:0">Lösung</h3><ul class="slist"><li><b>'+esc(e.o[e.a])+'</b> – '+esc(e.s)+'</li></ul>';var o=so.classList.toggle('open');t.textContent=o?'Lösung ausblenden':'Lösung anzeigen';}return;}
+ var b=ev.target.closest&&ev.target.closest('[data-go]');if(b)show(+b.dataset.go,true);});
+$('pprev').onclick=function(){show(cp-1,true);};$('pnext').onclick=function(){show(cp+1,true);};show(0,false);
+})();
+</script>
+</body>
+</html>
